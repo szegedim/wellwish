@@ -74,7 +74,19 @@ func Setup() {
 				redirect = fmt.Sprintf("/tmp?apikey=%s", voucher)
 			}
 		}
-		if Sacks[sack] == "" {
+		traces := Sacks[sack]
+		if traces == "" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		var begin, end, expiry string
+		err := englang.ScanfContains(traces, crypto.TicketExpiry, &begin, &expiry, &end)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		expiryTime, err := time.Parse("Jan 2, 2006", expiry)
+		if err != nil || expiryTime.Before(time.Now()) {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -94,7 +106,7 @@ func Setup() {
 			size = stat.Size()
 			_, _ = bw.WriteString(fmt.Sprintf("This is a sack storage of a single file\n"))
 			_, _ = bw.WriteString(fmt.Sprintf("The current size is %d bytes.\n", size))
-			_, _ = bw.WriteString(fmt.Sprintf("The sack record is the following\n%s\n", Sacks[sack]))
+			_, _ = bw.WriteString(fmt.Sprintf("Sack record follows\n%s\n", Sacks[sack]))
 			_ = bw.Flush()
 			return
 		}

@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"gitlab.com/eper.io/engine/billing"
-	"gitlab.com/eper.io/engine/crypto"
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/metadata"
@@ -55,11 +54,11 @@ func Setup() {
 	})
 
 	http.HandleFunc("/tmp", func(w http.ResponseWriter, r *http.Request) {
-		apiKey := r.URL.Query().Get("apikey")
-		if apiKey == "" {
-			w.WriteHeader(http.StatusPaymentRequired)
+		apiKey, err := billing.IsApiKeyValid(w, r, &Sacks)
+		if err != nil {
 			return
 		}
+
 		sack := apiKey
 		redirect := ""
 		if Sacks[sack] == "" && r.Method == "PUT" {
@@ -76,17 +75,6 @@ func Setup() {
 		}
 		traces := Sacks[sack]
 		if traces == "" {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-		var begin, end, expiry string
-		err := englang.ScanfContains(traces, crypto.TicketExpiry, &begin, &expiry, &end)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		expiryTime, err := time.Parse("Jan 2, 2006", expiry)
-		if err != nil || expiryTime.Before(time.Now()) {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -216,7 +204,7 @@ func MakeSackWithCoin(upload string) string {
 }
 
 func MakeSack(sack string) string {
-	trace := fmt.Sprintf(crypto.TicketExpiry, time.Now().Add(4*168*time.Hour).Format("Jan 2, 2006"))
+	trace := fmt.Sprintf(billing.TicketExpiry, time.Now().Add(4*168*time.Hour).Format("Jan 2, 2006"))
 	Sacks[sack] = trace
 	path1 := path.Join(fmt.Sprintf("/tmp/%s", sack))
 	newSack := drawing.NoErrorFile(os.Create(path1))

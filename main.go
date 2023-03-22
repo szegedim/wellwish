@@ -5,11 +5,11 @@ import (
 	"gitlab.com/eper.io/engine/activation"
 	"gitlab.com/eper.io/engine/billing"
 	"gitlab.com/eper.io/engine/correspondence"
-	"gitlab.com/eper.io/engine/crypto"
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/entry"
 	"gitlab.com/eper.io/engine/management"
 	"gitlab.com/eper.io/engine/metadata"
+	"gitlab.com/eper.io/engine/mining"
 	"gitlab.com/eper.io/engine/sack"
 	"net/http"
 )
@@ -46,11 +46,11 @@ func main() {
 		management.SetupSiteRoot()
 		entry.Setup()
 		sack.Setup()
+		mining.Setup()
 		drawing.SetupUploads()
 		billing.SetupVoucher()
 		billing.SetupCheckout()
 		billing.SetupInvoice()
-		crypto.SetupCryptoMining()
 		correspondence.SetupCorrespondence()
 	}()
 	err := http.ListenAndServe(":7777", nil)

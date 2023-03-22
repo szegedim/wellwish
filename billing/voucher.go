@@ -3,7 +3,6 @@ package billing
 import (
 	"bufio"
 	"fmt"
-	"gitlab.com/eper.io/engine/crypto"
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/metadata"
@@ -57,19 +56,6 @@ func SetupVoucher() {
 		ret, _, _, _ := ValidateVoucher(w, r, false)
 		if ret {
 			w.WriteHeader(http.StatusOK)
-		} else {
-			w.WriteHeader(http.StatusForbidden)
-		}
-	})
-	http.HandleFunc("/pay", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "GET" {
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			return
-		}
-		ok, _, _, voucher := ValidateVoucher(w, r, true)
-		if ok {
-			crypto.MakeTicket(voucher)
-			http.Redirect(w, r, fmt.Sprintf("/cryptonugget?apikey=%s", voucher), http.StatusTemporaryRedirect)
 		} else {
 			w.WriteHeader(http.StatusForbidden)
 		}

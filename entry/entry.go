@@ -43,6 +43,7 @@ func declareCorrespondenceForm(session *drawing.Session) {
 	if session.Form.Boxes == nil {
 		drawing.DeclareForm(session, "./entry/media/entry.png")
 
+		drawing.DeclareTextField(session, -1, drawing.ActiveContent{Text: metadata.SiteName, Lines: 2, Editable: false, Selectable: false, FontColor: drawing.White, BackgroundColor: drawing.Black, Alignment: 1})
 		DocumentButton := drawing.DeclareImageField(session, -1, "./entry/media/document.png", drawing.ActiveContent{Selectable: false, Editable: false})
 		_ = drawing.DeclareImageField(session, -1, "./entry/media/mine.png", drawing.ActiveContent{Selectable: false, Editable: false})
 		CheckoutButton := drawing.DeclareImageField(session, -1, "./entry/media/cart.png", drawing.ActiveContent{Selectable: false, Editable: false})

@@ -18,3 +18,5 @@ var vouchers = map[string]string{}
 func DebuggingInformation(w http.ResponseWriter, r *http.Request) {
 	return
 }
+
+const TicketExpiry = "Validated until %s."

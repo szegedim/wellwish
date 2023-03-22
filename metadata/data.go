@@ -9,6 +9,8 @@ package metadata
 
 var ActivationKey = "IISABPDENLCAEIKFLMBORDQQNLMLBLKJLQELSIJPIESFIAQAJINCMHLDLALMSLAM"
 
+var SiteName = "WellWish\nCloud Decision Engine"
+
 var SiteUrl = "http://127.0.0.1:7777"
 
 var CompanyName = "Example Corporation (SAMPLE)"

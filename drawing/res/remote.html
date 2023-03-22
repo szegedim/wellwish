@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>eper.io</title>
+</head>
+<body id="abc">
+<div id="home" style="z-index: 100; position: absolute; height: 90%; left:0; right:85%" onclick="window.open('/', '_self')">
+</div>
+<div id="payload" style="z-index: 100; position: absolute; height: 90%; left:20%; right:20%">
+  <canvas width="1024" height="1024" id="remoting" style="scale: 100%; height: 100%;" onclick="clicked(event)">
+  </canvas>
+</div>
+
+<script>
+  let flow = 0
+  let imageName = document.URL.replace('remote.html','remote.png')
+  let typing = ''
+  let msg = ''
+  let semaphore = 0
+  let acceptExtension = ''
+  setTimeout(function () {
+    flow = 30
+  }, 50)
+  setInterval(function () {
+    flow = 1
+  }, 60000)
+  setInterval(function () {
+    if (flow > 0) {
+      if (semaphore < 1) {
+        // TODO not nice but it works most of the time
+        semaphore = 1
+        let final = imageName + msg
+        typing = ''
+        msg = "&progressive=1"
+        overlayImage(final)
+        semaphore = 0
+        flow = flow - 1
+      }
+    }
+  }, 10)
+  function overlayImage(url) {
+    try {
+      let req = new XMLHttpRequest();
+      req.open("GET",  url);
+      req.responseType = "blob";
+      req.onload = function (event) {
+        let blob = req.response;
+        let img = new Image(1024, 1024)
+        img.src = URL.createObjectURL(blob);
+        img.onload = function () {
+          let canvas = document.getElementById("remoting");
+          let ctx = canvas.getContext("2d");
+          if (req.getResponseHeader("X") != null) {
+            ctx.drawImage(img, 0, 0,
+                    req.getResponseHeader("W"), req.getResponseHeader("H"),
+                    req.getResponseHeader("X"), req.getResponseHeader("Y"),
+                    req.getResponseHeader("W"), req.getResponseHeader("H"));
+          } else {
+            ctx.drawImage(img, 0, 0, 1024, 1024, 0, 0, canvas.width, canvas.height);
+          }
+          // Pick a border pixel to clean the browser background
+          let pixel = ctx.getImageData(2,2,1,1)
+          let r = pixel.data[0].toString(16)
+          if (r.length === 1) {
+            r = '0' + r
+          }
+          let g = pixel.data[1].toString(16)
+          if (g.length === 1) {
+            g = '0' + g
+          }
+          let b = pixel.data[2].toString(16)
+          if (b.length === 1) {
+            b = '0' + b
+          }
+          document.getElementById('abc').style.background = '#'+r+g+b
+        }
+        img.onerror = function () {
+          console.log(req.status)
+          if (req.status === 410) {
+            let redirect = req.getResponseHeader('Location')
+            if (redirect.length > 0) {
+              window.open(redirect, '_self')
+            }
+          } else if (req.status === 409) {
+            let redirect = req.getResponseHeader('Location')
+            if (redirect.length > 0) {
+              window.open(redirect, '_blank')
+            }
+          } else if (req.status === 402) {
+            let ext = req.getResponseHeader("Extension-Requested")
+            if (ext != null) {
+              acceptExtension = ext
+            }
+            uploadFile()
+          } else if (req.status !== 200) {
+            flow = 0
+          }
+        }
+      }
+      req.send()
+    } catch (err) {
+      console.log(err)
+      flow = 0
+    }
+  }
+
+  document.addEventListener('keydown', down);
+  document.addEventListener('keypress', key);
+  document.addEventListener('paste', pasted);
+  function clicked(e) {
+    msg = "&X=" + (e.offsetX / e.currentTarget.clientWidth) + "&Y=" + (e.offsetY / e.currentTarget.clientHeight)
+    flow = 2
+  }
+  function pasted(e) {
+    typing = typing + (event.clipboardData || window.clipboardData).getData('text');
+    msg = "&T=" + (typing)
+    flow = 5
+  }
+  function key(e) {
+    let key = (e.key)
+    if (e.key === ' ') {
+      key = "Space"
+    }
+    typing = typing + key
+    msg = "&T=" + (typing)
+    flow = 1
+  }
+  function down(e) {
+    let key = ''
+    if (e.key==='Home' ||
+        e.key==='End' ||
+        e.key==='Backspace' ||
+        e.key==='Delete' ||
+        e.key==='PageUp' ||
+        e.key==='PageDown' ||
+        e.key==='Insert' ||
+        e.key==='Help'
+  ) {
+      key = (e.key)
+    }
+    if (e.key==='ArrowLeft' || e.key==='ArrowRight' || e.key==='ArrowUp' || e.key==='ArrowDown' ||
+        e.key==='Escape' || e.key==='Tab' || e.key==='ContextMenu') {
+      key = (e.key)
+      e.stopPropagation()
+      e.stopImmediatePropagation()
+    }
+    if (key.length>0) {
+      typing = typing + key
+      msg = "&T=" + (typing)
+      flow = 1
+    }
+  }
+</script>
+<script>
+  function uploadFile() {
+    let input = document.createElement('input')
+    input.type = 'file'
+    input.accept = acceptExtension
+
+    input.onchange = e => {
+      if (input.value !== '') {
+        let fle = input.files[0]
+        let req = new XMLHttpRequest()
+        req.open('PUT', document.URL.replace('remote.html', 'upload.coin'), false)
+        fle.arrayBuffer().then(function (ab) {
+          req.setRequestHeader('Application-Binary-Type', input.accept)
+          req.send(ab.valueOf(), {type: 'application/octet-stream'})
+          input.value = ''
+          flow = 50
+        })
+      }
+    }
+    input.click()
+  }
+</script>
+</body>
+<!--
+This document is Licensed under Creative Commons CC0.
+To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights
+to this document to the public domain worldwide.
+This document is distributed without any warranty.
+You should have received a copy of the CC0 Public Domain Dedication along with this document.
+If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
+-->
+</html>

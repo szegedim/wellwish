@@ -46,10 +46,14 @@ func declareCheckoutForm(session *drawing.Session) {
 		pattern := metadata.OrderPattern
 		sample := fmt.Sprintf(pattern, "\vExample Buyer Inc.�", "\v111 S Ave, San Fransisco, CA, 55555, USA", "\vinfo@example.com", "\v10", metadata.UnitPrice, "USD 10")
 		drawing.DeclareTextField(session, OrderText, drawing.ActiveContent{Text: sample, Lines: 12, Editable: true, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 1})
-		drawing.DeclareTextField(session, BackButton, drawing.ActiveContent{Text: "    Back    ", Lines: 1, Selectable: false, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
-		drawing.DeclareTextField(session, OrderButton, drawing.ActiveContent{Text: "Send Invoice", Lines: 1, Selectable: false, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
+		drawing.DeclareTextField(session, BackButton, drawing.ActiveContent{Text: "    Cancel    ", Lines: 1, Selectable: false, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
+		drawing.DeclareTextField(session, OrderButton, drawing.ActiveContent{Text: "    Submit    ", Lines: 1, Selectable: false, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
 
 		session.SignalClicked = func(session *drawing.Session, i int) {
+			if i == BackButton {
+				session.Redirect = "/"
+				session.SelectedBox = -1
+			}
 			if i == OrderButton {
 				s := session.Text[OrderText].Text
 				s = strings.ReplaceAll(s, "�", "")
@@ -113,7 +117,7 @@ func declareCheckoutForm(session *drawing.Session) {
 			if !englang.IsNumber(amount) {
 				err = fmt.Errorf("not an amount")
 			}
-			if unit != metadata.UnitPrice {
+			if strings.ReplaceAll(unit, "�", "") != metadata.UnitPrice {
 				err = fmt.Errorf("cannot change unit price")
 			}
 			if err != nil {

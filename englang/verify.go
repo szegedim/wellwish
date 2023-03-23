@@ -220,13 +220,14 @@ func Evaluate(s string) string {
 			unit := ""
 			value := uint64(0)
 			residual := int(0)
+			dot := false
 			for _, c := range factor {
 				if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') {
 					unit = unit + string(c)
 				}
 				if c >= '0' && c <= '9' {
 					value = value*10 + uint64(c-'0')
-					if residual > 0 {
+					if dot {
 						residual = residual + 1
 					}
 				}
@@ -234,7 +235,7 @@ func Evaluate(s string) string {
 					continue
 				}
 				if c == '.' {
-					residual = 1
+					dot = true
 				}
 			}
 			evaluatedUnit = evaluatedUnit + unit
@@ -248,7 +249,7 @@ func Evaluate(s string) string {
 		}
 		s = fmt.Sprintf("%s %d", evaluatedUnit, evaluatedValue)
 		if evaluatedResidual > 0 {
-			s = s[:len(s)+1-evaluatedResidual] + "." + s[len(s)+1-evaluatedResidual:]
+			s = s[:len(s)-evaluatedResidual] + "." + s[len(s)-evaluatedResidual:]
 		}
 	}
 	return s

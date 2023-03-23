@@ -15,12 +15,13 @@ import (
 
 // This is just a package to show a user interface concept.
 // The basic design is that you find what you need right away.
-// Modern software was designed to swipes, moves, and scrolls
+// Modern software was designed to use swipes, drags, and scrolls
 // to showcase the superiority of newer and newer semiconductor
-// components.
+// components over the preceding generation of such products.
+// Moore's Law and growth helped to fund research for a long time.
 //
-// Some customers on the other hand need the right information, now.
-// It is a connector that can attach people, documents, and tasks
+// Some customers on the other hand need the right information, right there.
+// It is a connector that can attach people, documents, and tasks.
 
 func SetupCorrespondence() {
 	http.HandleFunc("/correspondence.html", func(w http.ResponseWriter, r *http.Request) {

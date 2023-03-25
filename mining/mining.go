@@ -19,7 +19,7 @@ import (
 func Setup() {
 	http.HandleFunc("/cryptonugget", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
-			apiKey, err := billing.IsApiKeyValid(w, r, &Tickets)
+			apiKey, err := billing.IsApiKeyValid(w, r, &MiningTicket)
 			if err != nil {
 				return
 			}
@@ -54,5 +54,5 @@ func random(salt string) uint32 {
 }
 
 func MakeCryptoNuggetMine(voucher string) {
-	Tickets[voucher] = fmt.Sprintf(billing.TicketExpiry, time.Now().Add(168*time.Hour).Format("Jan 2, 2006"))
+	MiningTicket[voucher] = fmt.Sprintf(billing.TicketExpiry, time.Now().Add(168*time.Hour).Format("Jan 2, 2006"))
 }

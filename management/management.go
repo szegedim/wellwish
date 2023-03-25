@@ -2,7 +2,11 @@ package management
 
 import (
 	"fmt"
+	"gitlab.com/eper.io/engine/activation"
+	"gitlab.com/eper.io/engine/billing"
 	drawing "gitlab.com/eper.io/engine/drawing"
+	"gitlab.com/eper.io/engine/mining"
+	"gitlab.com/eper.io/engine/sack"
 	"net/http"
 	"time"
 )
@@ -96,4 +100,8 @@ func DebuggingInformation(w http.ResponseWriter, r *http.Request) {
 	if apiKey != "" {
 		_, _ = w.Write([]byte(fmt.Sprintf("admin:%s\n\n", drawing.RedactPublicKey(apiKey))))
 	}
+	activation.DebuggingInformation(w, r)
+	billing.DebuggingInformation(w, r)
+	mining.DebuggingInformation(w, r)
+	sack.DebuggingInformation(w, r)
 }

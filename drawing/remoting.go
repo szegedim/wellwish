@@ -163,7 +163,11 @@ func ProcessInputs(w http.ResponseWriter, r *http.Request) {
 				textChanged = true
 				t = t[len("Delete"):]
 			} else if strings.HasPrefix(t, "Enter") {
-				if len(strings.Split(textNew, "\n")) < session.Text[c].Lines {
+				if strings.Contains(textNew, "\v") {
+					begin, middle, _ := strings.Cut(strings.ReplaceAll(textNew, "�", ""), "\v")
+					middle, end, _ := strings.Cut(middle, "\v")
+					textNew = begin + "�" + end
+				} else if len(strings.Split(textNew, "\n")) < session.Text[c].Lines {
 					before, after, ok := strings.Cut(textNew, "�")
 					if ok {
 						textNew = before + "\n" + "�" + after
@@ -178,21 +182,21 @@ func ProcessInputs(w http.ResponseWriter, r *http.Request) {
 				}
 				textChanged = true
 				t = t[len("Enter"):]
-			} else if strings.HasPrefix(t, "Help") {
-				t = t[len("Help"):]
-				textChanged = true
-				begin, end, _ := strings.Cut(textNew, "�")
-				middle, end, _ := strings.Cut(end, "\v")
-				if len(end) > 0 {
-					textNew = begin + middle + "\v" + "�" + end
-				} else {
-					textNew = "�" + begin + middle + end
+			} else if strings.HasPrefix(t, "Help") ||
+				strings.HasPrefix(t, "Insert") {
+				if strings.HasPrefix(t, "Help") {
+					t = t[len("Help"):]
 				}
-			} else if strings.HasPrefix(t, "Insert") {
-				t = t[len("Insert"):]
+				if strings.HasPrefix(t, "Insert") {
+					t = t[len("Insert"):]
+				}
 				textChanged = true
 				begin, end, _ := strings.Cut(textNew, "�")
 				middle, end, _ := strings.Cut(end, "\v")
+				left, end, _ := strings.Cut(end, "\v")
+				if end == "" {
+					end = left
+				}
 				if len(end) > 0 {
 					textNew = begin + middle + "\v" + "�" + end
 				} else {
@@ -318,7 +322,7 @@ func ProcessInputs(w http.ResponseWriter, r *http.Request) {
 			}
 			break
 		}
-		if textChanged {
+		if textChanged && session.Text[c].Editable {
 			replace := session.Text[c]
 			changeFrom := replace.Text
 			replace.Text = textNew

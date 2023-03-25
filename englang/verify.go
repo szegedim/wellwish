@@ -163,7 +163,7 @@ func FixState(state string) (string, bool) {
 	}
 	var states = []string{"California", "CA"}
 	for _, i := range states {
-		if state == i {
+		if strings.ReplaceAll(state, "\v", "") == i {
 			return i, true
 		}
 	}

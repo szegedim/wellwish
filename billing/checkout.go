@@ -44,8 +44,8 @@ func declareCheckoutForm(session *drawing.Session) {
 		const OrderButton = 2
 
 		pattern := metadata.OrderPattern
-		sample := fmt.Sprintf(pattern, "\vExample Buyer Inc.�", "\v111 S Ave, San Fransisco, CA, 55555, USA", "\vinfo@example.com", "\v10", metadata.UnitPrice, "USD 10")
-		drawing.DeclareTextField(session, OrderText, drawing.ActiveContent{Text: sample, Lines: 12, Editable: true, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 1})
+		sample := fmt.Sprintf(pattern, "\vExample Buyer Inc.\v", "\v111 S Ave\v, \vSan Fransisco\v, \vCA\v, \v55555\v, \vUSA\v", "\vinfo\v@\vexample.com\v", "\v10\v", metadata.UnitPrice, "USD 10", "0")
+		drawing.DeclareTextField(session, OrderText, drawing.ActiveContent{Text: "�" + sample, Lines: 20, Editable: true, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 1})
 		drawing.DeclareTextField(session, BackButton, drawing.ActiveContent{Text: "    Cancel    ", Lines: 1, Selectable: false, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
 		drawing.DeclareTextField(session, OrderButton, drawing.ActiveContent{Text: "    Submit    ", Lines: 1, Selectable: false, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
 
@@ -63,7 +63,8 @@ func declareCheckoutForm(session *drawing.Session) {
 				var amount string = "10"
 				var unit string = metadata.UnitPrice
 				var total string = "USD 10"
-				err := englang.Scanf(s, pattern, &company, &address, &email, &amount, &unit, &total)
+				var tax string = "0"
+				err := englang.Scanf(s, pattern, &company, &address, &email, &amount, &unit, &total, &tax)
 				if err == nil {
 					issued := time.Now()
 
@@ -99,11 +100,17 @@ func declareCheckoutForm(session *drawing.Session) {
 
 			var unit string = "USD 1"
 			var total string = "USD 10"
+			var tax string = "0"
 			s := session.Text[OrderText].Text
-			err := englang.Scanf(s, pattern, &company, &address, &email, &amount, &unit, &total)
+			err := englang.Scanf(s, pattern, &company, &address, &email, &amount, &unit, &total, &tax)
 			if err != nil {
 				s = strings.ReplaceAll(s, "�", "")
-				err = englang.Scanf(s, pattern, &company, &address, &email, &amount, &unit, &total)
+				err = englang.Scanf(s, pattern, &company, &address, &email, &amount, &unit, &total, &tax)
+			}
+			change := false
+			if amount == "\v�" {
+				amount = "\v0�"
+				change = true
 			}
 			if !englang.IsEmail(email) {
 				err = fmt.Errorf("not an email")
@@ -120,14 +127,20 @@ func declareCheckoutForm(session *drawing.Session) {
 			if strings.ReplaceAll(unit, "�", "") != metadata.UnitPrice {
 				err = fmt.Errorf("cannot change unit price")
 			}
+			if strings.ReplaceAll(tax, "�", "") != "0" {
+				err = fmt.Errorf("cannot change stales tax")
+			}
 			if err != nil {
 				session.Data = drawing.Revert + session.Data
 				return
 			}
 			newTotal := englang.Evaluate(fmt.Sprintf("%s multiplied by %s", amount, unit))
-			if newTotal != total {
-				s = fmt.Sprintf(pattern, company, address, email, amount, unit, newTotal)
-				err = englang.Scanf(s, pattern, &company, &address, &email, &amount, &unit, &total)
+			if newTotal != strings.ReplaceAll(total, "�", "") {
+				change = true
+			}
+			if change {
+				s = fmt.Sprintf(pattern, company, address, email, amount, unit, newTotal, tax)
+				err = englang.Scanf(s, pattern, &company, &address, &email, &amount, &unit, &total, &tax)
 				if err == nil {
 					if !strings.Contains(s, "�") && !strings.Contains(session.Text[OrderText].Text, "�") {
 						s = s + "�"

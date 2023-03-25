@@ -23,32 +23,41 @@ TAX ID: 1234-56 Payment: ACH Routing# 12345 Account# 12345 https://cashbuddy.exa
 var PaymentPattern = "https://example.com/%s"
 
 // InvoicePattern Please update the pattern with your locally regulated purchase order format.
-var OrderPattern = `Company: %s
+var OrderPattern = `
+Company: %s
 Billing address: %s
 Billing email: %s
-Our company orders the following items
-with payment term Net 30.
-Order is refundable and cancellable within 30 days.
-The order is %s service vouchers for %s each with a total liability of %s.
-The amount includes Sales Tax of 0 percent for downloadable custom software.
+Our company places the following order.
+The payment term is Net 30.                 
+Ordering %s remoting vouchers for %s each.
+
+The order total is %s.
+The final amount includes Sales Tax of %s percent.
+Satisfaction guarantee. Cancel or refund within 30 days.
+Notes:
 `
 
 // InvoicePattern Please update the pattern with your locally regulated invoice format.
 var InvoicePattern = `              INVOICE              
 
-From: %s
+Payee: %s
 Date: %s        Invoice Number: %s
 
-Company: %s
+Payer: %s
 Billing address: %s
 Billing email: %s
-Please pay the following service vouchers
-with payment term Net 30. Order is refundable
-and cancellable within 30 days, even if the voucher was used.
+Please pay the following remoting vouchers.
+The payment term is Net 30.
+Satisfaction guarantee.
+Order is cancellable within 30 days.
+Order is refundable within 30 days, if paid.
 
-The order is %s service vouchers for %s each with a total liability of %s.
-The order status is %s.
-The amount includes Sales Tax of 0 percent for downloadable custom software.
+Ordered %s cloud vouchers for %s each
+               Invoiced Total %s.
+
+The total amount includes sales tax of 0 percent.
+Order Status:
+%s.
 `
 
 var UnitPrice = "USD 1.03"

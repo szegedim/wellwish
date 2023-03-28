@@ -2,11 +2,7 @@ package management
 
 import (
 	"fmt"
-	"gitlab.com/eper.io/engine/activation"
-	"gitlab.com/eper.io/engine/billing"
 	drawing "gitlab.com/eper.io/engine/drawing"
-	"gitlab.com/eper.io/engine/mining"
-	"gitlab.com/eper.io/engine/sack"
 	"net/http"
 	"time"
 )
@@ -18,7 +14,7 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
-func SetupSiteManagement(administrationKeySet string) {
+func SetupSiteManagement(administrationKeySet string, traces func(w http.ResponseWriter, r *http.Request)) {
 	administrationKey = administrationKeySet
 
 	http.HandleFunc("/management.html", func(w http.ResponseWriter, r *http.Request) {
@@ -42,8 +38,13 @@ func SetupSiteManagement(administrationKeySet string) {
 			return
 		}
 
-		w.Header().Set("Content-Type", "text/plain")
-		DebuggingInformation(w, r)
+		if r.Method == "GET" {
+			w.Header().Set("Content-Type", "text/plain")
+			traces(w, r)
+		}
+		if r.Method == "PUT" {
+			//
+		}
 	})
 }
 
@@ -100,8 +101,15 @@ func DebuggingInformation(w http.ResponseWriter, r *http.Request) {
 	if apiKey != "" {
 		_, _ = w.Write([]byte(fmt.Sprintf("admin:%s\n\n", drawing.RedactPublicKey(apiKey))))
 	}
-	activation.DebuggingInformation(w, r)
-	billing.DebuggingInformation(w, r)
-	mining.DebuggingInformation(w, r)
-	sack.DebuggingInformation(w, r)
+}
+
+func Restore(w http.ResponseWriter, r *http.Request) {
+	//apiKey := r.URL.Query().Get("apikey")
+	//if apiKey != "" {
+	//	_, _ = w.Write([]byte(fmt.Sprintf("admin:%s\n\n", drawing.RedactPublicKey(apiKey))))
+	//}
+	//activation.DebuggingInformation(w, r)
+	//billing.DebuggingInformation(w, r)
+	//mining.DebuggingInformation(w, r)
+	//sack.DebuggingInformation(w, r)
 }

@@ -9,6 +9,22 @@ func ScanfContains(in string, format string, a ...*string) error {
 	return scanfInner(in, format, a)
 }
 
+func ScanfPrefix(format string) string {
+	items := strings.Split(format, "%s")
+	if len(items) >= 1 {
+		return items[0]
+	}
+	return ""
+}
+
+func ScanfSuffix(format string) string {
+	items := strings.Split(format, "%s")
+	if len(items) >= 1 {
+		return items[len(items)-1]
+	}
+	return ""
+}
+
 func Scanf(in string, format string, an ...*string) error {
 	begin := ""
 	end := ""

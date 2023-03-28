@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gitlab.com/eper.io/engine/activation"
 	"gitlab.com/eper.io/engine/billing"
+	"gitlab.com/eper.io/engine/burst"
 	"gitlab.com/eper.io/engine/correspondence"
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/entry"
@@ -24,6 +25,7 @@ import (
 // A simple billing experiment
 func main() {
 	drawing.SetupDrawing()
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if metadata.ActivationKey == "" {
 			w.Header().Set("Location", "/index.html")
@@ -36,25 +38,39 @@ func main() {
 
 	activation.SetupActivation()
 
-	go func() {
-		<-activation.Activated
-		administrationKey := drawing.GenerateUniqueKey()
+	go setupSite()
 
-		management.SetupSiteManagement(administrationKey)
-		activation.Activated <- administrationKey
-
-		management.SetupSiteRoot()
-		entry.Setup()
-		sack.Setup()
-		mining.Setup()
-		drawing.SetupUploads()
-		billing.SetupVoucher()
-		billing.SetupCheckout()
-		billing.SetupInvoice()
-		correspondence.SetupCorrespondence()
-	}()
 	err := http.ListenAndServe(":7777", nil)
 	if err != nil {
 		fmt.Println(err)
 	}
+}
+
+func setupSite() {
+	<-activation.Activated
+	administrationKey := drawing.GenerateUniqueKey()
+
+	management.SetupSiteManagement(administrationKey, func(w http.ResponseWriter, r *http.Request) {
+		apiKey := r.URL.Query().Get("apikey")
+		if apiKey != "" {
+			_, _ = w.Write([]byte(fmt.Sprintf("admin:%s\n\n", drawing.RedactPublicKey(apiKey))))
+		}
+		management.DebuggingInformation(w, r)
+		activation.DebuggingInformation(w, r)
+		billing.DebuggingInformation(w, r)
+		mining.DebuggingInformation(w, r)
+		sack.DebuggingInformation(w, r)
+		burst.DebuggingInformation(w, r)
+	})
+	activation.Activated <- administrationKey
+
+	management.SetupSiteRoot()
+	entry.Setup()
+	sack.Setup()
+	mining.Setup()
+	drawing.SetupUploads()
+	billing.SetupVoucher()
+	billing.SetupCheckout()
+	billing.SetupInvoice()
+	correspondence.SetupCorrespondence()
 }

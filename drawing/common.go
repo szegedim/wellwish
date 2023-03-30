@@ -31,6 +31,7 @@ func NewImageSlice(_image *image.RGBA64, rect image.Rectangle) ImageSlice {
 	return ImageSlice{Rgb: _image, Rect: rect}
 }
 
+// TODO fix file close leak potential
 func NoErrorFile(data *os.File, err error) *os.File {
 	if err != nil {
 		fmt.Errorf("%s\n", err)
@@ -45,6 +46,14 @@ func NoErrorBytes(data []byte, err error) []byte {
 		return nil
 	}
 	return data
+}
+
+func NoErrorString(data []byte, err error) string {
+	if err != nil {
+		fmt.Errorf("%s\n", err)
+		return ""
+	}
+	return string(data)
 }
 
 func NoErrorImage(data image.Image, err error) image.Image {

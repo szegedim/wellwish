@@ -1,6 +1,25 @@
 # WellWish Corporate Decision Engine
 
+Wellwish is a platform similar to Kubernetes.
 
+It allows you to run applets within your company that support decision-making.
+
+## Design
+
+The design is the result of three years of extensive research from 2020-2023 by Schmied Enterprises.
+
+Productivity is the measure of the domestic product achieved per employee.
+It has not improved much in decades, once data centers became mainstream.
+The goal was to address the problem of productivity,
+
+The main concept behind WellWish is that is extremely supportable.
+The marginal labor cost of running a cluster per node does not increase by the cluster size.
+It requires no-dev, no-ops, no-os eventually. The concept is also known as the Personal Cloud.
+
+There are two ways to achieve this.
+One is that it uses Englang, plain words to describe code and data.
+The second is that the entire state can easily be retrieved, stored, analyzed and ported.
+Even an accountant can read the bare metal data files.
 
 ## Getting started
 

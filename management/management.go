@@ -18,7 +18,7 @@ func SetupSiteManagement(administrationKeySet string, traces func(w http.Respons
 	administrationKey = administrationKeySet
 
 	http.HandleFunc("/management.html", func(w http.ResponseWriter, r *http.Request) {
-		_, err := EnsureAdministrator(w, r)
+		_, err := EnsureAdministratorSession(w, r)
 		if err != nil {
 			return
 		}
@@ -26,14 +26,14 @@ func SetupSiteManagement(administrationKeySet string, traces func(w http.Respons
 	})
 
 	http.HandleFunc("/management.png", func(w http.ResponseWriter, r *http.Request) {
-		_, err := EnsureAdministrator(w, r)
+		_, err := EnsureAdministratorSession(w, r)
 		if err != nil {
 			return
 		}
 		drawing.ServeRemoteFrame(w, r, declareForm)
 	})
 	http.HandleFunc("/logs.md", func(w http.ResponseWriter, r *http.Request) {
-		_, err := EnsureAdministrator(w, r)
+		_, err := EnsureAdministratorSession(w, r)
 		if err != nil {
 			return
 		}
@@ -48,13 +48,21 @@ func SetupSiteManagement(administrationKeySet string, traces func(w http.Respons
 	})
 }
 
-func EnsureAdministrator(w http.ResponseWriter, r *http.Request) (*drawing.Session, error) {
+func EnsureAdministrator(w http.ResponseWriter, r *http.Request) (string, error) {
 	apiKey := r.URL.Query().Get("apikey")
 
 	time.Sleep(15 * time.Millisecond)
 	if apiKey != administrationKey {
 		w.WriteHeader(http.StatusUnauthorized)
-		return nil, fmt.Errorf("unauthorized")
+		return "", fmt.Errorf("unauthorized")
+	}
+	return apiKey, nil
+}
+
+func EnsureAdministratorSession(w http.ResponseWriter, r *http.Request) (*drawing.Session, error) {
+	_, err := EnsureAdministrator(w, r)
+	if err != nil {
+		return nil, err
 	}
 	session := drawing.GetSession(w, r)
 	if session == nil {

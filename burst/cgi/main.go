@@ -1,18 +1,12 @@
 package main
 
-import (
-	"fmt"
-	"net/http"
-)
+import "fmt"
 
-func main() {
-	fmt.Println("Hello World!")
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "https://botanical.eper.io", http.StatusPermanentRedirect)
-	})
+func main() { fmt.Println("Hello World!") }
 
-	err := http.ListenAndServe(":7777", nil)
-	if err != nil {
-		fmt.Println(err)
-	}
-}
+//go func() {
+//	r := bufio.NewReader(os.Stdin)
+//	b, _ := io.ReadAll(r)
+//	fmt.Println(string(b))
+//}()
+//fmt.Println("Hello World!")

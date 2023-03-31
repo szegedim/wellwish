@@ -3,6 +3,7 @@ package management
 import (
 	"fmt"
 	drawing "gitlab.com/eper.io/engine/drawing"
+	"io"
 	"net/http"
 	"time"
 )
@@ -14,8 +15,9 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
-func SetupSiteManagement(administrationKeySet string, traces func(w http.ResponseWriter, r *http.Request)) {
+func SetupSiteManagement(administrationKeySet string, traces func(m string, w io.Writer, r io.Reader)) {
 	administrationKey = administrationKeySet
+	CheckpointFunc = traces
 
 	http.HandleFunc("/management.html", func(w http.ResponseWriter, r *http.Request) {
 		_, err := EnsureAdministratorSession(w, r)
@@ -40,10 +42,10 @@ func SetupSiteManagement(administrationKeySet string, traces func(w http.Respons
 
 		if r.Method == "GET" {
 			w.Header().Set("Content-Type", "text/plain")
-			traces(w, r)
+			CheckpointFunc("GET", w, nil)
 		}
 		if r.Method == "PUT" {
-			//
+			CheckpointFunc("PUT", nil, r.Body)
 		}
 	})
 }
@@ -104,11 +106,8 @@ func declareForm(session *drawing.Session) {
 	}
 }
 
-func DebuggingInformation(w http.ResponseWriter, r *http.Request) {
-	apiKey := r.URL.Query().Get("apikey")
-	if apiKey != "" {
-		_, _ = w.Write([]byte(fmt.Sprintf("admin:%s\n\n", drawing.RedactPublicKey(apiKey))))
-	}
+func LogSnapshot(m string, w io.Writer, r io.Reader) {
+	_, _ = w.Write([]byte(fmt.Sprintf("This container is running with management key %s ...\n\n", drawing.RedactPublicKey(administrationKey))))
 }
 
 func Restore(w http.ResponseWriter, r *http.Request) {
@@ -116,8 +115,8 @@ func Restore(w http.ResponseWriter, r *http.Request) {
 	//if apiKey != "" {
 	//	_, _ = w.Write([]byte(fmt.Sprintf("admin:%s\n\n", drawing.RedactPublicKey(apiKey))))
 	//}
-	//activation.DebuggingInformation(w, r)
-	//billing.DebuggingInformation(w, r)
-	//mining.DebuggingInformation(w, r)
-	//sack.DebuggingInformation(w, r)
+	//activation.LogSnapshot(w, r)
+	//billing.LogSnapshot(w, r)
+	//mining.LogSnapshot(w, r)
+	//sack.LogSnapshot(w, r)
 }

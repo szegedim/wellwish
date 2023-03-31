@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"gitlab.com/eper.io/engine/billing"
+	"gitlab.com/eper.io/engine/mesh"
 	"net/http"
 	"time"
 )
@@ -19,7 +20,7 @@ import (
 func Setup() {
 	http.HandleFunc("/cryptonugget", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
-			apiKey, err := billing.IsApiKeyValid(w, r, &MiningTicket)
+			apiKey, err := billing.IsApiKeyValid(w, r, &MiningTicket, mesh.Proxy)
 			if err != nil {
 				return
 			}

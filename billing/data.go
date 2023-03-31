@@ -3,7 +3,7 @@ package billing
 import (
 	"bytes"
 	"gitlab.com/eper.io/engine/englang"
-	"net/http"
+	"io"
 	"strconv"
 )
 
@@ -18,7 +18,7 @@ var orders = map[string]string{}
 
 var vouchers = map[string]string{}
 
-func DebuggingInformation(w http.ResponseWriter, r *http.Request) {
+func LogSnapshot(m string, w io.Writer, r io.Reader) {
 	for k, v := range orders {
 		buf := bytes.NewBufferString("")
 		bufv := []byte(v)

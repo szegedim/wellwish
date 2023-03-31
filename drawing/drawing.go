@@ -17,6 +17,8 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
+// TODO There is a small drawing PSNR at font edges to fix.
+
 func SetupDrawing() {
 	fmt.Println("loading fonts")
 	LoadFont(indexes, "./drawing/res/courier.png", "")

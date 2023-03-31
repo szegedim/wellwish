@@ -91,7 +91,12 @@ func Random() uint32 {
 }
 
 func GenerateUniqueKey() string {
-	// TODO Need to get something better from the internet
+	// So we do not add much of a header suggesting it is the best solution.
+	// Adding a header would increase the chance of randomly testing the
+	// private key with sites to verify it works, practically leaking it.
+	// Your internal context should tell where an api key is valid.
+
+	// TODO Need to get a better seed from the internet
 	x, _ := os.Stat(os.Args[0])
 	seed := time.Now().UnixNano() ^ x.ModTime().UnixNano()
 	math.Seed(seed)

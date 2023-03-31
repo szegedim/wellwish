@@ -10,13 +10,13 @@ package mining
 import (
 	"bytes"
 	"gitlab.com/eper.io/engine/englang"
-	"net/http"
+	"io"
 	"strconv"
 )
 
 var MiningTicket = map[string]string{}
 
-func DebuggingInformation(w http.ResponseWriter, r *http.Request) {
+func LogSnapshot(m string, w io.Writer, r io.Reader) {
 	for k, v := range MiningTicket {
 		buf := bytes.NewBufferString("")
 		bufv := []byte(v)

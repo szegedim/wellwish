@@ -5,7 +5,6 @@ import (
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/management"
 	"io"
-	"net/http"
 	"strconv"
 )
 
@@ -15,8 +14,8 @@ const RecordPattern = "Record with type %s, apikey %s, and length %s bytes."
 
 const RecordType = "sack"
 
-func DebuggingInformation(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
+func LogSnapshot(m string, w io.Writer, r io.Reader) {
+	if m == "GET" {
 		for k, v := range Sacks {
 			buf := bytes.NewBufferString("")
 			bufv := []byte(v)
@@ -25,8 +24,8 @@ func DebuggingInformation(w http.ResponseWriter, r *http.Request) {
 			_, _ = w.Write(buf.Bytes())
 		}
 	}
-	if r.Method == "PUT" {
-		backup, err := io.ReadAll(r.Body)
+	if m == "PUT" {
+		backup, err := io.ReadAll(r)
 		if err != nil {
 			return
 		}

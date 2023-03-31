@@ -1,7 +1,10 @@
 package activation
 
 import (
-	"net/http"
+	"fmt"
+	"gitlab.com/eper.io/engine/drawing"
+	"gitlab.com/eper.io/engine/metadata"
+	"io"
 )
 
 // This document is Licensed under Creative Commons CC0.
@@ -13,10 +16,11 @@ import (
 
 var Activated = make(chan string)
 
-func DebuggingInformation(w http.ResponseWriter, r *http.Request) {
+var ActivationHash = drawing.RedactPublicKey(metadata.ActivationKey)
+
+func LogSnapshot(m string, w io.Writer, r io.Reader) {
 	// Activation key is shared with multiple containers of the same version,
 	// so we just return the record locator
-	//buf := bytes.NewBufferString(fmt.Sprintf("Container running with activation key %s.", drawing.RedactPublicKey(metadata.ActivationKey)))
-	//_, _ = w.Write(buf.Bytes())
+	_, _ = w.Write([]byte(fmt.Sprintf("This container is running with activation key as %s ...", ActivationHash)))
 	return
 }

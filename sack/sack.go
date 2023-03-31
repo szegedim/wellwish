@@ -7,6 +7,7 @@ import (
 	"gitlab.com/eper.io/engine/billing"
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
+	"gitlab.com/eper.io/engine/mesh"
 	"gitlab.com/eper.io/engine/metadata"
 	"io"
 	"net/http"
@@ -54,7 +55,7 @@ func Setup() {
 	})
 
 	http.HandleFunc("/tmp", func(w http.ResponseWriter, r *http.Request) {
-		apiKey, err := billing.IsApiKeyValid(w, r, &Sacks)
+		apiKey, err := billing.IsApiKeyValid(w, r, &Sacks, mesh.Proxy)
 		if err != nil {
 			return
 		}

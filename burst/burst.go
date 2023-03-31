@@ -157,7 +157,7 @@ func Run(code []byte, stdin io.ReadCloser, stdout io.Writer) {
 	}
 }
 
-func DebuggingInformation(w http.ResponseWriter, r *http.Request) {
+func LogSnapshot(m string, w io.Writer, r io.Reader) {
 
 }
 

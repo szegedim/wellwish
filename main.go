@@ -9,9 +9,11 @@ import (
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/entry"
 	"gitlab.com/eper.io/engine/management"
+	"gitlab.com/eper.io/engine/mesh"
 	"gitlab.com/eper.io/engine/metadata"
 	"gitlab.com/eper.io/engine/mining"
 	"gitlab.com/eper.io/engine/sack"
+	"io"
 	"net/http"
 )
 
@@ -50,17 +52,14 @@ func setupSite() {
 	<-activation.Activated
 	administrationKey := drawing.GenerateUniqueKey()
 
-	management.SetupSiteManagement(administrationKey, func(w http.ResponseWriter, r *http.Request) {
-		apiKey := r.URL.Query().Get("apikey")
-		if apiKey != "" {
-			_, _ = w.Write([]byte(fmt.Sprintf("admin:%s\n\n", drawing.RedactPublicKey(apiKey))))
-		}
-		management.DebuggingInformation(w, r)
-		activation.DebuggingInformation(w, r)
-		billing.DebuggingInformation(w, r)
-		mining.DebuggingInformation(w, r)
-		sack.DebuggingInformation(w, r)
-		burst.DebuggingInformation(w, r)
+	management.SetupSiteManagement(administrationKey, func(m string, w io.Writer, r io.Reader) {
+		management.LogSnapshot(m, w, r)
+		activation.LogSnapshot(m, w, r)
+		billing.LogSnapshot(m, w, r)
+		mining.LogSnapshot(m, w, r)
+		sack.LogSnapshot(m, w, r)
+		burst.LogSnapshot(m, w, r)
+		mesh.LogSnapshot(m, w, r)
 	})
 	activation.Activated <- administrationKey
 
@@ -73,4 +72,5 @@ func setupSite() {
 	billing.SetupCheckout()
 	billing.SetupInvoice()
 	correspondence.SetupCorrespondence()
+	mesh.Setup()
 }

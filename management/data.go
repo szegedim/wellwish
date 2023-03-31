@@ -1,5 +1,9 @@
 package management
 
+import (
+	"io"
+)
+
 // This document is Licensed under Creative Commons CC0.
 // To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights
 // to this document to the public domain worldwide.
@@ -9,3 +13,5 @@ package management
 
 // TODO need a way to reset/renew this
 var administrationKey = ""
+
+var CheckpointFunc func(m string, w io.Writer, r io.Reader)

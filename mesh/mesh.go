@@ -36,6 +36,18 @@ import (
 // - Mesh can be on the same container as sacks or others running static code
 // - Burst is running dynamic code, it exits every time after a run.
 
+// We store checkpoints locally on each node.
+// A Redis runner can pick them up and back them up regularly
+// How? Potentially it is mapped to a sack and a burst with Redis client can pick it up.
+
+// How often?
+// Checkpoints too rare may lose important recent changes, ergo support costs.
+// Checkpoints too frequent may require differential storage, ergo support costs.
+// Differentials also tend to restore slower being eventually a downtime extender, ergo support costs.
+//
+// Solution: we are safe to run checkpoints as often as their collection timespan.
+// This also allows consistency and hardware error checks and fixes.
+
 func Setup() {
 	http.HandleFunc("/node", func(w http.ResponseWriter, r *http.Request) {
 		adminKey, err := management.EnsureAdministrator(w, r)
@@ -54,87 +66,149 @@ func Setup() {
 		}
 		Nodes[address] = address
 		for node := range Nodes {
-			_, _ = HttpRequest(fmt.Sprintf("http://%s:7777/node?apikey=%s&address=%s", node, adminKey, address), "PUT", nil)
+			_, _ = httpRequest(fmt.Sprintf("http://%s:7777/node?apikey=%s&address=%s", node, adminKey, address), "PUT", nil)
 		}
 	})
 
-	http.HandleFunc("/checkpoint", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/backup", func(w http.ResponseWriter, r *http.Request) {
 		// Read state from stateful node containers (sacks)
+		if r.Method != "PUT" {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
 		apiKey, err := management.EnsureAdministrator(w, r)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		buf := bytes.Buffer{}
 		for node := range Nodes {
-			b, _ := HttpRequest(fmt.Sprintf("http://%s:7777/checkpoint?apikey=%s", node, apiKey), "GET", nil)
-			buf.Write(b)
+			// Make sure your ops works
+			sackId, _ := httpRequest(fmt.Sprintf("http://%s:7777/checkpoint?apikey=%s", node, apiKey), "PUT", nil)
+			if sackId != nil && len(sackId) > 0 {
+				Index[string(sackId)] = node
+			}
 		}
+	})
 
-		checkpoint := path.Join("/tmp", drawing.GenerateUniqueKey())
-		_ = os.WriteFile(checkpoint, buf.Bytes(), 0700)
-		_ = os.Remove("/tmp/checkpoint")
-		_ = os.Link(checkpoint, "/tmp/checkpoint")
+	http.HandleFunc("/checkpoint", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "PUT" {
+			_, err := management.EnsureAdministrator(w, r)
+			if err != nil {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+
+			sackId := CheckPoint()
+			_, _ = w.Write([]byte(sackId))
+		}
+		if r.Method == "GET" {
+			apiKey := r.URL.Query().Get("apikey")
+			if apiKey == "" {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+
+			sackId := apiKey
+			fileName := path.Join("/tmp", sackId)
+			temp := path.Join("/tmp", fmt.Sprintf("%s_%s", sackId, drawing.RedactPublicKey(drawing.GenerateUniqueKey())))
+
+			_ = os.Remove(temp)
+			_ = os.Link(fileName, temp)
+			// No streaming so that the node always have 50% free memory for latency
+			requested := drawing.NoErrorBytes(os.ReadFile(temp))
+			if requested == nil || len(requested) == 0 {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			_, _ = w.Write(requested)
+			_ = os.Remove(temp)
+		}
 	})
 
 	http.HandleFunc("/restore", func(w http.ResponseWriter, r *http.Request) {
 		// Restore state to stateful node containers (sacks)
-		_, err := management.EnsureAdministrator(w, r)
+		if r.Method != "PUT" {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+		apiKey, err := management.EnsureAdministrator(w, r)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		apiKey := r.Header.Get("apikey")
-		if apiKey == "" {
-			w.WriteHeader(http.StatusUnauthorized)
+		if len(Index) > 0 {
+			w.WriteHeader(http.StatusConflict)
+			return
 		}
+
 		buf := bytes.Buffer{}
 		for node := range Nodes {
-			b, _ := HttpRequest(fmt.Sprintf("http://%s:7777/checkpoint?apikey=%s", node, apiKey), "GET", nil)
+			b, _ := httpRequest(fmt.Sprintf("http://%s:7777/restore?apikey=%s", node, apiKey), "GET", nil)
 			buf.Write(b)
 		}
+
 		checkpoint := drawing.GenerateUniqueKey()
 		_ = os.WriteFile(path.Join("/tmp", checkpoint), buf.Bytes(), 0700)
 		_ = os.Remove("/tmp/checkpoint")
 		_ = os.Rename("/tmp/backup", "/tmp/garbage")
 		_ = os.Rename("/tmp/checkpoint", "/tmp/backup")
 		_ = os.Remove("/tmp/garbage")
-
 	})
 }
 
-func FindApikeyServer(apiKey string) string {
+func CheckPoint() string {
+	var checkpoint = bytes.Buffer{}
+	management.CheckpointFunc("GET", &checkpoint, nil)
+
+	sackId := drawing.GenerateUniqueKey()
+	fileName := path.Join("/tmp", sackId)
+	_ = os.WriteFile(fileName, checkpoint.Bytes(), 0700)
+	_ = os.Remove("/tmp/checkpoint")
+	_ = os.Link(fileName, "/tmp/checkpoint")
+	UpdateIndex()
+	return sackId
+}
+
+func findApikeyServer(apiKey string) string {
 	return Index[apiKey]
 }
 
-func MeshProxy(w http.ResponseWriter, r *http.Request) {
+func Proxy(w http.ResponseWriter, r *http.Request) error {
 	apiKey := r.Header.Get("apikey")
 	if apiKey == "" {
 		w.WriteHeader(http.StatusNotFound)
-		return
+		return fmt.Errorf("not found")
 	}
 	original := r.URL.String()
-	server := FindApikeyServer(apiKey)
+	server := findApikeyServer(apiKey)
 	if server == "" {
 		w.WriteHeader(http.StatusNotFound)
-		return
+		return fmt.Errorf("not found")
+	}
+	if strings.HasPrefix(metadata.SiteUrl, "http://") &&
+		!strings.HasPrefix(server, "http://") {
+		server = "http://" + server
+	} else if strings.HasPrefix(metadata.SiteUrl, "https://") &&
+		!strings.HasPrefix(server, "https://") {
+		server = "https://" + server
 	}
 	modified := strings.Replace(original, metadata.SiteUrl, server, 1)
 	if modified == original {
 		w.WriteHeader(http.StatusNotFound)
-		return
+		return fmt.Errorf("not found")
 	}
-	b, _ := HttpRequest(fmt.Sprintf("http://%s:7777/checkpoint?apikey=%s", modified, apiKey), r.Method, r.Body)
+	b, _ := httpRequest(modified, r.Method, r.Body)
 	_, _ = w.Write(b)
+	return nil
 }
 
-func IndexState() {
+func UpdateIndex() {
 	index := map[string]string{}
 	scanner := bufio.NewScanner(drawing.NoErrorFile(os.Open("/tmp/checkpoint")))
 	for scanner.Scan() {
 		apikey := ""
 		server := ""
-		err := englang.Scanf(scanner.Text(), "Stateful item %s stored at %s server.", &apikey, &server)
+		err := englang.Scanf(scanner.Text(), MeshPattern, &apikey, &server)
 		if err != nil {
 			continue
 		}
@@ -143,7 +217,7 @@ func IndexState() {
 	Index = index
 }
 
-func HttpRequest(url string, method string, bodyIn io.Reader) ([]byte, error) {
+func httpRequest(url string, method string, bodyIn io.Reader) ([]byte, error) {
 	if method == "" {
 		method = "GET"
 	}

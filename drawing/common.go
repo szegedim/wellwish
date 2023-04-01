@@ -31,12 +31,16 @@ func NewImageSlice(_image *image.RGBA64, rect image.Rectangle) ImageSlice {
 	return ImageSlice{Rgb: _image, Rect: rect}
 }
 
-// TODO fix file close leak potential
 func NoErrorFile(data *os.File, err error) *os.File {
 	if err != nil {
 		fmt.Errorf("%s\n", err)
 		return nil
 	}
+	go func(f *os.File) {
+		// Garbage collection
+		time.Sleep(60 * time.Second)
+		_ = f.Close()
+	}(data)
 	return data
 }
 

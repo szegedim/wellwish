@@ -20,11 +20,13 @@ import (
 // TODO There is a small drawing PSNR at font edges to fix.
 
 func SetupDrawing() {
+	Loaded.Lock()
 	fmt.Println("loading fonts")
 	LoadFont(indexes, "./drawing/res/courier.png", "")
 	LoadFont("�", "./drawing/res/cursorwide.png", "")
 	LoadSpace()
 	fmt.Println("fonts loaded")
+	Loaded.Unlock()
 }
 
 func DeclareForm(session *Session, pngFile string) {

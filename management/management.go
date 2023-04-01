@@ -15,8 +15,16 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
-func SetupSiteManagement(administrationKeySet string, traces func(m string, w io.Writer, r io.Reader)) {
-	administrationKey = administrationKeySet
+func UpdateAdminKey(s string) {
+	if s != "" {
+		administrationKey = s
+	}
+}
+
+func SetupSiteManagement(traces func(m string, w io.Writer, r io.Reader)) string {
+	if administrationKey == "" {
+		administrationKey = drawing.GenerateUniqueKey()
+	}
 	CheckpointFunc = traces
 
 	http.HandleFunc("/management.html", func(w http.ResponseWriter, r *http.Request) {
@@ -48,11 +56,12 @@ func SetupSiteManagement(administrationKeySet string, traces func(m string, w io
 			CheckpointFunc("PUT", nil, r.Body)
 		}
 	})
+	return administrationKey
 }
 
 func IsAdministrator(apiKey string) error {
 	time.Sleep(15 * time.Millisecond)
-	if apiKey != administrationKey {
+	if administrationKey == "" || apiKey != administrationKey {
 		return fmt.Errorf("unauthorized")
 	}
 	return nil

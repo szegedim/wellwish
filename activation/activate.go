@@ -3,6 +3,8 @@ package activation
 import (
 	"fmt"
 	drawing "gitlab.com/eper.io/engine/drawing"
+	"gitlab.com/eper.io/engine/management"
+	"gitlab.com/eper.io/engine/mesh"
 	"gitlab.com/eper.io/engine/metadata"
 	"net/http"
 	"strings"
@@ -27,6 +29,24 @@ func SetupActivation() {
 	http.HandleFunc("/activate.png", func(w http.ResponseWriter, r *http.Request) {
 		drawing.ServeRemoteFrame(w, r, declareActivationForm)
 	})
+
+	http.HandleFunc("/activate", func(w http.ResponseWriter, r *http.Request) {
+		if metadata.ActivationKey == "" {
+			// Already activated
+			return
+		}
+		adminKeyCandidate := r.URL.Query().Get("apikey")
+		activationKey := r.URL.Query().Get("activationkey")
+		management.QuantumGradeAuthorization()
+		mesh.ForwardRoundRobinRingRequest(r)
+		if activationKey == metadata.ActivationKey {
+			management.UpdateAdminKey(adminKeyCandidate)
+			adminKey := Activate()
+			_, _ = w.Write([]byte(fmt.Sprintf("%s/management.html?apikey=%s", metadata.SiteUrl, adminKey)))
+		} else {
+			w.WriteHeader(http.StatusUnauthorized)
+		}
+	})
 }
 
 func declareActivationForm(session *drawing.Session) {
@@ -36,15 +56,24 @@ func declareActivationForm(session *drawing.Session) {
 		session.SignalTextChange = func(session *drawing.Session, i int, from string, to string) {
 			session.SignalPartialRedrawNeeded(session, i)
 			if strings.Contains(session.Text[i].Text, metadata.ActivationKey) {
+				adminKey := Activate()
+				session.Data = fmt.Sprintf("/management.html?apikey=%s", adminKey)
 				session.SignalClosed(session)
 			}
 		}
 		session.SignalClosed = func(session *drawing.Session) {
 			session.SelectedBox = -1
-			metadata.ActivationKey = ""
-			Activated <- "Hello World!"
-			adminKey := <-Activated
-			session.Redirect = fmt.Sprintf("/management.html?apikey=%s", adminKey)
+			session.Redirect = session.Data
 		}
 	}
+}
+
+func Activate() string {
+	original := metadata.ActivationKey
+
+	metadata.ActivationKey = ""
+	Activated <- "Hello World!"
+	adminKey := <-Activated
+	mesh.ActivateSite(original, adminKey)
+	return adminKey
 }

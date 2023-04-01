@@ -1,5 +1,7 @@
 package metadata
 
+import "time"
+
 // This document is Licensed under Creative Commons CC0.
 // To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights
 // to this document to the public domain worldwide.
@@ -13,13 +15,15 @@ var SiteName = "WellWish\nCloud Decision Engine"
 
 var SiteUrl = "http://127.0.0.1:7777"
 
+var NodeUrl = "http://127.0.0.1:7777"
+
 var CompanyName = "Example Corporation (SAMPLE)"
 
 var CompanyInfo = `Example Inc.
 1010 Corporate Avenue, San Jose, CA, 55555, USA
 TAX ID: 1234-56 Payment: ACH Routing# 12345 Account# 12345 https://cashbuddy.example.com/12345
 `
-
+var CheckpointPeriod = 10 * 60 * time.Second
 var PaymentPattern = "https://example.com/%s"
 
 // InvoicePattern Please update the pattern with your locally regulated purchase order format.

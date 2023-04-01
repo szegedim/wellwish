@@ -22,6 +22,10 @@ func LogSnapshot(m string, w io.Writer, r io.Reader) {
 	// Activation key is shared with multiple containers of the same version,
 	// so we just return the record locator
 	if m == "GET" {
-		_, _ = w.Write([]byte(fmt.Sprintf("This container is running with activation key as %s ...", ActivationHash)))
+		if metadata.ActivationKey == "" {
+			_, _ = w.Write([]byte("The container is activated."))
+		} else {
+			_, _ = w.Write([]byte(fmt.Sprintf("This container is running with activation key as %s ...", ActivationHash)))
+		}
 	}
 }

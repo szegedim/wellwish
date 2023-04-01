@@ -5,7 +5,6 @@ import (
 	"image"
 	"image/color"
 	"image/png"
-	"io"
 	"net/http"
 	"os"
 	"strconv"
@@ -81,7 +80,7 @@ func ServeRemoteForm(w http.ResponseWriter, r *http.Request, name string) {
 		return
 	}
 	w.Header().Set("Cache-Control", "no-cache")
-	raw := NoErrorBytes(io.ReadAll(NoErrorFile(os.Open("./drawing/res/remote.html"))))
+	raw := NoErrorBytes(os.ReadFile("./drawing/res/remote.html"))
 	html := strings.ReplaceAll(string(raw), "remote.html", name+".html")
 	html = strings.ReplaceAll(html, "remote.png", name+".png")
 	_, _ = w.Write([]byte(html))
@@ -91,6 +90,12 @@ func ServeRemoteFrame(w http.ResponseWriter, r *http.Request, formFunc func(sess
 	session := GetActivatedSession(w, r)
 	if session != nil {
 		session.Mutex.Lock()
+		Loaded.Lock()
+		Loaded.Unlock()
+		//	slice := NewImageSliceFromPng("./drawing/res/cursor.png")
+		//	DrawImage(ImageSlice{Rgb: session.Form.Rgb, Rect: session.Form.Rect}, slice.Rgb)
+		//	return
+		//}
 		init := session.Form.Boxes == nil
 		formFunc(session)
 		if init {

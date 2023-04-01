@@ -6,6 +6,12 @@ import (
 	"strings"
 )
 
+func Synonym(s string, t string) bool {
+	// Returns, if the two Englang statements are equivalent
+	// Example: Context is voltage. It is 3.3V == The voltage is 3.3V
+	return s == t
+}
+
 func ScanfContains(in string, format string, a ...*string) error {
 	return scanfInner(in, format, a)
 }

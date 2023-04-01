@@ -15,6 +15,7 @@ import (
 	"gitlab.com/eper.io/engine/sack"
 	"io"
 	"net/http"
+	"os"
 )
 
 // This document is Licensed under Creative Commons CC0.
@@ -26,7 +27,9 @@ import (
 
 // A simple billing experiment
 func main() {
-	drawing.SetupDrawing()
+	go func() {
+		drawing.SetupDrawing()
+	}()
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if metadata.ActivationKey == "" {
@@ -42,17 +45,23 @@ func main() {
 
 	go setupSite()
 
-	err := http.ListenAndServe(":7777", nil)
+	port := ":7777"
+
+	if len(os.Args) > 1 {
+		port = os.Args[1]
+		metadata.SiteUrl = port
+	}
+	err := http.ListenAndServe(port, nil)
 	if err != nil {
 		fmt.Println(err)
+		fmt.Println("usage: go run main.go 127.0.0.1:7777")
 	}
 }
 
 func setupSite() {
 	<-activation.Activated
-	administrationKey := drawing.GenerateUniqueKey()
 
-	management.SetupSiteManagement(administrationKey, func(m string, w io.Writer, r io.Reader) {
+	administrationKey := management.SetupSiteManagement(func(m string, w io.Writer, r io.Reader) {
 		management.LogSnapshot(m, w, r)
 		activation.LogSnapshot(m, w, r)
 		billing.LogSnapshot(m, w, r)

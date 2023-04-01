@@ -10,10 +10,13 @@ package drawing
 import (
 	"image"
 	"image/color"
+	"sync"
 )
 
 const Revert = "\r"
 const InitialHint = Revert
+
+var Loaded sync.Mutex
 
 var White = color.RGBA64{R: 0xFFFF, G: 0xFFFF, B: 0xFFFF, A: 0xFFFF}
 var Black = color.RGBA64{R: 0, G: 0, B: 0, A: 0xFFFF}

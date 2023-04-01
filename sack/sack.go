@@ -82,6 +82,7 @@ func Setup() {
 		fileName := sack
 		p := path.Join(fmt.Sprintf("/tmp/%s", fileName))
 		if r.Method == "GET" {
+			CleanupExpiredSack(sack)
 			http.ServeFile(w, r, p)
 			return
 		}
@@ -214,4 +215,23 @@ func MakeSack(sack string) string {
 	_ = w.Flush()
 	_ = newSack.Close()
 	return sack
+}
+
+func CleanupExpiredSack(sack string) {
+	info := Sacks[sack]
+	dt := ""
+	begin := ""
+	end := ""
+	err := englang.ScanfContains(info, billing.TicketExpiry, &begin, &dt, &end)
+	if err != nil {
+		return
+	}
+	expiry, err := time.Parse("Jan 2, 2006", dt)
+	if err != nil {
+		return
+	}
+	if time.Now().After(expiry) {
+		path1 := path.Join(fmt.Sprintf("/tmp/%s", sack))
+		_ = os.Remove(path1)
+	}
 }

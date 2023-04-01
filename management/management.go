@@ -50,6 +50,14 @@ func SetupSiteManagement(administrationKeySet string, traces func(m string, w io
 	})
 }
 
+func IsAdministrator(apiKey string) error {
+	time.Sleep(15 * time.Millisecond)
+	if apiKey != administrationKey {
+		return fmt.Errorf("unauthorized")
+	}
+	return nil
+}
+
 func EnsureAdministrator(w http.ResponseWriter, r *http.Request) (string, error) {
 	apiKey := r.URL.Query().Get("apikey")
 
@@ -79,11 +87,15 @@ func declareForm(session *drawing.Session) {
 		const Logs = 1
 		const PublicSite = 2
 		const PrivateSite = 3
+		const Backup = 4
+		const Restore = 5
 		drawing.DeclareForm(session, "./management/res/management.png")
 		drawing.DeclareImageField(session, Contact, "./drawing/res/space.png", drawing.ActiveContent{Text: "", Lines: 1, Editable: false, FontColor: drawing.White, BackgroundColor: drawing.Black, Alignment: 1})
 		drawing.DeclareTextField(session, Logs, drawing.ActiveContent{Text: "     Traces     ", Lines: 1, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
 		drawing.DeclareTextField(session, PublicSite, drawing.ActiveContent{Text: "     Public     ", Lines: 1, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
 		drawing.DeclareTextField(session, PrivateSite, drawing.ActiveContent{Text: "     Private    ", Lines: 1, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
+		drawing.DeclareTextField(session, Backup, drawing.ActiveContent{Text: "     Backup     ", Lines: 1, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
+		drawing.DeclareTextField(session, Restore, drawing.ActiveContent{Text: "     Restore    ", Lines: 1, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
 
 		session.SignalClicked = func(session *drawing.Session, i int) {
 			if i == Contact {
@@ -102,12 +114,30 @@ func declareForm(session *drawing.Session) {
 				session.Redirect = fmt.Sprintf("/checkout.html?apikey=%s", session.ApiKey)
 				session.SelectedBox = -1
 			}
+			if i == Backup {
+				session.Redirect = fmt.Sprintf("/backup.checkpoint?apikey=%s", session.ApiKey)
+				session.SelectedBox = -1
+			}
+			if i == Restore {
+				session.Upload = "checkpoint"
+			}
+		}
+		session.SignalUploaded = func(session *drawing.Session, upload drawing.Upload) {
+			err := IsAdministrator(session.ApiKey)
+			if err != nil {
+				return
+			}
+			//body := bytes.NewBuffer(upload.Body)
+			//mesh.HttpRequest("PUT", "/")
+			//CheckpointFunc("PUT", nil, body)
 		}
 	}
 }
 
 func LogSnapshot(m string, w io.Writer, r io.Reader) {
-	_, _ = w.Write([]byte(fmt.Sprintf("This container is running with management key %s ...\n\n", drawing.RedactPublicKey(administrationKey))))
+	if m == "GET" {
+		_, _ = w.Write([]byte(fmt.Sprintf("This container is running with management key %s ...\n\n", drawing.RedactPublicKey(administrationKey))))
+	}
 }
 
 func Restore(w http.ResponseWriter, r *http.Request) {

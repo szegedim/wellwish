@@ -21,6 +21,7 @@ var ActivationHash = drawing.RedactPublicKey(metadata.ActivationKey)
 func LogSnapshot(m string, w io.Writer, r io.Reader) {
 	// Activation key is shared with multiple containers of the same version,
 	// so we just return the record locator
-	_, _ = w.Write([]byte(fmt.Sprintf("This container is running with activation key as %s ...", ActivationHash)))
-	return
+	if m == "GET" {
+		_, _ = w.Write([]byte(fmt.Sprintf("This container is running with activation key as %s ...", ActivationHash)))
+	}
 }

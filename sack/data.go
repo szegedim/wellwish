@@ -2,34 +2,62 @@ package sack
 
 import (
 	"bytes"
+	"fmt"
 	"gitlab.com/eper.io/engine/englang"
-	"gitlab.com/eper.io/engine/management"
 	"io"
+	"os"
+	"path"
 	"strconv"
 )
 
 var Sacks = map[string]string{}
 
-const RecordPattern = "Record with type %s, apikey %s, and length %s bytes."
+const RecordPattern = "Record with type %s, apikey %s, info %s, file name %s and length of %s bytes."
 
 const RecordType = "sack"
 
 func LogSnapshot(m string, w io.Writer, r io.Reader) {
 	if m == "GET" {
 		for k, v := range Sacks {
-			buf := bytes.NewBufferString("")
-			bufv := []byte(v)
-			buf.WriteString(englang.Printf(RecordPattern, RecordType, k, strconv.FormatUint(uint64(len(bufv)), 10)))
-			buf.Write(bufv)
+			sack := k
+			filePath := path.Join(fmt.Sprintf("/tmp/%s", k))
+			info := v
+
+			content, _ := os.ReadFile(filePath)
+
+			buf := bytes.NewBuffer([]byte{})
+			buf.WriteString(englang.Printf(RecordPattern, RecordType, sack, info, filePath, strconv.FormatInt(int64(len(content)), 10)))
+			buf.Write(content)
 			_, _ = w.Write(buf.Bytes())
 		}
 	}
 	if m == "PUT" {
-		backup, err := io.ReadAll(r)
+		buf, err := io.ReadAll(r)
 		if err != nil {
 			return
 		}
-		management.RestoreRecords(backup, RecordPattern, RecordType, &Sacks, "")
-		management.RestoreRecords(backup, RecordPattern, RecordType, nil, "/tmp")
+		i := 0
+		for {
+			record := ""
+			sack := ""
+			info := ""
+			filePath := ""
+			length := ""
+			n, err := englang.ScanfStream(buf, i, RecordPattern, &record, &sack, &info, &filePath, &length)
+			if err != nil {
+				break
+			}
+			l, err := strconv.ParseInt(length, 10, 32)
+			if err != nil {
+				break
+			}
+			// Storing the length ensures to avoid Englang injection vulnerabilities
+			// if the file contains Englang of sacks.
+			Sacks[sack] = info
+			if l > 0 {
+				_ = os.WriteFile(path.Join("/tmp", sack), buf[n:n+int(l)], 0700)
+			}
+			i = n
+		}
 	}
 }

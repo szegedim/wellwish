@@ -1,6 +1,7 @@
 package englang
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 )
@@ -60,6 +61,34 @@ func scanfInner(in string, format string, an []*string) error {
 		return fmt.Errorf("parsing error")
 	}
 	return nil
+}
+
+func ScanfStream(in []byte, i int, format string, an ...*string) (int, error) {
+	begin := ""
+	end := ""
+	ab := make([]*string, len(an)+2)
+	ab[0] = &begin
+	ab[len(ab)-1] = &end
+	copy(ab[1:1+len(an)], an)
+
+	return scanfStreamInner(in, i, format, ab)
+}
+
+func scanfStreamInner(in []byte, i int, format string, an []*string) (int, error) {
+	items := strings.Split(format, "%s")
+	expected := len(items)
+	marker := []byte(items[0])
+	closure := []byte(items[expected-1])
+
+	f := bytes.Index(in[i:], marker)
+	if f == -1 {
+		return -1, fmt.Errorf("not found")
+	}
+	e := bytes.Index(in[i+f:], closure)
+	if e == -1 {
+		return -1, fmt.Errorf("not found")
+	}
+	return i + f + e, scanfInner(string(in[i+f:i+f+e]), format, an)
 }
 
 func Printf(format string, an ...string) string {

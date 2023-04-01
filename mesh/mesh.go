@@ -12,7 +12,9 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"sort"
 	"strings"
+	"time"
 )
 
 // This document is Licensed under Creative Commons CC0.
@@ -48,65 +50,116 @@ import (
 // Solution: we are safe to run checkpoints as often as their collection timespan.
 // This also allows consistency and hardware error checks and fixes.
 
+// This also means that mesh is 100% letter A = Available in the CAP theorem.
+// Consistency is implied by running personal cloud items independently by apikey.
+// The application layer can add consistency features. We are eventually consistent.
+// Partition tolerance can be implemented at the application level buying two sacks.
+// The temporary nature of sacks also helps to down prioritize partition tolerance.
+
 func Setup() {
 	http.HandleFunc("/node", func(w http.ResponseWriter, r *http.Request) {
+		// Load and Propagate server names from api
 		adminKey, err := management.EnsureAdministrator(w, r)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		// Load and Propagate server names from api
 		address := r.Header.Get("address")
 		if address == "" {
 			w.WriteHeader(http.StatusNoContent)
-		}
-		if Nodes[address] != "" {
-			// No reflection, avoid hangs
 			return
 		}
-		Nodes[address] = address
-		for node := range Nodes {
-			_, _ = httpRequest(fmt.Sprintf("http://%s:7777/node?apikey=%s&address=%s", node, adminKey, address), "PUT", nil)
-		}
-	})
-
-	http.HandleFunc("/backup", func(w http.ResponseWriter, r *http.Request) {
-		// Read state from stateful node containers (sacks)
-		if r.Method != "PUT" {
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			return
-		}
-		apiKey, err := management.EnsureAdministrator(w, r)
-		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-		for node := range Nodes {
-			// Make sure your ops works
-			sackId, _ := httpRequest(fmt.Sprintf("http://%s:7777/checkpoint?apikey=%s", node, apiKey), "PUT", nil)
-			if sackId != nil && len(sackId) > 0 {
-				Index[string(sackId)] = node
-			}
-		}
-	})
-
-	http.HandleFunc("/checkpoint", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "PUT" {
+			if Nodes[address] != "" {
+				// No reflection, avoid hangs
+				return
+			}
+			Nodes[address] = address
+			for node := range Nodes {
+				_, _ = HttpRequest(fmt.Sprintf("http://%s:7777/node?apikey=%s&address=%s", node, adminKey, address), "PUT", nil)
+			}
+			// TODO repropagate, if missing nodes are found
+			// Do not retry
+			// Retries usually just map malware errors as a unit test
+			// Make sure that you metal is steel.
+		}
+		// There is intentionally no way to get the list of nodes. Use traces for debugging.
+	})
+
+	http.HandleFunc("/site.backup", func(w http.ResponseWriter, r *http.Request) {
+		// Capture a checkpoint of the state of each node on the cluster
+		if r.Method == "PUT" {
+			apiKey, err := management.EnsureAdministrator(w, r)
+			management.QuantumGradeAuthorization()
+			if err != nil {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			for node := range Nodes {
+				// Make sure your ops works
+				sackId, _ := HttpRequest(fmt.Sprintf("http://%s:7777/node.checkpoint?apikey=%s", node, apiKey), "GET", nil)
+				if sackId != nil && len(sackId) > 0 {
+					Index[string(sackId)] = node
+				}
+			}
+			return
+		}
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	})
+
+	http.HandleFunc("/site.restore", func(w http.ResponseWriter, r *http.Request) {
+		// Capture a checkpoint of the state of each node on the cluster
+		if r.Method == "PUT" {
+			apiKey, err := management.EnsureAdministrator(w, r)
+			management.QuantumGradeAuthorization()
+			if err != nil {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			next := r.URL.Query().Get("next")
+
+			nodeNames := make([]string, 0)
+			nodes := Nodes
+			for node := range nodes {
+				nodeNames = append(nodeNames, node)
+			}
+			sort.Strings(nodeNames)
+
+			nextnext := ""
+			for i := 0; i < len(nodeNames); i++ {
+				if nodeNames[i] == next {
+					nextnext = nodeNames[(i+1)%len(nodeNames)]
+				}
+			}
+
+			_, _ = HttpRequest(fmt.Sprintf("http://%s:7777/site.restore?apikey=%s&next=%s", next, apiKey, nextnext), "PUT", r.Body)
+			management.CheckpointFunc("PUT", nil, r.Body)
+			return
+		}
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	})
+
+	http.HandleFunc("/node.checkpoint", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "PUT" {
+			// Create a new checkpoint file
 			_, err := management.EnsureAdministrator(w, r)
+			management.QuantumGradeAuthorization()
 			if err != nil {
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
 
-			sackId := CheckPoint()
-			_, _ = w.Write([]byte(sackId))
+			sackId := RunCheckPoint()
+			_, _ = w.Write([]byte(fmt.Sprintf("%s/node.checkpoint?apikey=%s", metadata.SiteUrl, sackId)))
 		}
 		if r.Method == "GET" {
+			// Get specified checkpoint file
 			apiKey := r.URL.Query().Get("apikey")
 			if apiKey == "" {
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
+			management.QuantumGradeAuthorization()
 
 			sackId := apiKey
 			fileName := path.Join("/tmp", sackId)
@@ -125,38 +178,35 @@ func Setup() {
 		}
 	})
 
-	http.HandleFunc("/restore", func(w http.ResponseWriter, r *http.Request) {
-		// Restore state to stateful node containers (sacks)
-		if r.Method != "PUT" {
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			return
-		}
-		apiKey, err := management.EnsureAdministrator(w, r)
-		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-		if len(Index) > 0 {
-			w.WriteHeader(http.StatusConflict)
-			return
-		}
+	http.HandleFunc("/node.restore", func(w http.ResponseWriter, r *http.Request) {
+		// Restore stateful state to a checkpoint (sacks)
+		if r.Method == "PUT" {
+			_, err := management.EnsureAdministrator(w, r)
+			management.QuantumGradeAuthorization()
+			if err != nil {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			if len(Index) > 0 {
+				w.WriteHeader(http.StatusConflict)
+				return
+			}
 
-		buf := bytes.Buffer{}
-		for node := range Nodes {
-			b, _ := httpRequest(fmt.Sprintf("http://%s:7777/restore?apikey=%s", node, apiKey), "GET", nil)
-			buf.Write(b)
+			management.CheckpointFunc("PUT", nil, r.Body)
+			return
 		}
-
-		checkpoint := drawing.GenerateUniqueKey()
-		_ = os.WriteFile(path.Join("/tmp", checkpoint), buf.Bytes(), 0700)
-		_ = os.Remove("/tmp/checkpoint")
-		_ = os.Rename("/tmp/backup", "/tmp/garbage")
-		_ = os.Rename("/tmp/checkpoint", "/tmp/backup")
-		_ = os.Remove("/tmp/garbage")
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	})
+
+	go func() {
+		for {
+			RunCheckPoint()
+			time.Sleep(10 * 60 * time.Second)
+		}
+	}()
 }
 
-func CheckPoint() string {
+func RunCheckPoint() string {
 	var checkpoint = bytes.Buffer{}
 	management.CheckpointFunc("GET", &checkpoint, nil)
 
@@ -166,6 +216,7 @@ func CheckPoint() string {
 	_ = os.Remove("/tmp/checkpoint")
 	_ = os.Link(fileName, "/tmp/checkpoint")
 	UpdateIndex()
+	fmt.Printf("Health check succeeded %s checkpoint file %s ...\n", time.Now().Format("15:04:05"), path.Join("/tmp", drawing.RedactPublicKey(sackId)))
 	return sackId
 }
 
@@ -197,7 +248,7 @@ func Proxy(w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusNotFound)
 		return fmt.Errorf("not found")
 	}
-	b, _ := httpRequest(modified, r.Method, r.Body)
+	b, _ := HttpRequest(modified, r.Method, r.Body)
 	_, _ = w.Write(b)
 	return nil
 }
@@ -217,7 +268,7 @@ func UpdateIndex() {
 	Index = index
 }
 
-func httpRequest(url string, method string, bodyIn io.Reader) ([]byte, error) {
+func HttpRequest(url string, method string, bodyIn io.Reader) ([]byte, error) {
 	if method == "" {
 		method = "GET"
 	}

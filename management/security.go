@@ -2,9 +2,10 @@ package management
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
-	url2 "net/url"
+	"strings"
 	"time"
 )
 
@@ -16,13 +17,10 @@ func QuantumGradeAuthorization() {
 }
 
 func AddAdminForUrl(url string) string {
-	url1, err := url2.Parse(url)
-	if err != nil {
-		return ""
+	if !strings.Contains(url, "?") {
+		return fmt.Sprintf("%s?apikey=%s", url, administrationKey)
 	}
-
-	url1.Query().Add("apikey", administrationKey)
-	return url1.String()
+	return fmt.Sprintf("%s&apikey=%s", url, administrationKey)
 }
 
 func HttpProxyRequest(url string, method string, bodyIn io.Reader) ([]byte, error) {
@@ -48,6 +46,8 @@ func HttpProxyRequest(url string, method string, bodyIn io.Reader) ([]byte, erro
 		return nil, err
 	}
 	_ = resp.Body.Close()
-
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf(resp.Status)
+	}
 	return body, nil
 }

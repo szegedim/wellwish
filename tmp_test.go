@@ -1,7 +1,8 @@
-package mesh
+package main
 
 import (
 	"gitlab.com/eper.io/engine/drawing"
+	"gitlab.com/eper.io/engine/server"
 	"io"
 	"os"
 	"os/exec"
@@ -29,15 +30,18 @@ func TestName(t *testing.T) {
 func TestCluster(t *testing.T) {
 	x := make(chan int)
 	y := make(chan int)
-	go func(ready chan int) { runServer(t, ready, "127.0.0.1:7779") }(y)
-	go func(ready chan int) { time.Sleep(2 * time.Second); runServer(t, ready, "127.0.0.1:7780") }(x)
+	z := make(chan int)
+	go func(ready chan int) { server.Main([]string{"go", ":7777"}) }(z)
+	go func(ready chan int) { time.Sleep(2 * time.Second); runServer(t, ready, ":7779") }(y)
+	go func(ready chan int) { time.Sleep(4 * time.Second); runServer(t, ready, ":7780") }(x)
 	<-x
 	<-y
+	<-z
 }
 
 func runServer(t *testing.T, ready chan int, port string) {
 	p := exec.Cmd{
-		Dir:  "..",
+		Dir:  ".",
 		Path: "/Users/miklos_szegedi/schmied.us/private/go-darwin-arm64-bootstrap/bin/go",
 		Args: []string{"go", "run", "main.go", port},
 	}
@@ -46,7 +50,7 @@ func runServer(t *testing.T, ready chan int, port string) {
 		t.Error(err)
 	}
 	go func() {
-		time.Sleep(30 * time.Second)
+		time.Sleep(9 * 60 * time.Second)
 		_ = p.Process.Kill()
 	}()
 	err = p.Wait()

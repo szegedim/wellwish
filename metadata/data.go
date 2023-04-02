@@ -17,6 +17,8 @@ var SiteUrl = "http://127.0.0.1:7777"
 
 var NodeUrl = "http://127.0.0.1:7777"
 
+var NodePattern = "http://127.0.0.1:777*"
+
 var CompanyName = "Example Corporation (SAMPLE)"
 
 var CompanyInfo = `Example Inc.

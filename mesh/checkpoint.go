@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"fmt"
 	"gitlab.com/eper.io/engine/drawing"
+	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/management"
 	"gitlab.com/eper.io/engine/metadata"
 	"io"
 	"net/http"
-	url2 "net/url"
 	"os"
 	"path"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -147,35 +148,31 @@ func checkpointingSetup() {
 	}()
 }
 
-func ActivateSite(activationKey string, managementKey string) {
+func ActivateSite() {
 	// Set up round-robin by adding ourselves as a node
-	_, _ = management.HttpProxyRequest(fmt.Sprintf("%s/node?apikey=%s", metadata.NodeUrl, managementKey), "PUT", bytes.NewBuffer([]byte(metadata.NodeUrl)))
+	//_, _ = management.HttpProxyRequest(fmt.Sprintf("%s/node?apikey=%s", metadata.NodeUrl, managementKey), "PUT", bytes.NewBuffer([]byte(metadata.NodeUrl)))
 
-	url1 := fmt.Sprintf("%s/activate?apikey=%s&activationkey=%s", metadata.SiteUrl, managementKey, activationKey)
+	url1 := fmt.Sprintf("%s/activate?activationkey=%s", metadata.SiteUrl, management.SiteActivationKey)
+	url1 = management.AddAdminForUrl(url1)
 	NewRoundRobinCall(url1, "GET", &bytes.Buffer{})
 }
 
 func NewRoundRobinCall(url1 string, method string, body io.Reader) {
-	u, err := url2.Parse(url1)
+	session := drawing.GenerateUniqueKey()
+	next, nextNext, err := roundRobinRing("", session)
 	if err != nil {
 		return
 	}
-	next, nextNext, session, err := roundRobinRing("", drawing.GenerateUniqueKey())
+	url := fmt.Sprintf("%s&session=%s&next=%s", strings.Replace(url1, metadata.SiteUrl, next, 1), session, nextNext)
+	_, err = management.HttpProxyRequest(url, method, body)
 	if err != nil {
-		return
+		Rings[session] = Rings[session] + "Request failed."
 	}
-	nextUrl, err := url2.Parse(next)
-	if err != nil {
-		return
-	}
-	u.Query().Set("session", session)
-	u.Query().Set("next", nextNext)
-	u.Host = nextUrl.Host
-	u.Scheme = nextUrl.Scheme
-	_, _ = management.HttpProxyRequest(u.String(), method, body)
+	Rings[session] = strings.TrimRight(Rings[session], "\n") + url1 + "\n"
 }
 
 func ForwardRoundRobinRingRequest(r *http.Request) {
+	InitializeNodeList()
 	ForwardRoundRobinRingRequestUpdated(r, r.Body)
 }
 
@@ -187,14 +184,15 @@ func ForwardRoundRobinRingRequestUpdated(r *http.Request, updated io.Reader) {
 	}
 
 	u := r.URL
-	next, nextNext, session, err := roundRobinRing(next, drawing.GenerateUniqueKey())
+	next, nextNext, err := roundRobinRing(next, session)
 	if err != nil {
+		//Rings[session] = strings.TrimRight(Rings[session], "\n") + r.URL.Path + "\n"
 		return
 	}
 	u.Query().Set("session", session)
 	u.Query().Set("next", nextNext)
 	u.Host = next
-	_, _ = management.HttpProxyRequest(u.String(), r.Method, updated)
+	_, err = management.HttpProxyRequest(u.String(), r.Method, updated)
 }
 
 //func roundRobinRingRequest(r *http.Request) (string, string, string, error) {
@@ -205,10 +203,15 @@ func ForwardRoundRobinRingRequestUpdated(r *http.Request, updated io.Reader) {
 //	return next, nextNext, session, err
 //}
 
-func roundRobinRing(next string, session string) (string, string, string, error) {
-	if session != "" && Rings[session] != "" {
+func roundRobinRing(next string, ringSession string) (string, string, error) {
+	if ringSession != "" && Rings[ringSession] != "" {
+		var ring, started, base, begin, end string
+		if englang.ScanfContains(Rings[ringSession], "Ring %s started on %s at %s ns", &begin, &ring, &started, &base, &end) == nil {
+			elapsed := englang.DecimalString(time.Now().UnixNano() - englang.Decimal(base))
+			Rings[ringSession] = fmt.Sprintf("Ring %s started on %s. It finished in %s ns %s\n", ringSession, time.Now().Format("Jan 2, 2006"), elapsed, end)
+		}
 		// Finished a circular propagating call
-		return "", "", "", fmt.Errorf("finished")
+		return "", "", fmt.Errorf("finished")
 	}
 	nodeNames := make([]string, 0)
 	nodes := Nodes
@@ -220,12 +223,15 @@ func roundRobinRing(next string, session string) (string, string, string, error)
 	nextNext := ""
 	for i := 0; i < len(nodeNames); i++ {
 		if nodeNames[i] == next || next == "" {
-			Rings[session] = session
-			next = nodeNames[i]
-			nextNext = nodeNames[(i+1)%len(nodeNames)]
-			return next, nextNext, session, nil
+			_, err := management.HttpProxyRequest(fmt.Sprintf("%s/healthz", nodeNames[i]), "GET", nil)
+			if err == nil {
+				Rings[ringSession] = fmt.Sprintf("Ring %s started on %s at %s ns", ringSession, time.Now().Format("Jan 2, 2006"), englang.DecimalString(time.Now().UnixNano()))
+				next = nodeNames[i]
+				nextNext = nodeNames[(i+1)%len(nodeNames)]
+				return next, nextNext, nil
+			}
 		}
 	}
 	// TODO no cluster?
-	return "", "", "", fmt.Errorf("finished")
+	return "", "", fmt.Errorf("finished")
 }

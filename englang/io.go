@@ -3,6 +3,7 @@ package englang
 import (
 	"bytes"
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -117,4 +118,16 @@ func sprintf(format string, an []string) string {
 	}
 	ret.WriteString(an[len(an)-1])
 	return ret.String()
+}
+
+func Decimal(s string) int64 {
+	i, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		i = 0
+	}
+	return i
+}
+
+func DecimalString(i int64) string {
+	return strconv.FormatInt(i, 10)
 }

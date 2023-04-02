@@ -31,14 +31,14 @@ func SetupActivation() {
 	})
 
 	http.HandleFunc("/activate", func(w http.ResponseWriter, r *http.Request) {
+		management.QuantumGradeAuthorization()
+		mesh.ForwardRoundRobinRingRequest(r)
 		if metadata.ActivationKey == "" {
 			// Already activated
 			return
 		}
 		adminKeyCandidate := r.URL.Query().Get("apikey")
 		activationKey := r.URL.Query().Get("activationkey")
-		management.QuantumGradeAuthorization()
-		mesh.ForwardRoundRobinRingRequest(r)
 		if activationKey == metadata.ActivationKey {
 			management.UpdateAdminKey(adminKeyCandidate)
 			adminKey := Activate()
@@ -69,11 +69,10 @@ func declareActivationForm(session *drawing.Session) {
 }
 
 func Activate() string {
-	original := metadata.ActivationKey
+	management.SiteActivationKey = metadata.ActivationKey
 
 	metadata.ActivationKey = ""
 	Activated <- "Hello World!"
 	adminKey := <-Activated
-	mesh.ActivateSite(original, adminKey)
 	return adminKey
 }

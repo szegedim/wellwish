@@ -134,7 +134,7 @@ func TestBurst(t *testing.T) {
 		}
 	}()
 
-	go func() {
+	burst1 := func(message string) {
 		var burstSession, burst string
 		ret := mesh.Englang(englang.Printf("Call server http://127.0.0.1:7777 path /api with method PUT and content %s. The call expects englang.", payment.String()))
 		if ret != "too early" {
@@ -142,7 +142,7 @@ func TestBurst(t *testing.T) {
 			burstSession = ret
 		}
 		time.Sleep(100 * time.Millisecond)
-		ret = mesh.Englang(englang.Printf("Call server http://127.0.0.1:7777 path /api?apikey=%s with method GET and content %s. The call expects englang.", burstSession, "Hello World!"))
+		ret = mesh.Englang(englang.Printf("Call server http://127.0.0.1:7777 path /api?apikey=%s with method GET and content %s. The call expects englang.", burstSession, message))
 		if ret != "too early" {
 			t.Log(ret)
 			burst = ret
@@ -151,7 +151,7 @@ func TestBurst(t *testing.T) {
 		for i := 0; i < 10; i++ {
 			time.Sleep(100 * time.Millisecond)
 			ret = mesh.Englang(englang.Printf("Call server http://127.0.0.1:7777 path /api?apikey=%s with method GET and content %s. The call expects englang.", burst, ""))
-			if ret == "Hello World!" {
+			if ret == message {
 				t.Log(ret)
 				done <- true
 				break
@@ -160,37 +160,14 @@ func TestBurst(t *testing.T) {
 				t.Log(ret)
 			}
 		}
-	}()
+	}
 
-	go func() {
-		var burstSession, burst string
-		ret := mesh.Englang(englang.Printf("Call server http://127.0.0.1:7777 path /api with method PUT and content %s. The call expects englang.", payment.String()))
-		if ret != "too early" {
-			t.Log(ret)
-			burstSession = ret
-		}
-		time.Sleep(100 * time.Millisecond)
-		ret = mesh.Englang(englang.Printf("Call server http://127.0.0.1:7777 path /api?apikey=%s with method GET and content %s. The call expects englang.", burstSession, "Hello Moon!"))
-		if ret != "too early" {
-			t.Log(ret)
-			burst = ret
-		}
+	var messages = []string{"Hello World!", "Hello Moon!"}
+	for _, v := range messages {
+		go burst1(v)
+	}
 
-		for i := 0; i < 10; i++ {
-			time.Sleep(100 * time.Millisecond)
-			ret := mesh.Englang(englang.Printf("Call server http://127.0.0.1:7777 path /api?apikey=%s with method GET and content %s. The call expects englang.", burst, ""))
-			if ret == "Hello Moon!" {
-				t.Log(ret)
-				done <- true
-				break
-			}
-			if ret != "too early" {
-				t.Log(ret)
-			}
-		}
-	}()
-
-	for i := 0; i < 2; i++ {
+	for range messages {
 		select {
 		case <-time.After(10 * time.Second):
 			t.Error("timeout")

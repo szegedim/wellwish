@@ -1,6 +1,8 @@
 package billing
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
@@ -128,4 +130,24 @@ func GetInvoice(session *drawing.Session) (string, bool) {
 		return "", false
 	}
 	return order, true
+}
+
+func RedeemCoin(upload string) (string, error) {
+	scanner := bufio.NewScanner(bytes.NewBufferString(upload))
+	for scanner.Scan() {
+		var voucher, begin, end, site string
+		err := englang.ScanfContains(scanner.Text()+".", "http%s/voucher.html?apikey=%s.", &begin, &site, &voucher, &end)
+		if err == nil {
+			ok, isInvoice, _, valid := ValidateVoucherKey(voucher, true)
+			if ok {
+				buf := bytes.NewBufferString("")
+				if isInvoice {
+					buf.WriteString(fmt.Sprintf("\nInvoice used: %s\n", drawing.RedactPublicKey(voucher)))
+				}
+				buf.WriteString(fmt.Sprintf("\nVoucher used: %s\n", drawing.RedactPublicKey(valid)))
+				return buf.String(), nil
+			}
+		}
+	}
+	return "", fmt.Errorf("not found")
 }

@@ -69,7 +69,7 @@ func Setup() {
 				w.WriteHeader(http.StatusPaymentRequired)
 				return
 			}
-			sack = MakeSack(voucher)
+			sack = makeSack(voucher)
 			if isInvoice {
 				redirect = fmt.Sprintf("/tmp?apikey=%s", voucher)
 			}
@@ -193,7 +193,7 @@ func MakeSackWithCoin(upload string) string {
 		if err == nil {
 			ok, isInvoice, _, valid := billing.ValidateVoucherKey(voucher, true)
 			if ok {
-				sack := MakeSack(valid)
+				sack := makeSack(valid)
 				if isInvoice {
 					Sacks[sack] = Sacks[sack] + fmt.Sprintf("\nInvoice used: %s\n", drawing.RedactPublicKey(voucher))
 				}
@@ -205,7 +205,7 @@ func MakeSackWithCoin(upload string) string {
 	return ""
 }
 
-func MakeSack(sack string) string {
+func makeSack(sack string) string {
 	trace := fmt.Sprintf(billing.TicketExpiry, time.Now().Add(4*168*time.Hour).Format("Jan 2, 2006"))
 	Sacks[sack] = trace
 	path1 := path.Join(fmt.Sprintf("/tmp/%s", sack))

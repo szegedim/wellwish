@@ -1,19 +1,15 @@
 package burst
 
 import (
-	"crypto/tls"
 	"fmt"
+	"gitlab.com/eper.io/engine/billing"
 	"gitlab.com/eper.io/engine/drawing"
-	"gitlab.com/eper.io/engine/mesh"
+	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/metadata"
-	"gitlab.com/eper.io/engine/sack"
 	"io"
-	"net"
 	"net/http"
-	"os"
-	"os/exec"
-	"path"
 	"strings"
+	"time"
 )
 
 // This document is Licensed under Creative Commons CC0.
@@ -38,188 +34,120 @@ import (
 // even if there is an extra network latency of 100ms
 
 func Setup() {
-	// writes keys to metal files
-	// listens to burst supply
+	http.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "PUT" {
+			ok, _, _, voucher := billing.ValidateVoucher(w, r, true)
+			if ok {
+				burst := drawing.GenerateUniqueKey()
+				BurstSession[burst] = englang.Printf(fmt.Sprintf("Burst chain api created from %s is %s/api?apikey=%s. Chain has %s left.", voucher, metadata.SiteUrl, burst, (24 * time.Hour).String()))
+				_, _ = w.Write([]byte(burst))
+				return
+			} else {
+				_, _ = w.Write([]byte("payment required"))
+				w.WriteHeader(http.StatusPaymentRequired)
+				return
+			}
+		}
 
-	http.HandleFunc("/burst", func(w http.ResponseWriter, r *http.Request) {
-		if drawing.EnsureAPIKey(w, r) != nil {
+		if r.Method == "GET" {
+			apiKey := r.URL.Query().Get("apikey")
+			_, call := BurstSession[apiKey]
+			_, result := Burst[apiKey]
+			if !call && !result {
+				_, _ = w.Write([]byte("payment required"))
+				w.WriteHeader(http.StatusPaymentRequired)
+			}
+
+			if call {
+				body := string(drawing.NoErrorBytes(io.ReadAll(r.Body)))
+				burst := drawing.GenerateUniqueKey()
+				Burst[burst] = englang.Printf("Request paid with %s %s", apiKey, body)
+
+				// This is just a perf improvement that can be eliminated
+				go func() { NewTask <- burst }()
+
+				_, _ = w.Write([]byte(burst))
+				return
+			}
+
+			if result {
+				burst, call := Burst[apiKey]
+				if call {
+					if strings.HasPrefix(burst, "Response ") {
+						_, _ = io.Copy(w, strings.NewReader(burst[len("Response "):]))
+						return
+					} else {
+						w.WriteHeader(http.StatusTooEarly)
+						_, _ = w.Write([]byte("too early"))
+						return
+					}
+				}
+			}
+
+			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		RunBurst(w, r)
 	})
-}
 
-func RunBurst(w http.ResponseWriter, r *http.Request) {
-	apiKey := r.URL.Query().Get("apikey")
-	if apiKey == "" {
-		w.WriteHeader(http.StatusPaymentRequired)
-		return
-	}
-	var stdin io.ReadCloser
-	if r.ContentLength != 0 {
-		stdin = r.Body
-	}
-	// You can run a burst, if you pay a sack underneath
-	// TODO Change this to pay bursts separately.
-	burstCode, err := DownloadBurst(apiKey)
-	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-	if burstCode == nil {
-		w.WriteHeader(http.StatusGone)
-		return
-	}
-	Run(burstCode, stdin, w)
-}
-
-func DownloadBurst(burst string) ([]byte, error) {
-	ret, err := DownloadCode(fmt.Sprintf("%s/sack?apikey=%s", metadata.SiteUrl, burst))
-	if err != nil {
-		return nil, err
-	}
-	return ret, nil
-}
-
-func DownloadCode(url string) ([]byte, error) {
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, err
-	}
-	// Use a client not associated with the Server.
-	var c http.Client
-	resp, err := c.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	burstCode, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	_ = resp.Body.Close()
-
-	return burstCode, nil
-}
-
-func Run(code []byte, stdin io.ReadCloser, stdout io.Writer) {
-	if len(sack.Sacks) > 0 || len(mesh.Index) > 0 {
-		_, _ = stdout.Write([]byte("isolation error running burst on sack/mesh"))
-		return
-	}
-	goPath := path.Join(os.Getenv("GOROOT"), "bin", "go")
-	workDir := path.Join("/tmp")
-	mainGo := path.Join(workDir, "main.go")
-	_ = os.WriteFile(mainGo, code, 0700)
-	cmd := &exec.Cmd{
-		Path: path.Join(goPath),
-		Args: []string{"", "run", mainGo},
-		Dir:  workDir,
-		Env: []string{fmt.Sprintf("HOSTNAME=%s", metadata.SiteUrl),
-			fmt.Sprintf("HOME=%s", workDir),
-			fmt.Sprintf("GOROOT=%s", os.Getenv("GOROOT"))},
-		Stderr: stdout,
-		Stdin:  stdin,
-	}
-
-	stdoutRead, err := cmd.StdoutPipe()
-	if err != nil {
-		_, _ = stdout.Write([]byte(err.Error()))
-		return
-	}
-
-	err = cmd.Start()
-	if err != nil {
-		_, _ = stdout.Write([]byte(err.Error()))
-		return
-	}
-
-	defer func() {
-		if cmd.Process != nil {
-			_ = cmd.Process.Kill()
-		}
-	}()
-
-	go func(r io.ReadCloser, w io.ReadCloser) {
-		_, err = io.Copy(stdout, r)
-		if err != nil {
-			_, _ = stdout.Write([]byte(err.Error()))
+	http.HandleFunc("/idle", func(w http.ResponseWriter, r *http.Request) {
+		apiKey := r.URL.Query().Get("apikey")
+		if len(apiKey) != len(drawing.GenerateUniqueKey()) {
+			_, _ = w.Write([]byte("payment required"))
+			w.WriteHeader(http.StatusPaymentRequired)
 			return
 		}
 
-		_ = r.Close()
-		_ = w.Close()
-	}(stdoutRead, stdin)
+		if r.Method == "GET" {
+			// TODO get paid
+			if Container[apiKey] != "This container is idle" {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
 
-	err = cmd.Wait()
-	if err != nil {
-		_, _ = stdout.Write([]byte(err.Error()))
-		return
-	}
-}
+			in := drawing.NoErrorString(io.ReadAll(r.Body))
+			var seconds string
+			_ = englang.Scanf(in, "Wait for %s for a new task.", &seconds)
+			retryFor, _ := time.ParseDuration(seconds)
+			start := time.Now()
 
-func LogSnapshot(m string, w io.Writer, r io.Reader) {
+			for {
+				started := false
+				for k, v := range Burst {
+					prefix := englang.Printf("Request paid with %s ", drawing.GenerateUniqueKey())
+					if strings.HasPrefix(v, "Request paid with ") {
+						_, _ = w.Write([]byte(v[len(prefix):]))
+						Burst[k] = "running"
+						Container[apiKey] = k
+						started = true
+						return
+					}
+				}
+				if !started && time.Now().After(start.Add(retryFor)) {
+					w.WriteHeader(http.StatusTooEarly)
+					_, _ = w.Write([]byte("too early"))
+					return
+				}
+				// This is just a perf improvement that can be eliminated
+				select {
+				case <-time.After(time.Now().Sub(start.Add(retryFor))):
+					continue
+				case <-NewTask:
+					continue
+				}
+			}
+		}
+		if r.Method == "PUT" {
+			burst, ok := Container[apiKey]
+			if !ok {
+				_, _ = w.Write([]byte("unauthorized"))
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
 
-}
-
-func Burst(client string, codeUrl string) {
-	burstKey := drawing.GenerateUniqueKey()
-	metalKey := drawing.NoErrorString(io.ReadAll(drawing.NoErrorFile(os.Open("/tmp/apikey"))))
-	if len(metalKey) != len(burstKey) {
-		fmt.Println("missing /tmp/apikey")
-	}
-	// Get key (same machine?)
-	a, err := net.ResolveTCPAddr("tcp", client)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	tc, err := net.DialTCP("tcp", nil, a)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	w, r := TlsClient(tc, client)
-
-	// So I do not check for errors on the stream...
-	// Does the server need to check for errors anyway? Yes.
-	// Is it cheaper to have one fallback solution docker --restart=always? Yes.
-	_, err = w.Write([]byte(metalKey))
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	dummyCode, err := DownloadCode(codeUrl)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	Run(dummyCode, r, w)
-	_ = w.Close()
-}
-
-func TlsServer(c net.Conn, client string) (io.WriteCloser, io.Reader) {
-	if strings.HasPrefix(client, "127") {
-		return io.WriteCloser(c), io.Reader(c)
-	}
-	var ts = tls.Server(c, tlsConfig(client))
-	return io.WriteCloser(ts), io.Reader(ts)
-}
-
-func TlsClient(c net.Conn, client string) (io.WriteCloser, io.ReadCloser) {
-	if strings.HasPrefix(client, "127") {
-		return io.WriteCloser(c), io.ReadCloser(c)
-	}
-	var ts = tls.Client(c, tlsConfig(client))
-	return io.WriteCloser(ts), io.ReadCloser(ts)
-}
-
-func tlsConfig(server string) *tls.Config {
-	c := &tls.Config{
-		InsecureSkipVerify: true,
-		ServerName:         server,
-		CipherSuites:       []uint16{tls.TLS_RSA_WITH_AES_128_CBC_SHA256, tls.TLS_RSA_WITH_AES_128_GCM_SHA256},
-	}
-	c.MinVersion = tls.VersionTLS13
-	return c
+			Container[apiKey] = "This container is idle"
+			if strings.HasPrefix(Burst[burst], "running") {
+				Burst[burst] = "Response " + string(drawing.NoErrorBytes(io.ReadAll(r.Body)))
+			}
+		}
+	})
 }

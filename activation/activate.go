@@ -18,6 +18,12 @@ import (
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
 func SetupActivation() {
+	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		if metadata.ActivationKey != "" {
+			w.WriteHeader(http.StatusUnauthorized)
+		}
+	})
+
 	http.HandleFunc("/activate.html", func(w http.ResponseWriter, r *http.Request) {
 		err := drawing.EnsureAPIKey(w, r)
 		if err != nil {

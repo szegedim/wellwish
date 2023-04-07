@@ -66,16 +66,7 @@ func declareCheckoutForm(session *drawing.Session) {
 				var tax string = "0"
 				err := englang.Scanf(s, pattern, &company, &address, &email, &amount, &unit, &total, &tax)
 				if err == nil {
-					issued := time.Now()
-
-					amount = strings.TrimSpace(amount)
-					NewVoucher(session, amount, issued)
-
-					invoice := englang.Printf(metadata.InvoicePattern,
-						metadata.CompanyInfo, issued.Format("Jan 2, 2006"), drawing.RedactPublicKey(session.ApiKey),
-						company, address, email, amount, unit, total,
-						"Status is due.")
-					orders[session.ApiKey] = invoice
+					IssueOrder(session.ApiKey, amount, company, address, email, unit)
 
 					session.Redirect = fmt.Sprintf("/invoice.html?apikey=%s", session.ApiKey)
 					session.SignalClosed(session)
@@ -153,4 +144,27 @@ func declareCheckoutForm(session *drawing.Session) {
 		}
 		session.SignalRecalculate(session)
 	}
+}
+
+func IssueOrder(apiKey string, amount string, company string, address string, email string, unit string) {
+	invoice := IssueVouchers(apiKey, amount, company, address, email, unit)
+	orders[apiKey] = invoice
+}
+
+func IssueVouchers(apiKey string, amount string, company string, address string, email string, unit string) string {
+	if apiKey == "" {
+		return ""
+	}
+
+	issued := time.Now()
+	amount = strings.TrimSpace(amount)
+	NewVoucher(apiKey, amount, issued)
+	total := englang.Evaluate(fmt.Sprintf("%s multiplied by %s", amount, unit))
+
+	invoice := englang.Printf(metadata.InvoicePattern,
+		metadata.CompanyInfo, issued.Format("Jan 2, 2006"), drawing.RedactPublicKey(apiKey),
+		company, address, email, amount, unit, total,
+		"Status is due.")
+
+	return invoice
 }

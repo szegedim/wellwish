@@ -168,11 +168,10 @@ func NewRoundRobinCall(url1 string, method string, body io.Reader) {
 	if err != nil {
 		Rings[session] = Rings[session] + "Request failed."
 	}
-	Rings[session] = strings.TrimRight(Rings[session], "\n") + url1 + "\n"
+	Rings[session] = strings.TrimRight(Rings[session], "\n") + url + "\n"
 }
 
 func ForwardRoundRobinRingRequest(r *http.Request) {
-	InitializeNodeList()
 	ForwardRoundRobinRingRequestUpdated(r, r.Body)
 }
 
@@ -204,6 +203,7 @@ func ForwardRoundRobinRingRequestUpdated(r *http.Request, updated io.Reader) {
 //}
 
 func roundRobinRing(next string, ringSession string) (string, string, error) {
+	InitializeNodeList()
 	if ringSession != "" && Rings[ringSession] != "" {
 		var ring, started, base, begin, end string
 		if englang.ScanfContains(Rings[ringSession], "Ring %s started on %s at %s ns", &begin, &ring, &started, &base, &end) == nil {

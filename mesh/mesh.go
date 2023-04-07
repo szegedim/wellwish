@@ -53,11 +53,6 @@ import (
 // The temporary nature of sacks also helps to down prioritize partition tolerance.
 
 func Setup() {
-	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		if metadata.ActivationKey != "" {
-			w.WriteHeader(http.StatusUnauthorized)
-		}
-	})
 	http.HandleFunc("/mesh.html", func(w http.ResponseWriter, r *http.Request) {
 		if drawing.EnsureAPIKey(w, r) != nil {
 			return

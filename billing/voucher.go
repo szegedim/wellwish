@@ -131,13 +131,13 @@ func CancelVoucher(current string, voucher string) string {
 	return voucher
 }
 
-func NewVoucher(session *drawing.Session, amount string, issued time.Time) {
+func NewVoucher(apiKey string, amount string, issued time.Time) {
 	final, err := strconv.ParseInt(amount, 10, 64)
 	if err == nil {
 		for i := int64(0); i < final; i++ {
 			key := drawing.GenerateUniqueKey()
 			vouchers[key] = englang.Printf(metadata.VoucherPattern, metadata.CompanyInfo, issued.Format("Jan 2, 2006"),
-				fmt.Sprintf(VoucherInvoicePointer, metadata.SiteUrl, session.ApiKey), "Status is valid.")
+				fmt.Sprintf(VoucherInvoicePointer, metadata.SiteUrl, apiKey), "Status is valid.")
 		}
 	}
 }
@@ -161,6 +161,10 @@ func ListVouchers(w http.ResponseWriter, r *http.Request) {
 	invoiceCandidate := fmt.Sprintf(VoucherInvoicePointer, metadata.SiteUrl, apiKey)
 	writer := bufio.NewWriter(w)
 
+	GetCoinFile(invoiceCandidate, writer)
+}
+
+func GetCoinFile(invoiceCandidate string, writer *bufio.Writer) {
 	for key, voucher := range vouchers {
 		// ApiKey may point to a voucher directly
 		if strings.Contains(voucher, invoiceCandidate) {

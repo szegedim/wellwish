@@ -17,4 +17,7 @@ package burst
 // - Communication will shift from REST/XML to Englang processed by ChatGPT like agents
 // - Bursts will be completely transparent allowing bare metal error resolution
 
-var Bursts = map[string]string{}
+var Burst = map[string]string{}
+var BurstSession = map[string]string{}
+var Container = map[string]string{}
+var NewTask = make(chan string)

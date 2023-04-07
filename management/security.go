@@ -43,11 +43,11 @@ func HttpProxyRequest(url string, method string, bodyIn io.Reader) ([]byte, erro
 	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return body, err
 	}
 	_ = resp.Body.Close()
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf(resp.Status)
+		return body, fmt.Errorf(resp.Status)
 	}
 	return body, nil
 }

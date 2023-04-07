@@ -20,9 +20,7 @@ import (
 )
 
 func Main(args []string) {
-	go func() {
-		drawing.SetupDrawing()
-	}()
+	activation.SetupActivation()
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if metadata.ActivationKey == "" {
@@ -34,7 +32,9 @@ func Main(args []string) {
 		}
 	})
 
-	activation.SetupActivation()
+	func() {
+		drawing.SetupDrawing()
+	}()
 
 	go setupSite()
 
@@ -70,6 +70,7 @@ func setupSite() {
 	})
 	activation.Activated <- administrationKey
 
+	mesh.Setup()
 	management.SetupSiteRoot()
 	entry.Setup()
 	sack.Setup()
@@ -79,5 +80,4 @@ func setupSite() {
 	billing.SetupCheckout()
 	billing.SetupInvoice()
 	correspondence.SetupCorrespondence()
-	mesh.Setup()
 }

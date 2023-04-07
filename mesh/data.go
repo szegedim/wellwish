@@ -7,6 +7,10 @@ import (
 	"io"
 )
 
+var MeshId = ""
+
+var WhoAmI = ""
+
 var Nodes = map[string]string{}
 
 var Rings = map[string]string{}

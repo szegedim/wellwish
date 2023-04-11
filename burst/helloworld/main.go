@@ -9,11 +9,6 @@ import "fmt"
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
-func main() { fmt.Println("Hello World!") }
+// A simple helloworld application
 
-//go func() {
-//	r := bufio.NewReader(os.Stdin)
-//	b, _ := io.ReadAll(r)
-//	fmt.Println(string(b))
-//}()
-//fmt.Println("Hello World!")
+func main() { fmt.Println("Hello World!") }

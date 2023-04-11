@@ -15,6 +15,8 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
+// This code counts the Golang words and lines in a directory recursively.
+
 var wc = 0
 var lc = 0
 

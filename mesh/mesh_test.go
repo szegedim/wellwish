@@ -24,5 +24,5 @@ func TestMesh(t *testing.T) {
 	go func() { _ = http.ListenAndServe(":7781", nil) }()
 	go func() { _ = http.ListenAndServe(":7782", nil) }()
 
-	time.Sleep(60 * time.Minute)
+	time.Sleep(20 * time.Second)
 }

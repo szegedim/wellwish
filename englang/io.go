@@ -44,6 +44,21 @@ func Scanf(in string, format string, an ...*string) error {
 	return scanfInner(in, format, ab)
 }
 
+func Scanf1(in string, format string, an ...*string) error {
+	begin := ""
+	end := ""
+	ab := make([]*string, len(an)+2)
+	ab[0] = &begin
+	ab[len(ab)-1] = &end
+	copy(ab[1:1+len(an)], an)
+
+	ret := scanfInner(in, format, ab)
+	if begin != "" || end != "" {
+		return fmt.Errorf("no match")
+	}
+	return ret
+}
+
 func scanfInner(in string, format string, an []*string) error {
 	items := strings.Split(format, "%s")
 	expected := len(items)

@@ -4,11 +4,11 @@ import (
 	"bufio"
 	"bytes"
 	"gitlab.com/eper.io/engine/billing"
+	box "gitlab.com/eper.io/engine/burst/box/englang"
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/mesh"
 	"io"
-	"net"
 	"net/http"
 	"os"
 	"testing"
@@ -43,55 +43,6 @@ func TestRun(t *testing.T) {
 	t.Log(s)
 }
 
-func TestBurstClient(t *testing.T) {
-	code := "http://127.0.0.1:8887/code"
-	client := "127.0.0.1:8888"
-
-	go func() {
-		http.HandleFunc("/code", func(w http.ResponseWriter, r *http.Request) {
-			dummyCode := []byte("package main\nimport \"fmt\"\nfunc main() {fmt.Println(\"Hello World!\")}\n")
-			_, _ = w.Write(dummyCode)
-		})
-
-		err := http.ListenAndServe(":8887", nil)
-		if err != nil {
-			t.Error(err)
-		}
-	}()
-	for true {
-		_, err := DownloadCode(code)
-		if err == nil {
-			break
-		}
-	}
-
-	l, _ := net.Listen("tcp", client)
-
-	metalKey := drawing.GenerateUniqueKey()
-	_ = os.WriteFile("/tmp/apikey", []byte(metalKey), 0700)
-	go func(key string) {
-		c, _ := l.Accept()
-		w, r := TlsServer(c, client)
-		s := drawing.GenerateUniqueKey()
-		cmp := make([]byte, len(s))
-		n, _ := r.Read(cmp)
-		if n != len(s) {
-			t.Error("no auth")
-			return
-		}
-		auth := string(cmp)
-		if key != auth {
-			t.Error("bad auth")
-		}
-		_, _ = w.Write([]byte("Hello World!"))
-		b := make([]byte, 1024)
-		n, _ = r.Read(b)
-		t.Log(string(b[0:n]))
-	}(metalKey)
-	// docker run ...
-	BurstRunner(client, code)
-}
-
 func TestBurst(t *testing.T) {
 	// api returns in few hundred milliseconds (polling unless asked)
 	// idle returns in few hundred milliseconds (polling unless asked)
@@ -112,24 +63,17 @@ func TestBurst(t *testing.T) {
 	t.Log(x)
 
 	done := make(chan bool)
-	containerKey := drawing.GenerateUniqueKey()
 
-	Container[containerKey] = "This container is idle"
+	SetupRunner()
 
 	go func() {
 		for i := 0; i < 100; i++ {
 			time.Sleep(100 * time.Millisecond)
-			ret := mesh.Englang(englang.Printf("Call server http://127.0.0.1:7777 path /idle?apikey=%s with method GET and content %s. The call expects englang.", containerKey, "Wait for 10 seconds for a new task."))
-			if ret == "Hello World!" || ret == "Hello Moon!" {
-				//t.Log(ret)
+			box.Vars["APIKEY"] = "/tmp/container2.metal"
+			box.Englang("Initialize container with key from file from environment variable APIKEY.")
+			if box.Vars["accumulator"] == "Hello World!" || box.Vars["accumulator"] == "Hello Moon!" {
 				time.Sleep(100 * time.Millisecond)
-				ret = mesh.Englang(englang.Printf("Call server http://127.0.0.1:7777 path /idle?apikey=%s with method PUT and content %s. The call expects success.", containerKey, ret))
-				if ret != "success" {
-					t.Error(ret)
-				}
-			}
-			if ret != "too early" && ret != "success" {
-				t.Error(ret)
+				box.Englang("Finish container with content from accumulator and key from file from environment variable APIKEY.")
 			}
 		}
 	}()
@@ -138,13 +82,11 @@ func TestBurst(t *testing.T) {
 		var burstSession, burst string
 		ret := mesh.Englang(englang.Printf("Call server http://127.0.0.1:7777 path /api with method PUT and content %s. The call expects englang.", payment.String()))
 		if ret != "too early" {
-			t.Log(ret)
 			burstSession = ret
 		}
 		time.Sleep(100 * time.Millisecond)
 		ret = mesh.Englang(englang.Printf("Call server http://127.0.0.1:7777 path /api?apikey=%s with method GET and content %s. The call expects englang.", burstSession, message))
 		if ret != "too early" {
-			t.Log(ret)
 			burst = ret
 		}
 

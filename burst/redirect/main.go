@@ -12,9 +12,11 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
+// This code shows how to run a web server
+
 func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "https://botanical.eper.io", http.StatusPermanentRedirect)
+		http.Redirect(w, r, "https://eper.io", http.StatusPermanentRedirect)
 	})
 
 	err := http.ListenAndServe(":7777", nil)

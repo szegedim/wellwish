@@ -99,7 +99,8 @@ func Setup() {
 
 		if r.Method == "GET" {
 			// TODO get paid
-			if Container[apiKey] != "This container is idle" {
+			_, ok := Container[apiKey]
+			if !ok {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
@@ -117,7 +118,7 @@ func Setup() {
 					if strings.HasPrefix(v, "Request paid with ") {
 						_, _ = w.Write([]byte(v[len(prefix):]))
 						Burst[k] = "running"
-						Container[apiKey] = k
+						UpdateContainerWithBurst(apiKey, k)
 						started = true
 						return
 					}
@@ -137,14 +138,13 @@ func Setup() {
 			}
 		}
 		if r.Method == "PUT" {
-			burst, ok := Container[apiKey]
-			if !ok {
+			burst := UpdateContainerWithBurst(apiKey, "finished")
+			if burst == "idle" || len(burst) != len(drawing.GenerateUniqueKey()) {
 				_, _ = w.Write([]byte("unauthorized"))
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
 
-			Container[apiKey] = "This container is idle"
 			if strings.HasPrefix(Burst[burst], "running") {
 				Burst[burst] = "Response " + string(drawing.NoErrorBytes(io.ReadAll(r.Body)))
 			}

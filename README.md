@@ -21,6 +21,17 @@ One is that it uses Englang, plain words to describe code and data.
 The second is that the entire state can easily be retrieved, stored, analyzed and ported.
 Even an accountant can read the bare metal data files.
 
+Kubernetes can do the same with pods that implement it.
+The main difference is the mesh structure.
+Kubernetes has a master, while Wellwish distributes even administrator requests across a unified cluster called the office.
+
+Nodes of the same type scale better and cheaper.
+Resource load differences between microservices are set within each node independently vs. the entire cluster.
+Therefore, each node has a stateful container and many stateless burst containers that pick up requests and restart.
+
+There are no roles. Each room in the office is a data or burst code that runs.
+Each of them has a unique private key that you can use to 'knock' and use that micro service.
+
 ## Getting started
 
 To make it easy for you to get started with GitLab, here's a list of recommended next steps.

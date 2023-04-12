@@ -23,7 +23,7 @@ import (
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
 func TestRun(t *testing.T) {
-	code, _ := io.ReadAll(drawing.NoErrorFile(os.Open("./cgi/main.go")))
+	code, _ := io.ReadAll(drawing.NoErrorFile(os.Open("./helloworld/main.go")))
 	stdout, in := io.Pipe()
 	go func() {
 		_, _ = in.Write([]byte("Hello Burst!"))
@@ -80,19 +80,19 @@ func TestBurst(t *testing.T) {
 
 	burst1 := func(message string) {
 		var burstSession, burst string
-		ret := mesh.Englang(englang.Printf("Call server http://127.0.0.1:7777 path /api with method PUT and content %s. The call expects englang.", payment.String()))
+		ret := mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1:7777 path /api with method PUT and content %s. The call expects englang.", payment.String()))
 		if ret != "too early" {
 			burstSession = ret
 		}
 		time.Sleep(100 * time.Millisecond)
-		ret = mesh.Englang(englang.Printf("Call server http://127.0.0.1:7777 path /api?apikey=%s with method GET and content %s. The call expects englang.", burstSession, message))
+		ret = mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1:7777 path /api?apikey=%s with method GET and content %s. The call expects englang.", burstSession, message))
 		if ret != "too early" {
 			burst = ret
 		}
 
 		for i := 0; i < 10; i++ {
 			time.Sleep(100 * time.Millisecond)
-			ret = mesh.Englang(englang.Printf("Call server http://127.0.0.1:7777 path /api?apikey=%s with method GET and content %s. The call expects englang.", burst, ""))
+			ret = mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1:7777 path /api?apikey=%s with method GET and content %s. The call expects englang.", burst, ""))
 			if ret == message {
 				t.Log(ret)
 				done <- true

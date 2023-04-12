@@ -33,7 +33,7 @@ func runCheckPoint() string {
 	// Propagate remotely
 	index := FilterIndexEntries()
 	url3 := management.AddAdminForUrl(fmt.Sprintf("%s/index", metadata.SiteUrl))
-	NewRoundRobinCall(url3, "PUT", &index)
+	NewRoundRobinCall(url3, "PUT", index)
 
 	fmt.Printf("Health check succeeded %s checkpoint file %s ...\n", time.Now().Format("15:04:05"), path.Join("/tmp", drawing.RedactPublicKey(sackId)))
 	return sackId

@@ -7,6 +7,13 @@ import (
 	"io"
 )
 
+// This document is Licensed under Creative Commons CC0.
+// To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights
+// to this document to the public domain worldwide.
+// This document is distributed without any warranty.
+// You should have received a copy of the CC0 Public Domain Dedication along with this document.
+// If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
+
 var MeshId = ""
 
 var WhoAmI = ""
@@ -19,7 +26,7 @@ var Index = map[string]string{}
 
 var NodePattern = ""
 
-var MeshPattern = "Stateful item %s stored on %s server.\n"
+var MeshPattern = "Stateful item %s is stored on %s server."
 
 func LogSnapshot(m string, w io.Writer, r io.Reader) {
 	if m == "GET" && w != nil {
@@ -34,7 +41,7 @@ func LogSnapshot(m string, w io.Writer, r io.Reader) {
 			_, _ = ww.WriteString(fmt.Sprintf("Node %s has status %s. Health result is %s\n", k, v, s))
 		}
 		for k, v := range Index {
-			_, _ = ww.WriteString(fmt.Sprintf(MeshPattern, k, v))
+			_, _ = ww.WriteString(fmt.Sprintf(MeshPattern, k, v) + "\n")
 		}
 		for k, v := range Rings {
 			_, _ = ww.WriteString(fmt.Sprintf("Ring %s has status %s.\n", k, v))

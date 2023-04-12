@@ -1,8 +1,6 @@
 package mesh
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
@@ -24,7 +22,7 @@ import (
 // Individual sack and burst containers are not aware of the cluster details.
 // They have only a pointer to the cluster entry point, a https site address.
 
-// Mesh containers listen to 7778 and communicate through in Englang.
+// Mesh containers listen to 7778 and communicate through in EnglangRequest.
 // It would not require https within the VPC, but we use TLS closure for now.
 // - Mesh reads sack checkpoint backups.
 // - Mesh knows where to find a sack and forwards requests to other nodes
@@ -136,11 +134,11 @@ func Setup() {
 			merged := FilterIndexEntries()
 
 			// Propagate remotely
-			ForwardRoundRobinRingRequestUpdated(r, &merged)
+			ForwardRoundRobinRingRequestUpdated(r, merged)
 		}
 		if r.Method == "GET" {
 			buf := FilterIndexEntries()
-			_, _ = io.Copy(w, &buf)
+			_, _ = io.Copy(w, buf)
 		}
 	})
 
@@ -179,10 +177,6 @@ func InitializeNodeList() {
 	Nodes = nodes
 }
 
-func findServerOfApiKey(apiKey string) string {
-	return Index[apiKey]
-}
-
 func Proxy(w http.ResponseWriter, r *http.Request) error {
 	apiKey := r.Header.Get("apikey")
 	if apiKey == "" {
@@ -215,31 +209,6 @@ func Proxy(w http.ResponseWriter, r *http.Request) error {
 	// TODO Is it okay to assume a complete write with HTTP writer?
 	_, _ = w.Write(b)
 	return nil
-}
-
-func FilterIndexEntries() bytes.Buffer {
-	serializedIndex := bytes.Buffer{}
-	for apiKey, server := range Index {
-		serializedIndex.Write([]byte(englang.Printf(MeshPattern, apiKey, server)))
-	}
-	return serializedIndex
-}
-
-func UpdateIndex(r io.Reader) {
-	index := map[string]string{}
-	scanner := bufio.NewScanner(r)
-
-	for scanner.Scan() {
-		apikey := ""
-		server := ""
-		err := englang.Scanf(scanner.Text(), MeshPattern, &apikey, &server)
-		if err != nil {
-			continue
-		}
-		index[apikey] = server
-	}
-	// Store locally
-	Index = index
 }
 
 func declareForm(session *drawing.Session) {

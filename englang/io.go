@@ -119,6 +119,12 @@ func Printf(format string, an ...string) string {
 	return sprintf(format, b)
 }
 
+func Println(format string, an ...string) string {
+	b := make([]string, len(an)+2)
+	copy(b[1:], an)
+	return sprintf(format+"\n", b)
+}
+
 func PrintfContains(format string, an ...string) string {
 	return sprintf(format, an)
 }

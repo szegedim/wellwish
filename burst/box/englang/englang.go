@@ -78,7 +78,7 @@ func englangInitialize(s string) string {
 	content = englangProcess(content)
 
 	containerKey := content
-	ret := mesh.Englang(englang.Printf("Call server http://127.0.0.1:7777 path /idle?apikey=%s with method GET and content %s. The call expects englang.", containerKey, "Wait for 10 seconds for a new task."))
+	ret := mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1:7777 path /idle?apikey=%s with method GET and content %s. The call expects englang.", containerKey, "Wait for 10 seconds for a new task."))
 	if ret == "success" {
 		return "I initialized the burst."
 	}
@@ -96,7 +96,7 @@ func englangFinish(s string) string {
 	content = englangProcess(content)
 
 	containerKey := englangProcess(apiKey)
-	ret := mesh.Englang(englang.Printf("Call server http://127.0.0.1:7777 path /idle?apikey=%s with method PUT and content %s. The call expects success.", containerKey, content))
+	ret := mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1:7777 path /idle?apikey=%s with method PUT and content %s. The call expects success.", containerKey, content))
 	if ret == "success" {
 		return "I finished the burst."
 	}

@@ -29,10 +29,10 @@ func TestMesh(t *testing.T) {
 
 	go func() {
 		time.Sleep(5 * time.Second)
-		update := "<init>\n" + englang.Println(MeshPattern, drawing.GenerateUniqueKey(), "http://127.0.0.1:7780") + "<init>\n"
-		EnglangRequest(fmt.Sprintf("Call server %s path %s with method %s and content %s. The call expects %s.", "http://127.0.0.1:7780", "/whoami", "GET", "<init>", "success"))
+		update := "Test ring code"
+		Index[drawing.GenerateUniqueKey()] = "test"
 		time.Sleep(5 * time.Second)
-		ret := EnglangRequest(englang.Printf("Call server http://127.0.0.1:7781 path /ring?apikey=INNABDBNSETETAKTRDOTNJSHFRKMKCQRCPRLMTNIBQPFAEESPNRPDEEIGLPNMPBC&ring=http://127.0.0.1:7781 with method GET and content %s. The call expects englang.", update))
+		ret := EnglangRequest1(englang.Printf("Call server http://127.0.0.1:7781 path /ring?apikey=INNABDBNSETETAKTRDOTNJSHFRKMKCQRCPRLMTNIBQPFAEESPNRPDEEIGLPNMPBC&ring=http://127.0.0.1:7781 with method GET and content %s. The call expects englang.", update))
 		t.Log(ret)
 	}()
 

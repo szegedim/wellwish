@@ -20,7 +20,11 @@ import (
 func SetupActivation() {
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		if metadata.ActivationKey != "" {
-			w.WriteHeader(http.StatusUnauthorized)
+			if mesh.Index[metadata.ActivationKey] != "" {
+				Activate()
+			} else {
+				//w.WriteHeader(http.StatusUnauthorized)
+			}
 		}
 	})
 
@@ -38,7 +42,7 @@ func SetupActivation() {
 
 	http.HandleFunc("/activate", func(w http.ResponseWriter, r *http.Request) {
 		management.QuantumGradeAuthorization()
-		mesh.ForwardRoundRobinRingRequest(r)
+		//mesh.ForwardRoundRobinRingRequest(r)
 		if metadata.ActivationKey == "" {
 			// Already activated
 			return
@@ -77,6 +81,7 @@ func declareActivationForm(session *drawing.Session) {
 func Activate() string {
 	management.SiteActivationKey = metadata.ActivationKey
 
+	mesh.Index[metadata.ActivationKey] = mesh.WhoAmI
 	metadata.ActivationKey = ""
 	Activated <- "Hello World!"
 	adminKey := <-Activated

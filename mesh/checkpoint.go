@@ -149,12 +149,13 @@ func checkpointingSetup() {
 }
 
 func ActivateSite() {
-	// Set up round-robin by adding ourselves as a node
-	//_, _ = management.HttpProxyRequest(fmt.Sprintf("%s/node?apikey=%s", metadata.NodeUrl, managementKey), "PUT", bytes.NewBuffer([]byte(metadata.NodeUrl)))
-
-	url1 := fmt.Sprintf("%s/activate?activationkey=%s", metadata.SiteUrl, management.SiteActivationKey)
-	url1 = management.AddAdminForUrl(url1)
-	NewRoundRobinCall(url1, "GET", &bytes.Buffer{})
+	// Activate the entire site
+	// Setting the key to the Index enables new nodes to get activated immediately
+	if management.SiteActivationKey != "" {
+		update := "<init>\n" + englang.Println(MeshPattern, management.SiteActivationKey, "http://127.0.0.1:7780") + "<init>\n"
+		ret := EnglangRequest(englang.Printf("Call server http://127.0.0.1:7781 path /ring?apikey=INNABDBNSETETAKTRDOTNJSHFRKMKCQRCPRLMTNIBQPFAEESPNRPDEEIGLPNMPBC&ring=http://127.0.0.1:7781 with method GET and content %s. The call expects englang.", update))
+		fmt.Println(ret)
+	}
 }
 
 func NewRoundRobinCall(url1 string, method string, body io.Reader) {

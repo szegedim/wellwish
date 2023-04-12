@@ -20,6 +20,7 @@ import (
 )
 
 func Main(args []string) {
+	mesh.SetupRing()
 	activation.SetupActivation()
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -32,7 +33,7 @@ func Main(args []string) {
 		}
 	})
 
-	func() {
+	go func() {
 		drawing.SetupDrawing()
 	}()
 

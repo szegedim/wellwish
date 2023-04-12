@@ -42,7 +42,7 @@ func FilterIndexEntries() *bytes.Buffer {
 	return &serializedIndex
 }
 
-func EnglangIndex(in string) string {
+func englangMergeIndex(in string) string {
 	UpdateIndex(bytes.NewBufferString(in))
 	ret := FilterIndexEntries().String()
 	return ret

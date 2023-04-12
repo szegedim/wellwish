@@ -10,7 +10,7 @@ The design is the result of three years of extensive research from 2020-2023 by 
 
 Productivity is the measure of the domestic product achieved per employee.
 It has not improved much in decades, once data centers became mainstream.
-The goal was to address the problem of productivity,
+The goal was to address the problem of productivity, with a simple, open benchmark solution.
 
 The main concept behind WellWish is that is extremely supportable.
 The marginal labor cost of running a cluster per node does not increase by the cluster size.
@@ -28,9 +28,33 @@ Kubernetes has a master, while Wellwish distributes even administrator requests 
 Nodes of the same type scale better and cheaper.
 Resource load differences between microservices are set within each node independently vs. the entire cluster.
 Therefore, each node has a stateful container and many stateless burst containers that pick up requests and restart.
+This structure also matches the design of the major cloud providers.
 
 There are no roles. Each room in the office is a data or burst code that runs.
-Each of them has a unique private key that you can use to 'knock' and use that micro service.
+Each of them has a unique private key that you can use to knock-knock and use that micro-service.
+
+The main business cost is low support costs.
+Each structure is allowed to be twice as large as a classical binary or json.
+This allows us to use Englang, help users, accountants, debuggers, etc.
+Doubling the buffer size still scales well, as long as the office is scalable.
+
+While it is designed to be scalable, we suggest using a cluster size of two nodes for optimal reliability.
+A single node does not ensure scaling when it is needed.
+One thousand nodes may bring in node errors with lost shards, where some customers run on older versions.
+Two nodes ensure that any node errors surface fast, while they also ensure that scaling works,
+and it is easy to add a third node when needed.
+
+## Who is it for?
+
+Wellwish targets a specific user base.
+
+Creative Commons open source is suitable for biotech, healthcare, robotics research and development businesses, who are patent holders themselves.
+Some copyright licenses other than Creative Commons may pose a patent risk for these companies.
+
+Also, we target organizations that are low on devops resources.
+The final goal is that professionals can use it, who can use tools like Microsoft Access, or Excel.
+
+Please consult with a professional of your local jurisdiction.
 
 ## Getting started
 

@@ -112,6 +112,7 @@ func TestBurst(t *testing.T) {
 	for range messages {
 		select {
 		case <-time.After(10 * time.Second):
+			// Timeout may mean a port conflict
 			t.Error("timeout")
 		case <-done:
 		}

@@ -3,6 +3,7 @@ package mesh
 import (
 	"bufio"
 	"fmt"
+	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/management"
 	"io"
 )
@@ -14,7 +15,7 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
-var MeshId = ""
+var MeshId = drawing.GenerateUniqueKey()
 
 var WhoAmI = ""
 

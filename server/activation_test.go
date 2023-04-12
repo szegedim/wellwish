@@ -5,6 +5,7 @@ import (
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/management"
+	"gitlab.com/eper.io/engine/mesh"
 	"gitlab.com/eper.io/engine/metadata"
 	"io"
 	"os"
@@ -31,13 +32,17 @@ func TestName(t *testing.T) {
 }
 
 func TestCluster(t *testing.T) {
-	t.SkipNow()
+	//t.SkipNow()
+	mesh.Nodes["http://127.0.0.1:7777"] = "active"
+	mesh.Nodes["http://127.0.0.1:7778"] = "active"
+	mesh.Nodes["http://127.0.0.1:7779"] = "active"
+
 	_ = os.Chdir("..")
 	x := make(chan int)
 	y := make(chan int)
 	z := make(chan int)
-	go func(ready chan int) { time.Sleep(2 * time.Second); runServer(t, ready, ":7777") }(z)
-	go func(ready chan int) { time.Sleep(4 * time.Second); Main([]string{"go", ":7778"}) }(y)
+	go func(ready chan int) { time.Sleep(2 * time.Second); Main([]string{"go", ":7777"}) }(y)
+	go func(ready chan int) { time.Sleep(2 * time.Second); runServer(t, ready, ":7778") }(z)
 	go func(ready chan int) { time.Sleep(2 * time.Second); runServer(t, ready, ":7779") }(x)
 	for {
 		_, err := management.HttpProxyRequest(englang.Printf("http://127.0.0.1:7777/healthz"), "", nil)
@@ -46,8 +51,11 @@ func TestCluster(t *testing.T) {
 		}
 		time.Sleep(1 * time.Second)
 	}
-	ret, err := management.HttpProxyRequest(englang.Printf("http://127.0.0.1:7778/activate?activationkey=%s", metadata.ActivationKey), "", nil)
-	t.Log("activated", string(ret), err.Error())
+	ret, err := management.HttpProxyRequest(englang.Printf("http://127.0.0.1:7777/activate?activationkey=%s", metadata.ActivationKey), "", nil)
+	t.Log("activated", string(ret))
+	if err != nil {
+		t.Error(err)
+	}
 	t.Log(billing.IssueVouchers(
 		drawing.GenerateUniqueKey(), "100",
 		"Example Inc.", "1 First Ave, USA",

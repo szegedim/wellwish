@@ -8,6 +8,7 @@ import (
 	"gitlab.com/eper.io/engine/metadata"
 	"net/http"
 	"strings"
+	"time"
 )
 
 // This document is Licensed under Creative Commons CC0.
@@ -18,16 +19,6 @@ import (
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
 func SetupActivation() {
-	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		if metadata.ActivationKey != "" {
-			if mesh.Index[metadata.ActivationKey] != "" {
-				Activate()
-			} else {
-				//w.WriteHeader(http.StatusUnauthorized)
-			}
-		}
-	})
-
 	http.HandleFunc("/activate.html", func(w http.ResponseWriter, r *http.Request) {
 		err := drawing.EnsureAPIKey(w, r)
 		if err != nil {
@@ -50,13 +41,25 @@ func SetupActivation() {
 		adminKeyCandidate := r.URL.Query().Get("apikey")
 		activationKey := r.URL.Query().Get("activationkey")
 		if activationKey == metadata.ActivationKey {
-			management.UpdateAdminKey(adminKeyCandidate)
-			adminKey := Activate()
+			adminKey := Activate(adminKeyCandidate)
 			_, _ = w.Write([]byte(fmt.Sprintf("%s/management.html?apikey=%s", metadata.SiteUrl, adminKey)))
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)
 		}
 	})
+
+	go func() {
+		for {
+			if metadata.ActivationKey == "" {
+				break
+			}
+			if mesh.Index[metadata.ActivationKey] != "" {
+				Activate(mesh.Index[metadata.ActivationKey])
+				break
+			}
+			time.Sleep(time.Second)
+		}
+	}()
 }
 
 func declareActivationForm(session *drawing.Session) {
@@ -66,7 +69,7 @@ func declareActivationForm(session *drawing.Session) {
 		session.SignalTextChange = func(session *drawing.Session, i int, from string, to string) {
 			session.SignalPartialRedrawNeeded(session, i)
 			if strings.Contains(session.Text[i].Text, metadata.ActivationKey) {
-				adminKey := Activate()
+				adminKey := Activate(drawing.GenerateUniqueKey())
 				session.Data = fmt.Sprintf("/management.html?apikey=%s", adminKey)
 				session.SignalClosed(session)
 			}
@@ -78,11 +81,9 @@ func declareActivationForm(session *drawing.Session) {
 	}
 }
 
-func Activate() string {
-	management.SiteActivationKey = metadata.ActivationKey
-
-	mesh.Index[metadata.ActivationKey] = mesh.WhoAmI
-	metadata.ActivationKey = ""
+func Activate(adminKeyInit string) string {
+	management.UpdateAdminKey(adminKeyInit)
+	mesh.Index[metadata.ActivationKey] = adminKeyInit
 	Activated <- "Hello World!"
 	adminKey := <-Activated
 	return adminKey

@@ -51,6 +51,7 @@ import (
 // The temporary nature of sacks also helps to down prioritize partition tolerance.
 
 func Setup() {
+
 	http.HandleFunc("/mesh.html", func(w http.ResponseWriter, r *http.Request) {
 		if drawing.EnsureAPIKey(w, r) != nil {
 			return
@@ -67,55 +68,55 @@ func Setup() {
 		drawing.ServeRemoteFrame(w, r, declareForm)
 	})
 
-	http.HandleFunc("/node", func(w http.ResponseWriter, r *http.Request) {
-		// Load and Propagate server names from api
-		adminKey, err := management.EnsureAdministrator(w, r)
-		management.QuantumGradeAuthorization()
-		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-		address := string(drawing.NoErrorBytes(io.ReadAll(r.Body)))
-		if address == "" {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-
-		// We circle back
-		ForwardRoundRobinRingRequest(r)
-
-		if r.Method == "PUT" {
-			if Nodes[address] != "" {
-				// No reflection, avoid hangs
-				return
-			}
-			Nodes[address] = address
-			for node, status := range Nodes {
-				if status != "This node got an eviction notice." {
-					go func() {
-						NewRoundRobinCall(fmt.Sprintf("%s/node?apikey=%s", node, adminKey), "PUT", strings.NewReader(address))
-					}()
-				}
-			}
-
-			// TODO retry propagation, if missing nodes are found
-			// Do not retry
-			// Retries usually just map malware errors as a unit test
-			// Make sure that your metal is steel.
-			//
-		}
-		if r.Method == "DELETE" {
-			if Nodes[address] == "" {
-				w.WriteHeader(http.StatusNotFound)
-				return
-			}
-			if Nodes[address] == "This node got an eviction notice." {
-				return
-			}
-			Nodes[address] = "This node got an eviction notice."
-		}
-		// There is intentionally no way to get the list of nodes. Parse checkpoint traces for debugging.
-	})
+	//http.HandleFunc("/node", func(w http.ResponseWriter, r *http.Request) {
+	//	// Load and Propagate server names from api
+	//	adminKey, err := management.EnsureAdministrator(w, r)
+	//	management.QuantumGradeAuthorization()
+	//	if err != nil {
+	//		w.WriteHeader(http.StatusUnauthorized)
+	//		return
+	//	}
+	//	address := string(drawing.NoErrorBytes(io.ReadAll(r.Body)))
+	//	if address == "" {
+	//		w.WriteHeader(http.StatusNoContent)
+	//		return
+	//	}
+	//
+	//	// We circle back
+	//	ForwardRoundRobinRingRequest(r)
+	//
+	//	if r.Method == "PUT" {
+	//		if Nodes[address] != "" {
+	//			// No reflection, avoid hangs
+	//			return
+	//		}
+	//		Nodes[address] = address
+	//		for node, status := range Nodes {
+	//			if status != "This node got an eviction notice." {
+	//				go func() {
+	//					NewRoundRobinCall(fmt.Sprintf("%s/node?apikey=%s", node, adminKey), "PUT", strings.NewReader(address))
+	//				}()
+	//			}
+	//		}
+	//
+	//		// TODO retry propagation, if missing nodes are found
+	//		// Do not retry
+	//		// Retries usually just map malware errors as a unit test
+	//		// Make sure that your metal is steel.
+	//		//
+	//	}
+	//	if r.Method == "DELETE" {
+	//		if Nodes[address] == "" {
+	//			w.WriteHeader(http.StatusNotFound)
+	//			return
+	//		}
+	//		if Nodes[address] == "This node got an eviction notice." {
+	//			return
+	//		}
+	//		Nodes[address] = "This node got an eviction notice."
+	//	}
+	//	// There is intentionally no way to get the list of nodes. Parse checkpoint traces for debugging.
+	//})
 
 	http.HandleFunc("/index", func(w http.ResponseWriter, r *http.Request) {
 		// Load and Propagate server names from api
@@ -142,9 +143,6 @@ func Setup() {
 		}
 	})
 
-	InitializeNodeList()
-
-	ActivateSite()
 	checkpointingSetup()
 }
 

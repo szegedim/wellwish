@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
 
 // This document is Licensed under Creative Commons CC0.
 // To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights
@@ -12,5 +15,6 @@ import "fmt"
 // This code throws an error
 
 func main() {
-	fmt.Sprintf("%d\n", 1/0)
+	fmt.Println(os.Args)
+	//fmt.Sprintf("%d\n", 1/0)
 }

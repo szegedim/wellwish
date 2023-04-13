@@ -5,45 +5,23 @@ import (
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/management"
-	"gitlab.com/eper.io/engine/mesh"
 	"gitlab.com/eper.io/engine/metadata"
-	"io"
 	"os"
 	"os/exec"
 	"testing"
 	"time"
 )
 
-func TestName(t *testing.T) {
-	_ = os.Remove("/tmp/a")
-	_ = os.Remove("/tmp/b")
-	_ = os.Remove("/tmp/checkpoint")
-	_ = os.WriteFile("/tmp/a", []byte("abc"), 0700)
-	_ = os.Link("/tmp/a", "/tmp/checkpoint")
-
-	_ = os.WriteFile("/tmp/b", []byte("def"), 0700)
-	_ = os.Remove("/tmp/checkpoint")
-	_ = os.Link("/tmp/b", "/tmp/checkpoint")
-
-	x, _ := io.ReadAll(drawing.NoErrorFile(os.Open("/tmp/checkpoint")))
-	if string(x) != "def" {
-		t.Error(string(x))
-	}
-}
-
-func TestCluster(t *testing.T) {
-	//t.SkipNow()
-	mesh.Nodes["http://127.0.0.1:7777"] = "active"
-	mesh.Nodes["http://127.0.0.1:7778"] = "active"
-	mesh.Nodes["http://127.0.0.1:7779"] = "active"
-
+func TestClusterActivation(t *testing.T) {
 	_ = os.Chdir("..")
 	x := make(chan int)
 	y := make(chan int)
 	z := make(chan int)
-	go func(ready chan int) { time.Sleep(2 * time.Second); Main([]string{"go", ":7777"}) }(y)
-	go func(ready chan int) { time.Sleep(2 * time.Second); runServer(t, ready, ":7778") }(z)
+	go func(ready chan int) { time.Sleep(2 * time.Second); Main([]string{"go", ":7777"}) }(z)
+	go func(ready chan int) { time.Sleep(2 * time.Second); runServer(t, ready, ":7778") }(y)
 	go func(ready chan int) { time.Sleep(2 * time.Second); runServer(t, ready, ":7779") }(x)
+
+	// Wait for a stable state
 	for {
 		_, err := management.HttpProxyRequest(englang.Printf("http://127.0.0.1:7777/healthz"), "", nil)
 		if err == nil {
@@ -51,7 +29,9 @@ func TestCluster(t *testing.T) {
 		}
 		time.Sleep(1 * time.Second)
 	}
-	ret, err := management.HttpProxyRequest(englang.Printf("http://127.0.0.1:7777/activate?activationkey=%s", metadata.ActivationKey), "", nil)
+
+	managementKey := drawing.GenerateUniqueKey()
+	ret, err := management.HttpProxyRequest(englang.Printf("http://127.0.0.1:7777/activate?activationkey=%s&apikey=%s", metadata.ActivationKey, managementKey), "", nil)
 	t.Log("activated", string(ret))
 	if err != nil {
 		t.Error(err)
@@ -62,7 +42,8 @@ func TestCluster(t *testing.T) {
 		"hq@opensource.eper.io", "USD 3"))
 	<-x
 	<-y
-	<-z
+	// Never exits
+	//<-z
 }
 
 func runServer(t *testing.T, ready chan int, port string) {
@@ -76,7 +57,7 @@ func runServer(t *testing.T, ready chan int, port string) {
 		t.Error(err)
 	}
 	go func() {
-		time.Sleep(9 * 60 * time.Second)
+		time.Sleep(60 * time.Second)
 		_ = p.Process.Kill()
 	}()
 	err = p.Wait()

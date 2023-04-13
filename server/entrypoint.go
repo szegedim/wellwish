@@ -71,7 +71,6 @@ func setupSite() {
 	})
 	activation.Activated <- administrationKey
 
-	mesh.Setup()
 	management.SetupSiteRoot()
 	entry.Setup()
 	sack.Setup()

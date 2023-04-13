@@ -22,6 +22,10 @@ import (
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
 func SetupRing() {
+	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
 	http.HandleFunc("/ring", func(w http.ResponseWriter, r *http.Request) {
 		next := ""
 		ring := r.URL.Query().Get("ring")
@@ -36,41 +40,68 @@ func SetupRing() {
 		}
 
 		sample := Nodes
-		nodes := make([]string, 0)
-		for node, status := range sample {
-			if status != "This node got an eviction notice." {
-				nodes = append(nodes, node)
-			}
-		}
+		nodes := getNodes(sample)
 		sort.Strings(nodes)
 
 		for i := 0; i < len(nodes); i++ {
 			if nodes[i] == last {
-				next = nodes[(i+1)%len(nodes)]
+				for j := 1; j < len(nodes); j++ {
+					next = nodes[(i+j)%len(nodes)]
+					success := RingNext(w, r, next, last)
+					if success {
+						break
+					}
+				}
 				break
 			}
-		}
-
-		if next != "" {
-			RingNext(w, r, next, last)
 		}
 	})
 
 	http.HandleFunc("/whoami", func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write([]byte(MeshId))
+		if r.Method == "PUT" {
+			_, _ = w.Write([]byte(MeshId))
+		}
+		if r.Method == "GET" {
+			_, _ = w.Write([]byte(WhoAmI))
+		}
 	})
 
+	InitializeNodeList()
 	go func() {
 		GetWhoAmI()
 		fmt.Printf("whoami:%s\n", WhoAmI)
 
 		for {
-			update := "Propagating indexes\n"
-			ret := EnglangRequest(englang.Printf("Call server %s path /ring?apikey=INNABDBNSETETAKTRDOTNJSHFRKMKCQRCPRLMTNIBQPFAEESPNRPDEEIGLPNMPBC&ring=%s with method GET and content %s. The call expects englang.", WhoAmI, WhoAmI, update))
-			fmt.Println(ret)
+			sample := Nodes
+			nodes := getNodes(sample)
+			sort.Strings(nodes)
+			if len(nodes) >= 2 && WhoAmI == nodes[0] {
+				update := "Test ring code\n"
+				update = update + FilterIndexEntries().String()
+				apiKey := drawing.GenerateUniqueKey()
+				call := englang.Printf("Call server %s path /ring?apikey=%s&ring=%s with method GET and content %s. The call expects englang.", nodes[0], apiKey, nodes[0], update)
+				ret := EnglangRequest1(call)
+				fmt.Println(call)
+				fmt.Println(ret)
+				fmt.Println(Index)
+			}
 			time.Sleep(10 * time.Second)
 		}
 	}()
+}
+
+func getNodes(sample map[string]string) []string {
+	nodes := make([]string, 0)
+	for node, status := range sample {
+		if status != "This node got an eviction notice." {
+			_, err := management.HttpProxyRequest(fmt.Sprintf("%s/healthz", node), "GET", nil)
+			if err == nil {
+				//fmt.Println(node)
+				nodes = append(nodes, node)
+			}
+		}
+	}
+	return nodes
 }
 
 func RingNext(w http.ResponseWriter, r *http.Request, next string, last string) bool {
@@ -88,8 +119,10 @@ func RingNext(w http.ResponseWriter, r *http.Request, next string, last string) 
 	body := string(drawing.NoErrorBytes(io.ReadAll(r.Body)))
 	updateSent := Englang(body)
 	//fmt.Println("<" + last + updateSent + ">")
-	ret := EnglangRequest1(fmt.Sprintf("Call server %s path %s with method %s and content %s. The call expects %s.", next, q, r.Method, updateSent, expected))
+	call := fmt.Sprintf("Call server %s path %s with method %s and content %s. The call expects %s.", next, q, r.Method, updateSent, expected)
+	ret := EnglangRequest1(call)
 	if ret == "" {
+		fmt.Println("fail")
 		return false
 	}
 	update := Englang(ret)
@@ -104,7 +137,7 @@ func GetWhoAmI() string {
 	for node, status := range Nodes {
 		if status != "This node got an eviction notice." {
 			path := fmt.Sprintf("/whoami?apikey=%s", MeshId)
-			meshId := EnglangRequest(fmt.Sprintf("Call server %s path %s with method %s and content %s. The call expects %s.", node, path, "GET", node, "englang"))
+			meshId := EnglangRequest(fmt.Sprintf("Call server %s path %s with method %s and content %s. The call expects %s.", node, path, "PUT", node, "englang"))
 			if meshId == MeshId {
 				WhoAmI = node
 				return node
@@ -171,15 +204,16 @@ func EnglangRequest1(e string) string {
 	err := englang.Scanf(e, "Call server %s path %s with method %s and content %s. The call expects %s.", &server, &path, &method, &content, &expect)
 	if err == nil {
 		if expect != "success" && expect != "englang" {
+			fmt.Println("invalid type")
 			return ""
 		}
 		response, err := management.HttpProxyRequest(fmt.Sprintf("%s%s", server, path), method, strings.NewReader(content))
+		if err != nil {
+			//fmt.Println(err)
+			return ""
+		}
 		if expect == "englang" {
-			if err == nil {
-				return string(response)
-			} else {
-				return ""
-			}
+			return string(response)
 		}
 		return "success"
 	}

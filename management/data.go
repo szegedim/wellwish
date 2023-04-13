@@ -13,6 +13,5 @@ import (
 
 // TODO need a way to reset/renew this
 var administrationKey = ""
-var SiteActivationKey = ""
 
 var CheckpointFunc func(m string, w io.Writer, r io.Reader)

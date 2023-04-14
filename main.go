@@ -12,7 +12,8 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
-// A simple billing experiment
+// Usage: go run main.go [:port]
+// Example: go run main.go :8080
 func main() {
 	server.Main(os.Args)
 }

@@ -44,6 +44,24 @@ func NoErrorFile(data *os.File, err error) *os.File {
 	return data
 }
 
+func NoErrorWrite64(n int64, err error) {
+	if err != nil {
+		fmt.Errorf("%s\n", err)
+	}
+}
+
+func NoErrorWrite(n int, err error) {
+	if err != nil {
+		fmt.Errorf("%s\n", err)
+	}
+}
+
+func NoErrorVoid(err error) {
+	if err != nil {
+		fmt.Errorf("%s\n", err)
+	}
+}
+
 func NoErrorBytes(data []byte, err error) []byte {
 	if err != nil {
 		fmt.Errorf("%s\n", err)

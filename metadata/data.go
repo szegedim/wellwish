@@ -9,7 +9,7 @@ import "time"
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
-var ActivationKey = "IISABPDENLCAEIKFLMBORDQQNLMLBLKJLQELSIJPIESFIAQAJINCMHLDLALMSLAM"
+var ActivationKey = "AIFABNTRFGLBONJAFGQSFJBJRHMNFHPKOTRKHOIGHLMLJKRODDCOCQRQLTJOATPR"
 
 var SiteName = "WellWish\nCloud Decision Engine"
 
@@ -23,12 +23,13 @@ var CompanyName = "Example Corporation (SAMPLE)"
 
 var CompanyInfo = `Example Inc.
 1010 Corporate Avenue, San Jose, CA, 55555, USA
-TAX ID: 1234-56 Payment: ACH Routing# 12345 Account# 12345 https://cashbuddy.example.com/12345
+TAX ID: 1234-56 Payment: ACH Routing# 12345 Account# 12345 https://example.com/12345
 `
 var CheckpointPeriod = 10 * 60 * time.Second
 var PaymentPattern = "https://example.com/%s"
+var UnitPrice = "USD 1.03"
 
-// InvoicePattern Please update the pattern with your locally regulated purchase order format.
+// Please update the pattern based on your purchase order format.
 var OrderPattern = `
 Company: %s
 Billing address: %s
@@ -65,8 +66,6 @@ The total amount includes sales tax of 0 percent.
 Order Status:
 %s.
 `
-
-var UnitPrice = "USD 1.03"
 
 var VoucherPattern = `              SERVICE VOUCHER              
 

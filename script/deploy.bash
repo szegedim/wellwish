@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Repeat this on each node by copying it to the end of any startup script
+# Run this script on each node
 # Create a load balancer TLS closure from SiteUrl:443 to 7777 on each node.
 # Nodes will take care of propagating the index for stateful sacks
 
@@ -8,14 +8,14 @@ docker run -d --rm --restart=always --net=host -v /tmp/containers:/tmp/container
 
 # docker run -d --rm --restart=always --net=none --privileged ... read apikeys from /tmp/containers/container*.metal and restart the ones where the token expired
 
-docker run -d --rm --restart=always --net=host -v /tmp/containers/container0.metal:/tmp/containers/container0.metal:ro --name=container0 schmiedent/wellwish go run burst/box/main.go
-docker run -d --rm --restart=always --net=host -v /tmp/containers/container1.metal:/tmp/containers/container1.metal:ro --name=container1 schmiedent/wellwish go run burst/box/main.go
-docker run -d --rm --restart=always --net=host -v /tmp/containers/container2.metal:/tmp/containers/container2.metal:ro --name=container2 schmiedent/wellwish go run burst/box/main.go
-docker run -d --rm --restart=always --net=host -v /tmp/containers/container3.metal:/tmp/containers/container3.metal:ro --name=container3 schmiedent/wellwish go run burst/box/main.go
-docker run -d --rm --restart=always --net=host -v /tmp/containers/container4.metal:/tmp/containers/container4.metal:ro --name=container4 schmiedent/wellwish go run burst/box/main.go
-docker run -d --rm --restart=always --net=host -v /tmp/containers/container5.metal:/tmp/containers/container5.metal:ro --name=container5 schmiedent/wellwish go run burst/box/main.go
-docker run -d --rm --restart=always --net=host -v /tmp/containers/container5.metal:/tmp/containers/container5.metal:ro --name=container5 schmiedent/wellwish go run burst/box/main.go
-docker run -d --rm --restart=always --net=host -v /tmp/containers/container6.metal:/tmp/containers/container6.metal:ro --name=container6 schmiedent/wellwish go run burst/box/main.go
-docker run -d --rm --restart=always --net=host -v /tmp/containers/container7.metal:/tmp/containers/container7.metal:ro --name=container7 schmiedent/wellwish go run burst/box/main.go
-docker run -d --rm --restart=always --net=host -v /tmp/containers/container8.metal:/tmp/containers/container8.metal:ro --name=container8 schmiedent/wellwish go run burst/box/main.go
-docker run -d --rm --restart=always --net=host -v /tmp/containers/container9.metal:/tmp/containers/container9.metal:ro --name=container9 schmiedent/wellwish go run burst/box/main.go
+docker run -d --rm --restart=always --net=host -v /tmp/containers/stateless0.metal:/tmp/containers/stateless0.metal:ro --name=stateless0 schmiedent/wellwish go run burst/box/main.go
+docker run -d --rm --restart=always --net=host -v /tmp/containers/stateless1.metal:/tmp/containers/stateless1.metal:ro --name=stateless1 schmiedent/wellwish go run burst/box/main.go
+docker run -d --rm --restart=always --net=host -v /tmp/containers/stateless2.metal:/tmp/containers/stateless2.metal:ro --name=stateless2 schmiedent/wellwish go run burst/box/main.go
+docker run -d --rm --restart=always --net=host -v /tmp/containers/stateless3.metal:/tmp/containers/stateless3.metal:ro --name=stateless3 schmiedent/wellwish go run burst/box/main.go
+docker run -d --rm --restart=always --net=host -v /tmp/containers/stateless4.metal:/tmp/containers/stateless4.metal:ro --name=stateless4 schmiedent/wellwish go run burst/box/main.go
+docker run -d --rm --restart=always --net=host -v /tmp/containers/stateless5.metal:/tmp/containers/stateless5.metal:ro --name=stateless5 schmiedent/wellwish go run burst/box/main.go
+docker run -d --rm --restart=always --net=host -v /tmp/containers/stateless5.metal:/tmp/containers/stateless5.metal:ro --name=stateless5 schmiedent/wellwish go run burst/box/main.go
+docker run -d --rm --restart=always --net=host -v /tmp/containers/stateless6.metal:/tmp/containers/stateless6.metal:ro --name=stateless6 schmiedent/wellwish go run burst/box/main.go
+docker run -d --rm --restart=always --net=host -v /tmp/containers/stateless7.metal:/tmp/containers/stateless7.metal:ro --name=stateless7 schmiedent/wellwish go run burst/box/main.go
+docker run -d --rm --restart=always --net=host -v /tmp/containers/stateless8.metal:/tmp/containers/stateless8.metal:ro --name=stateless8 schmiedent/wellwish go run burst/box/main.go
+docker run -d --rm --restart=always --net=host -v /tmp/containers/stateless9.metal:/tmp/containers/stateless9.metal:ro --name=stateless9 schmiedent/wellwish go run burst/box/main.go

@@ -38,9 +38,9 @@ func TestMesh(t *testing.T) {
 	}
 
 	mesh.Index[metadata.ActivationKey] = metadata.ActivationKey
-	mesh.Index[drawing.GenerateUniqueKey()] = "http://127.0.0.1:7780"
-	mesh.Index[drawing.GenerateUniqueKey()] = "http://127.0.0.1:7781"
-	mesh.Index[drawing.GenerateUniqueKey()] = "http://127.0.0.1:7782"
+	mesh.Index[drawing.GenerateUniqueKey()] = "http://127.0.0.1:7777"
+	mesh.Index[drawing.GenerateUniqueKey()] = "http://127.0.0.1:7778"
+	mesh.Index[drawing.GenerateUniqueKey()] = "http://127.0.0.1:7779"
 
 	go func() {
 		time.Sleep(3 * time.Second)
@@ -48,7 +48,7 @@ func TestMesh(t *testing.T) {
 		mesh.Index[drawing.GenerateUniqueKey()] = "test"
 		fmt.Println(mesh.Index)
 		time.Sleep(3 * time.Second)
-		ret := mesh.EnglangRequest1(englang.Printf("Call server http://127.0.0.1:7781 path /ring?apikey=INNABDBNSETETAKTRDOTNJSHFRKMKCQRCPRLMTNIBQPFAEESPNRPDEEIGLPNMPBC&ring=http://127.0.0.1:7781 with method GET and content %s. The call expects englang.", update))
+		ret := mesh.EnglangRequest1(englang.Printf("Call server http://127.0.0.1:7778 path /ring?apikey=INNABDBNSETETAKTRDOTNJSHFRKMKCQRCPRLMTNIBQPFAEESPNRPDEEIGLPNMPBC&ring=http://127.0.0.1:7778 with method GET and content %s. The call expects englang.", update))
 		t.Log(ret)
 	}()
 

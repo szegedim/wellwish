@@ -15,11 +15,33 @@ import (
 	"gitlab.com/eper.io/engine/sack"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 )
 
+// This document is Licensed under Creative Commons CC0.
+// To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights
+// to this document to the public domain worldwide.
+// This document is distributed without any warranty.
+// You should have received a copy of the CC0 Public Domain Dedication along with this document.
+// If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
+
+// Main server
+// - It starts up a page where you can activate with a key in metadata/data.go ActivationKey
+// - It propagates to local servers matching the pattern NodePattern
+// - The service is redirected to a management and administration page using a new api key
+// - Bookmark this page with the admin key to return and get backup or traces
+// - It has a pointer to public pages that can create sacks bursts, etc.
+
+// ## Design.
+// Why activate?
+// Such a solution allows a unique private distribution to be propagated and started in a clean state.
+// The activation key can also help to open up clusters in a few hundred milliseconds to customers who just paid.
+
 func Main(args []string) {
+	go func() {
+		drawing.SetupDrawing()
+	}()
+
 	mesh.SetupRing()
 	activation.SetupActivation()
 
@@ -33,15 +55,17 @@ func Main(args []string) {
 		}
 	})
 
-	go func() {
-		drawing.SetupDrawing()
-	}()
-
 	go setupSite()
 
 	port := ":7777"
 
-	if len(os.Args) > 1 {
+	port = customizePort(args, port)
+	err := http.ListenAndServe(port, nil)
+	printUsage(err)
+}
+
+func customizePort(args []string, port string) string {
+	if len(args) > 1 {
 		port = args[1]
 	}
 	if strings.HasPrefix(metadata.SiteUrl, "http://127.") {
@@ -50,7 +74,10 @@ func Main(args []string) {
 			metadata.SiteUrl = fmt.Sprintf("http://127.0.0.1%s", port)
 		}
 	}
-	err := http.ListenAndServe(port, nil)
+	return port
+}
+
+func printUsage(err error) {
 	if err != nil {
 		fmt.Println(err)
 		fmt.Println("usage: go run main.go 127.0.0.1:7777")
@@ -72,6 +99,8 @@ func setupSite() {
 	activation.Activated <- administrationKey
 
 	management.SetupSiteRoot()
+
+	// It is reliable to do these in order
 	entry.Setup()
 	sack.Setup()
 	mining.Setup()

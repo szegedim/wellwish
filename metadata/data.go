@@ -9,6 +9,13 @@ import "time"
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
+// You need to update this file to fine tune your implementation of WellWish
+// The design goal is to omit any json, yaml, xml configuration files being (i.e. devops)
+// The solution runs as go run anyway making .go and .yaml obsolete
+// Traditionally these were separate having different teams to fine tune and slow compilation
+// Nowadays Golang building is fast, and it is more secure to have the open source code shipped in the container
+// This makes it easy for distributors to verify what is actually running
+
 var ActivationKey = "AIFABNTRFGLBONJAFGQSFJBJRHMNFHPKOTRKHOIGHLMLJKRODDCOCQRQLTJOATPR"
 
 var SiteName = "WellWish\nCloud Decision Engine"
@@ -17,6 +24,8 @@ var SiteUrl = "http://127.0.0.1:7777"
 
 var NodeUrl = "http://127.0.0.1:7777"
 
+// Node pattern is easy to validate and a simple health script tells the nodes that are active.
+// The system scans the cluster at startup.
 var NodePattern = "http://127.0.0.1:777*"
 
 var CompanyName = "Example Corporation (SAMPLE)"

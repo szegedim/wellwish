@@ -8,7 +8,7 @@ import (
 func TestConvertAll(t *testing.T) {
 	// Loading a font should not take more than 20 seconds at startup
 	start := time.Now()
-	LoadFont(indexes, "res/courier.png", "/tmp/")
+	LoadFont(indexes, "res/defaultfont.png", "/tmp/")
 	LoadSpace()
 	LoadFont("�", "res/cursorwide.png", "/tmp/")
 	if time.Now().Sub(start).Seconds() > 20 {

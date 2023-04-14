@@ -25,7 +25,11 @@ func Setup() {
 				return
 			}
 			writer := bufio.NewWriter(w)
-			_, _ = writer.WriteString(fmt.Sprintf("%8x", random(apiKey)))
+			r := uint32(0)
+			for i := 0; i < 3 || r == 0; i++ {
+				r = random(apiKey)
+			}
+			_, _ = writer.WriteString(fmt.Sprintf("%8x", r))
 			_ = writer.Flush()
 			return
 		}

@@ -153,6 +153,7 @@ func ProcessInputs(w http.ResponseWriter, r *http.Request) {
 		textNew := session.Text[c].Text
 		for t != "" {
 			t = strings.ReplaceAll(t, "Space", " ")
+			t = strings.ReplaceAll(t, "Plus", "+")
 			if strings.HasPrefix(t, "Backspace") {
 				before, after, ok := strings.Cut(textNew, "�")
 				if ok && len(before) > 0 {

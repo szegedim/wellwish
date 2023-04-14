@@ -18,30 +18,31 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
-// Mesh containers do some heavy lifting for the entire cluster.
+// Mesh module functions do some heavy lifting for the entire cluster.
 // Individual sack and burst containers are not aware of the cluster details.
 // They have only a pointer to the cluster entry point, a https site address.
 
-// Mesh containers listen to 7778 and communicate through in EnglangRequest.
-// It would not require https within the VPC, but we use TLS closure for now.
+// Mesh containers listen to 7777 and communicate through Englang.
+// Most cloud providers do not require https within the VPC. //TODO Is this still the case?
 // - Mesh reads sack checkpoint backups.
-// - Mesh knows where to find a sack and forwards requests to other nodes
-// - Mesh can restore an entire cluster
-// - Mesh sets up a node metal file with key for burst nodes
-// - Burst nodes log in with the key in the metal file to mesh to get tasks to run.
-// - Mesh can be on the same container as sacks or others running static code
-// - Burst is running dynamic code, it exits every time after a run.
+// - Mesh knows where to find a sack and forwards requests to other nodes using Index.
+// - Mesh can restore an entire cluster from and Englang backup file.
+// - Mesh sets up a node metal file with keys for burst nodes.
+// - Burst nodes log in with the key in the metal file to get tasks to run.
+// - Mesh runs within the stateful containers of each node.
+// - Burst is running dynamic code, it restarts every time after a run making a clean state.
 
-// We store checkpoints locally on each node.
-// A Redis runner can pick them up and back them up regularly
-// How? Potentially it is mapped to a sack and a burst with Redis client can pick it up.
+// We store checkpoints locally on each node periodically.
+// The period is set in the metadata.
+// A Redis runner can pick them up using a simple sack GET and back them up regularly.
+// How? It is mapped to a sack and a burst with Redis client can pick it up.
 
 // How often?
 // Checkpoints too rare may lose important recent changes, ergo support costs.
 // Checkpoints too frequent may require differential storage, ergo support costs.
 // Differentials also tend to restore slower being eventually a downtime extender, ergo support costs.
-//
-// Solution: we are safe to run checkpoints as often as their collection timespan.
+
+// Solution: we are safe to run checkpoints as often as the time to collect them allows.
 // This also allows consistency and hardware error checks and fixes.
 
 // This also means that mesh is 100% letter A = Available in the CAP theorem.
@@ -49,6 +50,14 @@ import (
 // The application layer can add consistency features. We are eventually consistent.
 // Partition tolerance can be implemented at the application level buying two sacks.
 // The temporary nature of sacks also helps to down prioritize partition tolerance.
+
+// We use just a node pattern instead of having configuration to add each node.
+// This allows simple node addition and removal.
+// Adding a node is as simple as turning it on with the activation key propagated from the existing cluster.
+// Removing a node is simple. Mark it as "This node got an eviction notice."
+// TODO It is easier to add port 7778 for stateful writes and disable it in the load balancer.
+// TODO It is easier to disable sack PUT requests i.e. /tmp in the load balancer or firewall.
+// It can be turned off at the standard expiry time, when stateful sacks, etc. expired.
 
 func Setup() {
 
@@ -67,56 +76,6 @@ func Setup() {
 		}
 		drawing.ServeRemoteFrame(w, r, declareForm)
 	})
-
-	//http.HandleFunc("/node", func(w http.ResponseWriter, r *http.Request) {
-	//	// Load and Propagate server names from api
-	//	adminKey, err := management.EnsureAdministrator(w, r)
-	//	management.QuantumGradeAuthorization()
-	//	if err != nil {
-	//		w.WriteHeader(http.StatusUnauthorized)
-	//		return
-	//	}
-	//	address := string(drawing.NoErrorBytes(io.ReadAll(r.Body)))
-	//	if address == "" {
-	//		w.WriteHeader(http.StatusNoContent)
-	//		return
-	//	}
-	//
-	//	// We circle back
-	//	ForwardRoundRobinRingRequest(r)
-	//
-	//	if r.Method == "PUT" {
-	//		if Nodes[address] != "" {
-	//			// No reflection, avoid hangs
-	//			return
-	//		}
-	//		Nodes[address] = address
-	//		for node, status := range Nodes {
-	//			if status != "This node got an eviction notice." {
-	//				go func() {
-	//					NewRoundRobinCall(fmt.Sprintf("%s/node?apikey=%s", node, adminKey), "PUT", strings.NewReader(address))
-	//				}()
-	//			}
-	//		}
-	//
-	//		// TODO retry propagation, if missing nodes are found
-	//		// Do not retry
-	//		// Retries usually just map malware errors as a unit test
-	//		// Make sure that your metal is steel.
-	//		//
-	//	}
-	//	if r.Method == "DELETE" {
-	//		if Nodes[address] == "" {
-	//			w.WriteHeader(http.StatusNotFound)
-	//			return
-	//		}
-	//		if Nodes[address] == "This node got an eviction notice." {
-	//			return
-	//		}
-	//		Nodes[address] = "This node got an eviction notice."
-	//	}
-	//	// There is intentionally no way to get the list of nodes. Parse checkpoint traces for debugging.
-	//})
 
 	http.HandleFunc("/index", func(w http.ResponseWriter, r *http.Request) {
 		// Load and Propagate server names from api

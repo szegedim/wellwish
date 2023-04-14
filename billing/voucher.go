@@ -209,6 +209,7 @@ func ValidateVoucher(w http.ResponseWriter, r *http.Request, consume bool) (bool
 }
 
 func ValidateVoucherKey(apiKey string, consume bool) (bool, bool, string, string) {
+	// TODO management.QuantumGradeAuthorization()
 	// ApiKey may point to an invoice key of a valid voucher
 	invoiceCandidate := fmt.Sprintf(VoucherInvoicePointer, metadata.SiteUrl, apiKey)
 	for key, voucher := range vouchers {

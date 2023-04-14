@@ -22,7 +22,7 @@ import (
 func SetupDrawing() {
 	Loaded.Lock()
 	fmt.Println("loading fonts")
-	LoadFont(indexes, "./drawing/res/courier.png", "")
+	LoadFont(indexes, "./drawing/res/defaultfont.png", "")
 	LoadFont("�", "./drawing/res/cursorwide.png", "")
 	LoadSpace()
 	fmt.Println("fonts loaded")
@@ -444,7 +444,7 @@ func DrawText(target ImageSlice, format ActiveContent) {
 				lines++
 			} else {
 				chars = append(chars, character{rect: scaledGlyph, r: c, pos: cursor})
-				cursor = cursor.Add(image.Point{X: nominalWidthShift, Y: 0})
+				cursor = cursor.Add(image.Point{X: nominalWidthShift * 140 / 100, Y: 0})
 			}
 		}
 		if lines > format.Lines {

@@ -14,6 +14,7 @@ func IsApiKeyValid(w http.ResponseWriter, r *http.Request, validated *map[string
 		w.WriteHeader(http.StatusPaymentRequired)
 		return "", fmt.Errorf("no apikey")
 	}
+	// TODO management.QuantumGradeAuthorization()
 	// TODO The option is to delete/recreate a lost or stolen apikey
 	// We can add another option to mask it with a newly generated one here.
 	content := (*validated)[apiKey]

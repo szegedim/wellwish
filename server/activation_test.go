@@ -20,7 +20,7 @@ import (
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
 func TestClusterActivation(t *testing.T) {
-	t.SkipNow()
+	//t.SkipNow()
 	_ = os.Chdir("..")
 	x := make(chan int)
 	y := make(chan int)
@@ -73,7 +73,11 @@ func runServer(t *testing.T, ready chan int, port string) {
 		t.Error(err)
 	}
 	b, _ := p.CombinedOutput()
-	t.Log(string(b))
-	t.Log(p.ProcessState.ExitCode())
+	if len(b) > 0 {
+		t.Log(string(b))
+	}
+	if p.ProcessState.ExitCode() != 0 {
+		t.Log(p.ProcessState.ExitCode())
+	}
 	ready <- 1
 }

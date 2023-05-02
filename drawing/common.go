@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image"
 	"image/png"
+	"io"
 	math "math/rand"
 	"os"
 	"time"
@@ -67,6 +68,32 @@ func NoErrorBytes(data []byte, err error) []byte {
 		fmt.Errorf("%s\n", err)
 		return nil
 	}
+	return data
+}
+
+func NoErrorReader(data *os.File, err error) io.Reader {
+	if err != nil {
+		fmt.Errorf("%s\n", err)
+		return nil
+	}
+	go func(f *os.File) {
+		// Garbage collection
+		time.Sleep(60 * time.Second)
+		_ = f.Close()
+	}(data)
+	return data
+}
+
+func NoErrorWriter(data *os.File, err error) io.Writer {
+	if err != nil {
+		fmt.Errorf("%s\n", err)
+		return nil
+	}
+	go func(f *os.File) {
+		// Garbage collection
+		time.Sleep(60 * time.Second)
+		_ = f.Close()
+	}(data)
 	return data
 }
 

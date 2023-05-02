@@ -2,11 +2,9 @@ package server
 
 import (
 	"fmt"
-	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/management"
 	"gitlab.com/eper.io/engine/mesh"
-	"gitlab.com/eper.io/engine/metadata"
 	"os"
 	"testing"
 	"time"
@@ -37,29 +35,16 @@ func TestMesh(t *testing.T) {
 		time.Sleep(1 * time.Second)
 	}
 
-	mesh.Index[metadata.ActivationKey] = metadata.ActivationKey
-	mesh.Index[drawing.GenerateUniqueKey()] = "http://127.0.0.1:7777"
-	mesh.Index[drawing.GenerateUniqueKey()] = "http://127.0.0.1:7778"
-	mesh.Index[drawing.GenerateUniqueKey()] = "http://127.0.0.1:7779"
-
-	go func() {
-		time.Sleep(3 * time.Second)
-		update := "Test ring code"
-		mesh.Index[drawing.GenerateUniqueKey()] = "test"
-		fmt.Println(mesh.Index)
-		time.Sleep(3 * time.Second)
-		ret := mesh.EnglangRequest1(englang.Printf("Call server http://127.0.0.1:7778 path /ring?apikey=INNABDBNSETETAKTRDOTNJSHFRKMKCQRCPRLMTNIBQPFAEESPNRPDEEIGLPNMPBC&ring=http://127.0.0.1:7778 with method GET and content %s. The call expects englang.", update))
-		t.Log(ret)
-	}()
+	fmt.Println("cluster is stable")
+	//mesh.Index[metadata.ActivationKey] = metadata.ActivationKey
+	//fmt.Println("cluster is activated")
 
 	time.Sleep(15 * time.Second)
-	if len(mesh.Index) != 5 {
+	if len(mesh.Index) != 4 {
 		t.Error(mesh.Index)
 	}
-	fmt.Println(mesh.Index)
 
 	<-x
 	<-y
-	// Never exits
-	//<-z
+	// z Never exits
 }

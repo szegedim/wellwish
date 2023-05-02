@@ -7,6 +7,7 @@ import (
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/management"
+	"gitlab.com/eper.io/engine/metadata"
 	"io"
 	"net/http"
 	"sort"
@@ -29,33 +30,40 @@ func SetupRing() {
 	})
 
 	http.HandleFunc("/ring", func(w http.ResponseWriter, r *http.Request) {
-		next := ""
-		ring := r.URL.Query().Get("ring")
-		last := r.URL.Query().Get("next")
-		if last == ring {
-			buf := fmt.Sprintf("Ring finished on %s%s\n", last, r.URL.String())
-			_, _ = w.Write([]byte(buf))
+		err := fmt.Errorf("unauthorized")
+		apiKey := r.URL.Query().Get("apikey")
+		administrationKey := management.GetAdminKey()
+		if administrationKey == "" {
+			// Propagate administration key
+			if apiKey == metadata.ActivationKey {
+				err = nil
+			}
+		}
+
+		if err != nil {
+			apiKey, err = management.EnsureAdministrator(w, r)
+		}
+		management.QuantumGradeAuthorization()
+
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		if last == "" {
-			last = ring
+
+		// TODO stream it?
+		body := drawing.NoErrorString(io.ReadAll(r.Body))
+		nodes := make([]string, 0)
+		for node := range Nodes {
+			nodes = append(nodes, node)
 		}
-
-		sample := Nodes
-		nodes := getNodes(sample)
 		sort.Strings(nodes)
-
-		for i := 0; i < len(nodes); i++ {
-			if nodes[i] == last {
-				for j := 1; j < len(nodes); j++ {
-					next = nodes[(i+j)%len(nodes)]
-					success := RingNext(w, r, next, last)
-					if success {
-						break
-					}
-				}
-				break
-			}
+		i, forward := handleRing(body, nodes, &Index, pingItem)
+		if i != -1 {
+			call := englang.Printf("Call server %s path /ring?apikey=%s with method GET and content %s. The call expects success.", nodes[i], apiKey, forward)
+			go func() {
+				ret := EnglangRequest1(call)
+				fmt.Println(call, ret)
+			}()
 		}
 	})
 
@@ -70,18 +78,22 @@ func SetupRing() {
 
 	InitializeNodeList()
 	go func() {
-		GetWhoAmI()
+		Index["host"] = GetWhoAmI()
+		// For testing
+		Index[drawing.GenerateUniqueKey()] = Index["host"]
 		fmt.Printf("whoami:%s\n", WhoAmI)
 
 		for {
 			sample := Nodes
 			nodes := getNodes(sample)
 			sort.Strings(nodes)
-			if len(nodes) >= 2 && WhoAmI == nodes[0] {
-				update := "Test ring code\n"
-				update = update + FilterIndexEntries().String()
-				apiKey := drawing.GenerateUniqueKey()
-				call := englang.Printf("Call server %s path /ring?apikey=%s&ring=%s with method GET and content %s. The call expects englang.", nodes[0], apiKey, nodes[0], update)
+			if len(nodes) >= 2 {
+				administrationKey := management.GetAdminKey()
+				if administrationKey == "" {
+					administrationKey = metadata.ActivationKey
+				}
+
+				call := englang.Printf("Call server %s path /ring?apikey=%s with method GET and content %s. The call expects success.", Index["host"], administrationKey, "")
 				ret := EnglangRequest1(call)
 				fmt.Println(call)
 				fmt.Println(ret)
@@ -106,32 +118,6 @@ func getNodes(sample map[string]string) []string {
 	return nodes
 }
 
-func RingNext(w http.ResponseWriter, r *http.Request, next string, last string) bool {
-	q := r.URL.String()
-	begin, _, _ := strings.Cut(q, "&next=")
-	q = fmt.Sprintf("%s&next=%s", begin, next)
-
-	expected := "success"
-	if r.ContentLength > 0 {
-		expected = "englang"
-	}
-
-	buf := fmt.Sprintf("Ring running on %s %s%s\n", last, next, q)
-	_, _ = w.Write([]byte(buf))
-	body := string(drawing.NoErrorBytes(io.ReadAll(r.Body)))
-	updateSent := Englang(body)
-	//fmt.Println("<" + last + updateSent + ">")
-	call := fmt.Sprintf("Call server %s path %s with method %s and content %s. The call expects %s.", next, q, r.Method, updateSent, expected)
-	ret := EnglangRequest1(call)
-	if ret == "" {
-		fmt.Println("fail")
-		return false
-	}
-	update := Englang(ret)
-	_, _ = w.Write([]byte(fmt.Sprintf("%sThe call included server %s with %d indexes.\n", update, last, len(Index))))
-	return true
-}
-
 func GetWhoAmI() string {
 	if WhoAmI != "" {
 		return WhoAmI
@@ -147,41 +133,6 @@ func GetWhoAmI() string {
 		}
 	}
 	return ""
-}
-
-func Englang(in string) string {
-	var ret, res string
-	update := englangMergeIndex(in)
-	if update != "" {
-		ret = update
-	}
-	res = EnglangHealthz(in)
-	if res != "" {
-		ret = update + res
-	}
-
-	return ret
-}
-
-func EnglangHealthz(in string) string {
-	scanner := bufio.NewScanner(strings.NewReader(in))
-	ret := bytes.NewBufferString("")
-	for scanner.Scan() {
-		x := scanner.Text()
-		if x == "Test ring code" {
-			ret.WriteString(englang.Printf("Answer to %s is %s.\n", in, "Done"))
-		}
-		if strings.HasPrefix(x, "Ring finished on") {
-			ret.WriteString(x + "\n")
-		}
-		if strings.HasPrefix(x, "Ring running on ") {
-			ret.WriteString(x + "\n")
-		}
-		if strings.HasPrefix(x, "The call included server") {
-			ret.WriteString(x + "\n")
-		}
-	}
-	return ret.String()
 }
 
 func EnglangRequest(e string) string {
@@ -221,4 +172,84 @@ func EnglangRequest1(e string) string {
 	}
 	fmt.Println("I do not understand " + e)
 	return ""
+}
+
+func nextRing(current string, ring []string, ping func(host string) bool) int {
+	if ping == nil {
+		ping = pingAwaysSuccess
+	}
+	found := ""
+	for i, v := range ring {
+		if v == current {
+			found = ring[(i+1)%len(ring)]
+		}
+	}
+	if found == "" {
+		return -1
+	}
+	for j := 0; j < 2; j++ {
+		for i, v := range ring {
+			if v == found {
+				if ping(v) {
+					return i
+				}
+				found = ring[(i+1)%len(ring)]
+			}
+		}
+	}
+	return -1
+}
+
+func pingItem(host string) bool {
+	call := englang.Printf("%s/healthz", host)
+	_, err := management.HttpProxyRequest(call, "", nil)
+	return err == nil
+}
+
+func pingAwaysSuccess(host string) bool {
+	return true
+}
+
+func handleRing(body string, ring []string, index *map[string]string, ping func(host string) bool) (int, string) {
+	if body == "" {
+		body = englang.Println("Ring %s on (%s)", "starts", GetWhoAmI()) //TODO index[host]
+	}
+	scanner := bufio.NewScanner(strings.NewReader(body))
+
+	forward := bytes.Buffer{}
+
+	localHost := (*index)["host"]
+	next := nextRing(localHost, ring, ping)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		var final, twice string
+		drawing.NoErrorVoid(englang.Scanf1(line, "Ring %s on (%s)", &twice, &final))
+		if final == localHost {
+			if twice == "starts" {
+				// first call
+				forward.WriteString(englang.Println("Ring %s on (%s)", "finishes", final))
+				for k, v := range *index {
+					if k != "host" {
+						forward.WriteString(englang.Println("Index %s is (%s)", k, v))
+					}
+				}
+				return next, forward.String()
+			} else if twice == "finishes" {
+				// last call
+				return -1, ""
+			}
+		} else {
+			// ring call
+			forward.WriteString(englang.Println(line))
+			var k, v string
+			drawing.NoErrorVoid(englang.Scanf1(line, "Index %s is (%s)", &k, &v))
+			if k != "" && v != "" {
+				(*index)[k] = v
+			}
+		}
+	}
+
+	return next, forward.String()
 }

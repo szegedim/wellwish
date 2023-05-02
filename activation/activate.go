@@ -33,15 +33,13 @@ func SetupActivation() {
 
 	http.HandleFunc("/activate", func(w http.ResponseWriter, r *http.Request) {
 		management.QuantumGradeAuthorization()
-		//mesh.ForwardRoundRobinRingRequest(r)
 		if metadata.ActivationKey == "" {
 			// Already activated
 			return
 		}
-		adminKeyCandidate := r.URL.Query().Get("apikey")
-		activationKey := r.URL.Query().Get("activationkey")
+		activationKey := r.URL.Query().Get("apikey")
 		if activationKey == metadata.ActivationKey {
-			adminKey := Activate(adminKeyCandidate)
+			adminKey := startActivation()
 			_, _ = w.Write([]byte(fmt.Sprintf("%s/management.html?apikey=%s", metadata.SiteUrl, adminKey)))
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -54,12 +52,19 @@ func SetupActivation() {
 				break
 			}
 			if mesh.Index[metadata.ActivationKey] != "" {
-				Activate(mesh.Index[metadata.ActivationKey])
+				management.UpdateAdminKey(mesh.Index[metadata.ActivationKey])
+				activate()
 				break
 			}
 			time.Sleep(time.Second)
 		}
 	}()
+}
+
+func startActivation() string {
+	adminKey := drawing.GenerateUniqueKey()
+	mesh.Index[metadata.ActivationKey] = adminKey
+	return adminKey
 }
 
 func declareActivationForm(session *drawing.Session) {
@@ -69,22 +74,27 @@ func declareActivationForm(session *drawing.Session) {
 		session.SignalTextChange = func(session *drawing.Session, i int, from string, to string) {
 			session.SignalPartialRedrawNeeded(session, i)
 			if strings.Contains(session.Text[i].Text, metadata.ActivationKey) {
-				adminKey := Activate(drawing.GenerateUniqueKey())
+				adminKey := startActivation()
 				session.Data = fmt.Sprintf("/management.html?apikey=%s", adminKey)
 				session.SignalClosed(session)
 			}
 		}
 		session.SignalClosed = func(session *drawing.Session) {
+			for {
+				if metadata.ActivationKey == "" {
+					break
+				}
+			}
 			session.SelectedBox = -1
 			session.Redirect = session.Data
 		}
 	}
 }
 
-func Activate(adminKeyInit string) string {
-	management.UpdateAdminKey(adminKeyInit)
-	mesh.Index[metadata.ActivationKey] = adminKeyInit
+func activate() string {
 	Activated <- "Hello World!"
 	adminKey := <-Activated
+	fmt.Println("Activated.", adminKey)
+	metadata.ActivationKey = ""
 	return adminKey
 }

@@ -78,6 +78,10 @@ func EnsureAdministrator(w http.ResponseWriter, r *http.Request) (string, error)
 	return apiKey, nil
 }
 
+func GetAdminKey() string {
+	return administrationKey
+}
+
 func EnsureAdministratorSession(w http.ResponseWriter, r *http.Request) (*drawing.Session, error) {
 	_, err := EnsureAdministrator(w, r)
 	if err != nil {

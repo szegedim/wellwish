@@ -1,5 +1,7 @@
 package drawing
 
+import "math/rand"
+
 // This document is Licensed under Creative Commons CC0.
 // To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights
 // to this document to the public domain worldwide.
@@ -16,4 +18,8 @@ func monteCarlo(n int, seed *int) int {
 	}
 	*seed = (*seed + 1) % len(pseudo)
 	return int(pseudo[*seed]) % n
+}
+
+func monteCarlo2(n int, seed *int) int {
+	return rand.Intn(n)
 }

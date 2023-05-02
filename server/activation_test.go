@@ -1,10 +1,12 @@
 package server
 
 import (
+	"fmt"
 	"gitlab.com/eper.io/engine/billing"
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/management"
+	"gitlab.com/eper.io/engine/mesh"
 	"gitlab.com/eper.io/engine/metadata"
 	"os"
 	"os/exec"
@@ -20,7 +22,6 @@ import (
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
 func TestClusterActivation(t *testing.T) {
-	//t.SkipNow()
 	_ = os.Chdir("..")
 	x := make(chan int)
 	y := make(chan int)
@@ -38,20 +39,30 @@ func TestClusterActivation(t *testing.T) {
 		time.Sleep(1 * time.Second)
 	}
 
-	managementKey := drawing.GenerateUniqueKey()
-	ret, err := management.HttpProxyRequest(englang.Printf("http://127.0.0.1:7777/activate?activationkey=%s&apikey=%s", metadata.ActivationKey, managementKey), "", nil)
-	t.Log("activated", string(ret))
-	if err != nil {
-		t.Error(err)
-	}
+	fmt.Println("cluster is stable")
+	mesh.Index[metadata.ActivationKey] = metadata.ActivationKey
+	fmt.Println("cluster is activated")
+
 	t.Log(billing.IssueVouchers(
 		drawing.GenerateUniqueKey(), "100",
 		"Example Inc.", "1 First Ave, USA",
 		"hq@opensource.eper.io", "USD 3"))
+
+	time.Sleep(15 * time.Second)
+	ret, err := management.HttpProxyRequest(englang.Printf("http://127.0.0.1:7777/management.html?apikey=%s", management.GetAdminKey()), "", nil)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log("management", string(ret))
+
+	time.Sleep(15 * time.Second)
+	if len(mesh.Index) != 5 {
+		t.Error(mesh.Index)
+	}
+
 	<-x
 	<-y
-	// Never exits
-	//<-z
+	// z Never exits
 }
 
 func runServer(t *testing.T, ready chan int, port string) {

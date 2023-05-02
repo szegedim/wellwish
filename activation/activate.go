@@ -18,6 +18,14 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
+// The activation module does not allow any production modules to run until it gets activated.
+// This helps to make sure we can always get into a consistent state at startup.
+// Each deployment should update the activation key in metadata.ActivationKey
+// Activation is propagated automatically to all servers participating in the mesh
+// The activation key can be entered from the UI on startup, which redirects to the management UI.
+// Bookmark the management url with ApiKey to manage the site. There is no other way to access backups, etc.
+// TODO management apikey rotation.
+
 func SetupActivation() {
 	http.HandleFunc("/activate.html", func(w http.ResponseWriter, r *http.Request) {
 		err := drawing.EnsureAPIKey(w, r)

@@ -12,7 +12,7 @@ import (
 func QuantumGradeAuthorization() {
 	// Just wait a second.
 	// TODO mutex lock
-	time.Sleep(1 * time.Second)
+	time.Sleep(15 * time.Millisecond)
 	// This is what you do before buying that doggycattycoin for too much.
 	// Wait a sec... Is it a suspicious call?
 }

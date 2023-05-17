@@ -2,6 +2,7 @@ package drawing
 
 import (
 	"fmt"
+	"gitlab.com/eper.io/engine/metadata"
 	"image"
 	"image/color"
 	"image/png"
@@ -23,7 +24,7 @@ type Session struct {
 	ApiKey                    string
 	Mutex                     sync.Mutex
 	BackgroundFile            string
-	Text                      map[int]ActiveContent
+	Text                      map[int]Content
 	DirtyFrame                image.Image
 	SelectedBox               int
 	BaseIndex                 int
@@ -67,7 +68,7 @@ func ResetSession(w http.ResponseWriter, r *http.Request) error {
 
 func EnsureAPIKey(w http.ResponseWriter, r *http.Request) error {
 	apiKey := r.URL.Query().Get("apikey")
-	if apiKey == "" {
+	if apiKey == "" || len(apiKey) != len(GenerateUniqueKey()) {
 		w.Header().Set("Location", r.URL.EscapedPath()+fmt.Sprintf("?apikey=%s", GenerateUniqueKey()))
 		w.WriteHeader(http.StatusTemporaryRedirect)
 		return fmt.Errorf("redirect")
@@ -76,12 +77,14 @@ func EnsureAPIKey(w http.ResponseWriter, r *http.Request) error {
 }
 
 func ServeRemoteForm(w http.ResponseWriter, r *http.Request, name string) {
+	w.Header().Set("Cache-Control", "no-cache")
 	if ResetSession(w, r) != nil {
 		return
 	}
 	w.Header().Set("Cache-Control", "no-cache")
 	raw := NoErrorBytes(os.ReadFile("./drawing/res/remote.html"))
 	html := strings.ReplaceAll(string(raw), "remote.html", name+".html")
+	html = strings.ReplaceAll(html, "<title>eper.io</title>", "<title>"+metadata.SiteName+"</title>")
 	html = strings.ReplaceAll(html, "remote.png", name+".png")
 	_, _ = w.Write([]byte(html))
 }
@@ -89,13 +92,10 @@ func ServeRemoteForm(w http.ResponseWriter, r *http.Request, name string) {
 func ServeRemoteFrame(w http.ResponseWriter, r *http.Request, formFunc func(session *Session)) {
 	session := GetActivatedSession(w, r)
 	if session != nil {
+		w.Header().Set("Cache-Control", "no-cache")
 		session.Mutex.Lock()
 		Loaded.Lock()
 		Loaded.Unlock()
-		//	slice := NewImageSliceFromPng("./drawing/res/cursor.png")
-		//	DrawImage(ImageSlice{Rgb: session.Form.Rgb, Rect: session.Form.Rect}, slice.Rgb)
-		//	return
-		//}
 		init := session.Form.Boxes == nil
 		formFunc(session)
 		if init {
@@ -123,6 +123,15 @@ func GetSession(w http.ResponseWriter, r *http.Request) *Session {
 		}
 	}
 	return sessions[apiKey]
+}
+
+func RecalculateSession(apiKey string) {
+	session, found := sessions[apiKey]
+	if found {
+		if session.SignalRecalculate != nil {
+			session.SignalRecalculate(session)
+		}
+	}
 }
 
 func ProcessInputs(w http.ResponseWriter, r *http.Request) {
@@ -313,7 +322,7 @@ func ProcessInputs(w http.ResponseWriter, r *http.Request) {
 				if len(t) > 100 {
 					fmt.Printf("invalid string %c", t[0])
 				} else if len(t) >= 1 {
-					if strings.HasPrefix(textNew, Revert) {
+					if strings.HasPrefix(textNew, RevertAndReturn) {
 						textNew = t + "�"
 					} else {
 						before, after, ok := strings.Cut(textNew, "�")
@@ -421,7 +430,7 @@ func RenderSingleBoxChange(session *Session, changedBox int) {
 	RenderBox(session, formatted, selectedBox)
 }
 
-func RenderBox(session *Session, formatted ActiveContent, selectedBox image.Rectangle) {
+func RenderBox(session *Session, formatted Content, selectedBox image.Rectangle) {
 	background := session.Form.Rgb.At(selectedBox.Min.X+1, selectedBox.Min.Y+1)
 	formatted.BackgroundColor = background
 

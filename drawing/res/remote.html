@@ -2,14 +2,30 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>eper.io</title>
+  <title>opensource.eper.io</title>
+  <link rel="icon" href="icon.png">
 </head>
+<!--
+This document is Licensed under Creative Commons CC0.
+To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights
+to this document to the public domain worldwide.
+This document is distributed without any warranty.
+You should have received a copy of the CC0 Public Domain Dedication along with this document.
+If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
+-->
 <body id="abc">
-<div id="home" style="z-index: 100; position: absolute; height: 90%; left:0; right:85%" onclick="window.open('/', '_self')">
-</div>
-<div id="payload" style="z-index: 100; position: absolute; height: 90%; left:20%; right:20%">
-  <canvas width="1024" height="1024" id="remoting" style="scale: 100%; height: 100%;" onclick="clicked(event)">
+<div id="payload" style="z-index: 100; position: absolute;">
+  <canvas width="1024" height="1024" id="remoting" style="scale: 100%; height: 95%;" onclick="clicked(event)" autofocus>
   </canvas>
+</div>
+<div id="footer1" style="z-index: 100; position: absolute; top: 93%; width: 400px; height: 7%;">
+  <table>
+    <tr>
+      <td><a href="/"><img src="home.png" style="width: 100%;" alt="home"></a></td>
+      <td><a href="/terms.txt"><img src="legal.png" style="width: 100%;" alt="home"></a></td>
+      <td><a href="/contact.txt"><img src="contact.png" style="width: 100%;" alt="home"></a></td>
+    </tr>
+  </table>
 </div>
 
 <script>
@@ -21,10 +37,25 @@
   let acceptExtension = ''
   setTimeout(function () {
     flow = 30
+    reconcile()
   }, 50)
   setInterval(function () {
     flow = 1
-  }, 60000)
+    reconcile()
+  }, 3000)
+  function reconcile() {
+    if (window.innerWidth < window.innerHeight) {
+      // Mobile
+      document.getElementById('remoting').style.cssText = 'scale: 100%; width: 95%;'
+      document.getElementById('payload').style.cssText = 'z-index: 100; position: absolute;'
+    } else {
+      // Desktop
+      document.getElementById('remoting').style.cssText = 'scale: 100%; height: 95%;'
+      document.getElementById('payload').style.cssText = 'z-index: 100; position: absolute; height: 95%;'
+    }
+    //document.body.scrollTop = 0;
+    //document.documentElement.scrollTop = 0;
+  }
   setInterval(function () {
     if (flow > 0) {
       if (semaphore < 1) {
@@ -76,7 +107,7 @@
           document.getElementById('abc').style.background = '#'+r+g+b
         }
         img.onerror = function () {
-          console.log(req.status)
+          //console.log(req.status)
           if (req.status === 410) {
             let redirect = req.getResponseHeader('Location')
             if (redirect.length > 0) {
@@ -178,12 +209,4 @@
   }
 </script>
 </body>
-<!--
-This document is Licensed under Creative Commons CC0.
-To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights
-to this document to the public domain worldwide.
-This document is distributed without any warranty.
-You should have received a copy of the CC0 Public Domain Dedication along with this document.
-If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
--->
 </html>

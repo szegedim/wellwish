@@ -45,9 +45,9 @@ func declareCheckoutForm(session *drawing.Session) {
 
 		pattern := metadata.OrderPattern
 		sample := fmt.Sprintf(pattern, "\vExample Buyer Inc.\v", "\v111 S Ave\v, \vSan Fransisco\v, \vCA\v, \v55555\v, \vUSA\v", "\vinfo\v@\vexample.com\v", "\v10\v", metadata.UnitPrice, "USD 10", "0")
-		drawing.DeclareTextField(session, OrderText, drawing.ActiveContent{Text: "�" + sample, Lines: 20, Editable: true, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 1})
-		drawing.DeclareTextField(session, BackButton, drawing.ActiveContent{Text: "    Cancel    ", Lines: 1, Selectable: false, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
-		drawing.DeclareTextField(session, OrderButton, drawing.ActiveContent{Text: "    Submit    ", Lines: 1, Selectable: false, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
+		drawing.PutText(session, OrderText, drawing.Content{Text: "�" + sample, Lines: 20, Editable: true, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 1})
+		drawing.PutText(session, BackButton, drawing.Content{Text: "    Cancel    ", Lines: 1, Selectable: false, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
+		drawing.PutText(session, OrderButton, drawing.Content{Text: "    Submit    ", Lines: 1, Selectable: false, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
 
 		session.SignalClicked = func(session *drawing.Session, i int) {
 			if i == BackButton {
@@ -76,7 +76,7 @@ func declareCheckoutForm(session *drawing.Session) {
 		session.SignalTextChange = func(session *drawing.Session, i int, from string, to string) {
 			session.Data = from
 			session.SignalRecalculate(session)
-			if strings.HasPrefix(session.Data, drawing.Revert) {
+			if strings.HasPrefix(session.Data, drawing.RevertAndReturn) {
 				last := session.Text[OrderText]
 				last.Text = session.Data[1:]
 				session.Text[OrderText] = last
@@ -122,7 +122,7 @@ func declareCheckoutForm(session *drawing.Session) {
 				err = fmt.Errorf("cannot change stales tax")
 			}
 			if err != nil {
-				session.Data = drawing.Revert + session.Data
+				session.Data = drawing.RevertAndReturn + session.Data
 				return
 			}
 			newTotal := englang.Evaluate(fmt.Sprintf("%s multiplied by %s", amount, unit))

@@ -26,6 +26,9 @@ import (
 // Bookmark the management url with ApiKey to manage the site. There is no other way to access backups, etc.
 // TODO management apikey rotation.
 
+// If the activation key is empty, no activation is needed.
+// Containers start right away. However, you cannot access any management features either.
+
 func SetupActivation() {
 	http.HandleFunc("/activate.html", func(w http.ResponseWriter, r *http.Request) {
 		err := drawing.EnsureAPIKey(w, r)
@@ -55,6 +58,10 @@ func SetupActivation() {
 	})
 
 	go func() {
+		if metadata.ActivationKey == "" {
+			activate()
+			return
+		}
 		for {
 			if metadata.ActivationKey == "" {
 				break
@@ -78,7 +85,7 @@ func startActivation() string {
 func declareActivationForm(session *drawing.Session) {
 	if session.Form.Boxes == nil {
 		drawing.DeclareForm(session, "./activation/res/activate.png")
-		drawing.DeclareTextField(session, 0, drawing.ActiveContent{Text: drawing.Revert + "Enter the activation key", Lines: 1, Editable: true, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
+		drawing.PutText(session, 0, drawing.Content{Text: drawing.RevertAndReturn + "Enter the activation key", Lines: 1, Editable: true, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
 		session.SignalTextChange = func(session *drawing.Session, i int, from string, to string) {
 			session.SignalPartialRedrawNeeded(session, i)
 			if strings.Contains(session.Text[i].Text, metadata.ActivationKey) {

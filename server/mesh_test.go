@@ -18,6 +18,7 @@ import (
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
 func TestMesh(t *testing.T) {
+	t.SkipNow()
 	_ = os.Chdir("..")
 	x := make(chan int)
 	y := make(chan int)

@@ -41,24 +41,24 @@ func declareCorrespondenceForm(session *drawing.Session) {
 	if session.Form.Boxes == nil {
 		drawing.DeclareForm(session, "./correspondence/res/correspondence.png")
 		var MakeWidget = 0
-		drawing.DeclareTextField(session, MakeWidget, drawing.ActiveContent{Text: "hello", Lines: 1, Editable: true, Selectable: true, FontColor: color.Black, BackgroundColor: color.White})
+		drawing.PutText(session, MakeWidget, drawing.Content{Text: "hello", Lines: 1, Editable: true, Selectable: true, FontColor: color.Black, BackgroundColor: color.White})
 		checked := drawing.CombineImages("./correspondence/res/person.png", "./correspondence/res/check.png")
 		unchecked := "./correspondence/res/person.png"
 		empty := "./correspondence/res/placeholder.png"
 		for i := 1; i < 65; i++ {
 			if i < 9 {
-				drawing.DeclareImageField(session, i, unchecked, drawing.ActiveContent{Selectable: true, Editable: false})
+				drawing.SetImage(session, i, unchecked, drawing.Content{Selectable: true, Editable: false})
 				continue
 			}
-			drawing.DeclareImageField(session, i, empty, drawing.ActiveContent{Selectable: false, Editable: false})
+			drawing.SetImage(session, i, empty, drawing.Content{Selectable: false, Editable: false})
 		}
 		session.SignalFocusChanged = func(session *drawing.Session, from int, to int) {
 			if session.Text[to].Text == "" && session.Text[to].BackgroundFile != empty {
-				drawing.DeclareImageField(session, to, checked, drawing.ActiveContent{Selectable: true, Editable: false})
+				drawing.SetImage(session, to, checked, drawing.Content{Selectable: true, Editable: false})
 				session.SignalPartialRedrawNeeded(session, to)
 			}
 			if session.Text[from].BackgroundFile == checked {
-				drawing.DeclareImageField(session, from, unchecked, drawing.ActiveContent{Selectable: true, Editable: false})
+				drawing.SetImage(session, from, unchecked, drawing.Content{Selectable: true, Editable: false})
 				session.SignalPartialRedrawNeeded(session, from)
 			}
 		}

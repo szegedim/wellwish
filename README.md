@@ -65,7 +65,7 @@ Please consult with a professional of your local jurisdiction.
 ## Getting started
 
 ```
-git clone https://gitlab.com/eper.io/wellwish.git
+git clone https://gitlab.com/eper.io/engine.git
 ```
 
 ## License

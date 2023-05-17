@@ -45,10 +45,10 @@ func declareinvoiceForm(session *drawing.Session) {
 		const PaymentButton = 2
 		const VoucherButton = 3
 
-		drawing.DeclareTextField(session, InvoiceText, drawing.ActiveContent{Text: "", Lines: 25, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 1})
-		drawing.DeclareTextField(session, CancelButton, drawing.ActiveContent{Text: "    Refund     ", Lines: 1, Selectable: false, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
-		drawing.DeclareTextField(session, PaymentButton, drawing.ActiveContent{Text: "      Pay      ", Lines: 1, Selectable: false, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
-		drawing.DeclareTextField(session, VoucherButton, drawing.ActiveContent{Text: "    Vouchers   ", Lines: 1, Selectable: false, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
+		drawing.PutText(session, InvoiceText, drawing.Content{Text: "", Lines: 25, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 1})
+		drawing.PutText(session, CancelButton, drawing.Content{Text: "    Refund     ", Lines: 1, Selectable: false, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
+		drawing.PutText(session, PaymentButton, drawing.Content{Text: "      Pay      ", Lines: 1, Selectable: false, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
+		drawing.PutText(session, VoucherButton, drawing.Content{Text: "    Vouchers   ", Lines: 1, Selectable: false, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
 
 		session.SignalClicked = func(session *drawing.Session, i int) {
 			invoice, done := GetInvoice(session)

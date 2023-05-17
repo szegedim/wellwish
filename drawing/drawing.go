@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"net/http"
 	"os"
 	"path"
 	"strings"
@@ -20,6 +21,21 @@ import (
 // TODO There is a small drawing PSNR at font edges to fix.
 
 func SetupDrawing() {
+	http.HandleFunc("/home.png", func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Cache-Control", "no-cache")
+		http.ServeFile(writer, request, "./drawing/res/home.png")
+	})
+	http.HandleFunc("/legal.png", func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Cache-Control", "no-cache")
+		http.ServeFile(writer, request, "./drawing/res/legal.png")
+	})
+	http.HandleFunc("/contact.png", func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Cache-Control", "no-cache")
+		http.ServeFile(writer, request, "./drawing/res/contact.png")
+	})
+
+	// Now this may actually break the server early.
+	// Break fast, break hard allows users to enforce 2GB of RAM ensuring a stable run later.
 	Loaded.Lock()
 	fmt.Println("loading fonts")
 	LoadFont(indexes, "./drawing/res/defaultfont.png", "")
@@ -42,7 +58,7 @@ func DeclareForm(session *Session, pngFile string) {
 	session.Form = form
 	session.DirtyFrame = form.Rgb
 
-	session.Text = map[int]ActiveContent{}
+	session.Text = map[int]Content{}
 	session.SelectedBox = 0
 
 	session.SignalRecalculate = func(session *Session) {
@@ -73,7 +89,7 @@ func DeclareForm(session *Session, pngFile string) {
 	session.SignalFocusGot = func(session *Session, focused int) {
 		if focused >= 0 && session.Text[focused].Editable {
 			replace := session.Text[focused]
-			if strings.HasPrefix(session.Text[focused].Text, Revert) {
+			if strings.HasPrefix(session.Text[focused].Text, RevertAndReturn) {
 				replace.Text = "�"
 			} else {
 				if !strings.Contains(replace.Text, "�") {
@@ -94,7 +110,7 @@ func DeclareForm(session *Session, pngFile string) {
 			text, ok := session.Text[candidate]
 			if ok && text.Editable {
 				session.SelectedBox = candidate
-				if strings.HasPrefix(text.Text, Revert) {
+				if strings.HasPrefix(text.Text, RevertAndReturn) {
 					session.SignalFocusGot(session, session.SelectedBox)
 				} else {
 					session.SignalPartialRedrawNeeded(session, session.SelectedBox)
@@ -105,7 +121,7 @@ func DeclareForm(session *Session, pngFile string) {
 	}
 }
 
-func DeclareTextField(session *Session, i int, t ActiveContent) int {
+func PutText(session *Session, i int, t Content) int {
 	if i == -1 {
 		i = len(session.Text)
 	}
@@ -117,7 +133,7 @@ func DeclareTextField(session *Session, i int, t ActiveContent) int {
 	return i
 }
 
-func DeclareImageField(session *Session, i int, pngFile string, t ActiveContent) int {
+func SetImage(session *Session, i int, pngFile string, t Content) int {
 	if i == -1 {
 		i = len(session.Text)
 	}
@@ -339,7 +355,7 @@ func FindGridTextBoxes(target ImageSlice, grid *Grid) {
 	}
 }
 
-type ActiveContent struct {
+type Content struct {
 	Text           string
 	BackgroundFile string
 	Background     ImageSlice
@@ -353,13 +369,13 @@ type ActiveContent struct {
 	BackgroundColor color.Color
 }
 
-func DrawTextWithFillWithErase(session *Session, target ImageSlice, format ActiveContent) {
+func DrawTextWithFillWithErase(session *Session, target ImageSlice, format Content) {
 	EraseBox(session, target)
 	EraseBorder(target)
 	DrawTextWithFill(target, format)
 }
 
-func DrawTextWithFill(target ImageSlice, format ActiveContent) {
+func DrawTextWithFill(target ImageSlice, format Content) {
 	if format.Background.Rgb != nil {
 		DrawTextOnImage(target, format)
 		return
@@ -368,7 +384,7 @@ func DrawTextWithFill(target ImageSlice, format ActiveContent) {
 	DrawText(target, format)
 }
 
-func DrawTextOnImage(target ImageSlice, format ActiveContent) {
+func DrawTextOnImage(target ImageSlice, format Content) {
 	DrawImage(target, format.Background.Rgb.SubImage(format.Background.Rect))
 	DrawText(target, format)
 }
@@ -382,7 +398,7 @@ type Grid struct {
 	Borders   []image.Rectangle
 }
 
-func DrawTextGridWithFill(target ImageSlice, grid *Grid, pos image.Point, format ActiveContent) {
+func DrawTextGridWithFill(target ImageSlice, grid *Grid, pos image.Point, format Content) {
 	if grid.Boxes == nil {
 		FindGridTextBoxes(target, grid)
 	}
@@ -391,7 +407,7 @@ func DrawTextGridWithFill(target ImageSlice, grid *Grid, pos image.Point, format
 	DrawTextWithFill(ImageSlice{Rgb: target.Rgb, Rect: grid.Boxes[index]}, format)
 }
 
-func DrawGridBorder(target ImageSlice, grid *Grid, pos image.Point, format ActiveContent) {
+func DrawGridBorder(target ImageSlice, grid *Grid, pos image.Point, format Content) {
 	if grid.Boxes == nil || grid.Borders == nil {
 		FindGridTextBoxes(target, grid)
 	}
@@ -401,7 +417,7 @@ func DrawGridBorder(target ImageSlice, grid *Grid, pos image.Point, format Activ
 	FillWithColor(ImageSlice{Rgb: target.Rgb, Rect: grid.Boxes[index]}, format.BackgroundColor)
 }
 
-func DrawGridPadding(target ImageSlice, grid *Grid, format ActiveContent) {
+func DrawGridPadding(target ImageSlice, grid *Grid, format Content) {
 	if grid.Boxes == nil || grid.Borders == nil {
 		FindGridTextBoxes(target, grid)
 	}
@@ -409,9 +425,12 @@ func DrawGridPadding(target ImageSlice, grid *Grid, format ActiveContent) {
 	FillWithColor(ImageSlice{Rgb: target.Rgb, Rect: target.Rect}, format.BackgroundColor)
 }
 
-func DrawText(target ImageSlice, format ActiveContent) {
+func DrawText(target ImageSlice, format Content) {
 	text := format.Text
 	if text == "" {
+		return
+	}
+	if format.Lines == 0 {
 		return
 	}
 	for iteration := 0; iteration < 2; iteration++ {
@@ -480,6 +499,9 @@ func DrawText(target ImageSlice, format ActiveContent) {
 		scaleDenominator := format.Lines
 		scaleNominator = scaleNominator * target.Rect.Dy()
 		scaleDenominator = scaleDenominator * bounds.Dy()
+		if scaleDenominator == 0 {
+			continue
+		}
 		if bounds.Dx()*scaleNominator/scaleDenominator > target.Rect.Dx() {
 			// Always fit regardless of shape.
 			scaleNominator = target.Rect.Dx()

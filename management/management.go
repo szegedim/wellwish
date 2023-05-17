@@ -103,12 +103,12 @@ func declareForm(session *drawing.Session) {
 		const Backup = 4
 		const Restore = 5
 		drawing.DeclareForm(session, "./management/res/management.png")
-		drawing.DeclareImageField(session, Contact, "./drawing/res/space.png", drawing.ActiveContent{Text: "", Lines: 1, Editable: false, FontColor: drawing.White, BackgroundColor: drawing.Black, Alignment: 1})
-		drawing.DeclareTextField(session, Logs, drawing.ActiveContent{Text: "     Traces     ", Lines: 1, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
-		drawing.DeclareTextField(session, PublicSite, drawing.ActiveContent{Text: "     Public     ", Lines: 1, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
-		drawing.DeclareTextField(session, PrivateSite, drawing.ActiveContent{Text: "     Private    ", Lines: 1, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
-		drawing.DeclareTextField(session, Backup, drawing.ActiveContent{Text: "     Backup     ", Lines: 1, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
-		drawing.DeclareTextField(session, Restore, drawing.ActiveContent{Text: "     Restore    ", Lines: 1, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
+		drawing.SetImage(session, Contact, "./drawing/res/space.png", drawing.Content{Text: "", Lines: 1, Editable: false, FontColor: drawing.White, BackgroundColor: drawing.Black, Alignment: 1})
+		drawing.PutText(session, Logs, drawing.Content{Text: "     Traces     ", Lines: 1, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
+		drawing.PutText(session, PublicSite, drawing.Content{Text: "     Public     ", Lines: 1, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
+		drawing.PutText(session, PrivateSite, drawing.Content{Text: "     Private    ", Lines: 1, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
+		drawing.PutText(session, Backup, drawing.Content{Text: "     Backup     ", Lines: 1, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
+		drawing.PutText(session, Restore, drawing.Content{Text: "     Restore    ", Lines: 1, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
 
 		session.SignalClicked = func(session *drawing.Session, i int) {
 			if i == Contact {

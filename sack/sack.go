@@ -186,7 +186,7 @@ func declareForm(session *drawing.Session) {
 		if Sacks[session.ApiKey] != "" {
 			init = "Click here to preview sack."
 		}
-		CommandText := drawing.DeclareTextField(session, -1, drawing.ActiveContent{Text: init, Lines: 1, Editable: false, Selectable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
+		CommandText := drawing.PutText(session, -1, drawing.Content{Text: init, Lines: 1, Editable: false, Selectable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
 
 		session.SignalClicked = func(session *drawing.Session, i int) {
 			if i == CommandText {
@@ -209,7 +209,7 @@ func declareForm(session *drawing.Session) {
 				// session.Data is going to the voucher id
 				session.Data = MakeSackWithCoin(string(upload.Body))
 				if session.Data != "" {
-					drawing.DeclareTextField(session, CommandText, drawing.ActiveContent{Text: "Click here to upload content.", Lines: 1, Editable: false, Selectable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
+					drawing.PutText(session, CommandText, drawing.Content{Text: "Click here to upload content.", Lines: 1, Editable: false, Selectable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
 					session.SignalPartialRedrawNeeded(session, CommandText)
 					return
 				} else {
@@ -254,4 +254,3 @@ func makeSack(sack string) string {
 	_ = newSack.Close()
 	return sack
 }
-

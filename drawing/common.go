@@ -127,6 +127,9 @@ func NewImageSliceDuplicated(slice ImageSlice) ImageSlice {
 }
 
 func RedactPublicKey(uq string) string {
+	if uq == "" {
+		return ""
+	}
 	return uq[0:6]
 }
 

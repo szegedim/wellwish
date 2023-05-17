@@ -13,11 +13,12 @@ import (
 	"sync"
 )
 
-const Revert = "\r"
-const InitialHint = Revert
+const RevertAndReturn = "\r"
+const InitialHint = RevertAndReturn
 
 var Loaded sync.Mutex
 
+var Transparent = color.RGBA64{R: 0xFFFF, G: 0xFFFF, B: 0xFFFF, A: 0x0}
 var White = color.RGBA64{R: 0xFFFF, G: 0xFFFF, B: 0xFFFF, A: 0xFFFF}
 var Black = color.RGBA64{R: 0, G: 0, B: 0, A: 0xFFFF}
 
@@ -39,4 +40,5 @@ Q0123456789
 Q?!@#$%^&*-
 Q,';:=+~
 Q._
+QẞäÄ
 `

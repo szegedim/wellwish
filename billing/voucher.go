@@ -70,9 +70,9 @@ func declareVoucherForm(session *drawing.Session) {
 		const CancelButton = 1
 		const InvoiceButton = 2
 
-		drawing.DeclareTextField(session, VoucherText, drawing.ActiveContent{Text: "", Lines: 20, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 1})
-		drawing.DeclareTextField(session, CancelButton, drawing.ActiveContent{Text: " Cancel/Refund ", Lines: 1, Selectable: false, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
-		drawing.DeclareTextField(session, InvoiceButton, drawing.ActiveContent{Text: "  Find invoice  ", Lines: 1, Selectable: false, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
+		drawing.PutText(session, VoucherText, drawing.Content{Text: "", Lines: 20, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 1})
+		drawing.PutText(session, CancelButton, drawing.Content{Text: " Cancel/Refund ", Lines: 1, Selectable: false, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
+		drawing.PutText(session, InvoiceButton, drawing.Content{Text: "  Find invoice  ", Lines: 1, Selectable: false, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
 
 		session.SignalClicked = func(session *drawing.Session, i int) {
 			voucher, done := getVoucher(session)

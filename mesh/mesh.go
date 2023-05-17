@@ -175,7 +175,7 @@ func declareForm(session *drawing.Session) {
 		var Text = 0
 
 		instruction := fmt.Sprintf("Set up mesh network using health check results from the nodes: %s", metadata.NodePattern)
-		drawing.DeclareTextField(session, Text, drawing.ActiveContent{Text: "�" + instruction, Lines: 20, Editable: true, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 1})
+		drawing.PutText(session, Text, drawing.Content{Text: "�" + instruction, Lines: 20, Editable: true, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 1})
 
 	}
 }

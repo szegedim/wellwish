@@ -27,6 +27,8 @@ var SiteUrl = "http://127.0.0.1:7777"
 
 var NodeUrl = "http://127.0.0.1:7777"
 
+var Http11Port = ":7777"
+
 // Node pattern is easy to validate and a simple health script tells the nodes that are active.
 // The system scans the cluster at startup.
 var NodePattern = "http://127.0.0.1:777*"

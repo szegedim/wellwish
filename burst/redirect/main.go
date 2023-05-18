@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"gitlab.com/eper.io/engine/metadata"
 	"net/http"
 )
 
@@ -19,7 +20,7 @@ func main() {
 		http.Redirect(w, r, "https://eper.io", http.StatusPermanentRedirect)
 	})
 
-	err := http.ListenAndServe(":7777", nil)
+	err := http.ListenAndServe(metadata.Http11Port, nil)
 	if err != nil {
 		fmt.Println(err)
 	}

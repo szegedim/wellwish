@@ -57,7 +57,7 @@ func Main(args []string) {
 
 	go setupSite()
 
-	port := ":7777"
+	port := metadata.Http11Port
 
 	port = customizePort(args, port)
 	err := http.ListenAndServe(port, nil)

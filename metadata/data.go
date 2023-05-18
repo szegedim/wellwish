@@ -25,6 +25,7 @@ var SiteName = "WellWish\nCloud Decision Engine"
 
 var SiteUrl = "http://127.0.0.1:7777"
 
+// This is only required if SiteUrl is http://127....
 var NodeUrl = "http://127.0.0.1:7777"
 
 var Http11Port = ":7777"

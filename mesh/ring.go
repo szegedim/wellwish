@@ -126,6 +126,7 @@ func GetWhoAmI() string {
 		if status != "This node got an eviction notice." {
 			path := fmt.Sprintf("/whoami?apikey=%s", MeshId)
 			meshId := EnglangRequest(fmt.Sprintf("Call server %s path %s with method %s and content %s. The call expects %s.", node, path, "PUT", node, "englang"))
+			fmt.Println(meshId, node)
 			if meshId == MeshId {
 				WhoAmI = node
 				return node

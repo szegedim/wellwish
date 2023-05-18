@@ -16,6 +16,9 @@ import "time"
 // Nowadays Golang building is fast, and it is more secure to have the open source code shipped in the container
 // This makes it easy for distributors to verify what is actually running
 
+// This is an example to fine tune a new docker image
+// (docker pull registry.gitlab.com/eper.io/wellwish | grep 'Downloaded newer image') && docker build -t example.com/wellwish . && docker push example.com/wellwish
+
 var ActivationKey = "AIFABNTRFGLBONJAFGQSFJBJRHMNFHPKOTRKHOIGHLMLJKRODDCOCQRQLTJOATPR"
 
 var SiteName = "WellWish\nCloud Decision Engine"
@@ -29,6 +32,8 @@ var NodeUrl = "http://127.0.0.1:7777"
 var NodePattern = "http://127.0.0.1:777*"
 
 var CompanyName = "Example Corporation (SAMPLE)"
+
+var CompanyEmail = "hq@example.com"
 
 var CompanyInfo = `Example Inc.
 1010 Corporate Avenue, San Jose, CA, 55555, USA

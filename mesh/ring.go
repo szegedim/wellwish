@@ -125,14 +125,14 @@ func GetWhoAmI() string {
 	done := make(chan string)
 	for node, status := range Nodes {
 		if status != "This node got an eviction notice." {
-			go func(d chan string) {
+			go func(current string, d chan string) {
 				path := fmt.Sprintf("/whoami?apikey=%s", MeshId)
-				meshId := EnglangRequest(fmt.Sprintf("Call server %s path %s with method %s and content %s. The call expects %s.", node, path, "PUT", node, "englang"))
+				meshId := EnglangRequest(fmt.Sprintf("Call server %s path %s with method %s and content %s. The call expects %s.", current, path, "PUT", current, "englang"))
 				if meshId == MeshId {
-					WhoAmI = node
-					d <- node
+					WhoAmI = current
+					d <- current
 				}
-			}(done)
+			}(node, done)
 		}
 	}
 	select {
@@ -141,7 +141,9 @@ func GetWhoAmI() string {
 	case <-time.After(5 * time.Second):
 		break
 	}
-	fmt.Println(WhoAmI)
+	if WhoAmI == "" {
+		fmt.Printf("Could not identify mesh address from: %v\n", Nodes)
+	}
 	return WhoAmI
 }
 

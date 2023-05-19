@@ -91,7 +91,7 @@ func InitializeNodeList() {
 }
 
 func Run(code []byte, stdin io.ReadCloser, stdout io.Writer) {
-	if len(sack.Sacks) > 0 || len(mesh.Index) > 0 {
+	if len(sack.Sacks) > 0 || mesh.IndexUsed() {
 		_, _ = stdout.Write([]byte("isolation error running burst on sack/mesh"))
 		return
 	}

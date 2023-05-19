@@ -56,7 +56,7 @@ func checkpointingSetup() {
 				// Make sure your ops works
 				sackId, _ := management.HttpProxyRequest(fmt.Sprintf("http://%s/node.checkpoint?apikey=%s", node, apiKey), "GET", nil)
 				if sackId != nil && len(sackId) > 0 {
-					Index[string(sackId)] = node
+					index[string(sackId)] = node
 				}
 			}
 			return
@@ -129,7 +129,7 @@ func checkpointingSetup() {
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
-			if len(Index) > 0 {
+			if len(index) > 0 {
 				w.WriteHeader(http.StatusConflict)
 				return
 			}

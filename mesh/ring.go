@@ -22,7 +22,7 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
-// TODO make sure only activation keys can spread before activation on Index
+// TODO make sure only activation keys can spread before activation on index
 
 func SetupRing() {
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
@@ -57,7 +57,7 @@ func SetupRing() {
 			nodes = append(nodes, node)
 		}
 		sort.Strings(nodes)
-		i, forward := handleRing(body, nodes, &Index, pingItem)
+		i, forward := handleRing(body, nodes, &index, pingItem)
 		if i != -1 {
 			call := englang.Printf("Call server %s path /ring?apikey=%s with method GET and content %s. The call expects success.", nodes[i], apiKey, forward)
 			go func() {
@@ -78,9 +78,9 @@ func SetupRing() {
 
 	InitializeNodeList()
 	go func() {
-		Index["host"] = GetWhoAmI()
+		index["host"] = GetWhoAmI()
 		// For testing
-		Index[drawing.GenerateUniqueKey()] = Index["host"]
+		index[drawing.GenerateUniqueKey()] = index["host"]
 		fmt.Printf("whoami:%s\n", WhoAmI)
 
 		for {
@@ -93,11 +93,11 @@ func SetupRing() {
 					administrationKey = metadata.ActivationKey
 				}
 
-				call := englang.Printf("Call server %s path /ring?apikey=%s with method GET and content %s. The call expects success.", Index["host"], administrationKey, "")
+				call := englang.Printf("Call server %s path /ring?apikey=%s with method GET and content %s. The call expects success.", index["host"], administrationKey, "")
 				ret := EnglangRequest1(call)
 				fmt.Println(call)
 				fmt.Println(ret)
-				fmt.Println(Index)
+				fmt.Println(index)
 			}
 			time.Sleep(10 * time.Second)
 		}
@@ -244,7 +244,7 @@ func handleRing(body string, ring []string, index *map[string]string, ping func(
 				forward.WriteString(englang.Println("Ring %s on (%s)", "finishes", final))
 				for k, v := range *index {
 					if k != "host" {
-						forward.WriteString(englang.Println("Index %s is (%s)", k, v))
+						forward.WriteString(englang.Println("index %s is (%s)", k, v))
 					}
 				}
 				return next, forward.String()
@@ -256,7 +256,7 @@ func handleRing(body string, ring []string, index *map[string]string, ping func(
 			// ring call
 			forward.WriteString(englang.Println(line))
 			var k, v string
-			drawing.NoErrorVoid(englang.Scanf1(line, "Index %s is (%s)", &k, &v))
+			drawing.NoErrorVoid(englang.Scanf1(line, "index %s is (%s)", &k, &v))
 			if k != "" && v != "" {
 				(*index)[k] = v
 			}

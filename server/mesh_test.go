@@ -18,7 +18,9 @@ import (
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
 func TestMesh(t *testing.T) {
-	t.SkipNow()
+	if EndToEndRun {
+		t.SkipNow()
+	}
 	_ = os.Chdir("..")
 	x := make(chan int)
 	y := make(chan int)
@@ -37,12 +39,12 @@ func TestMesh(t *testing.T) {
 	}
 
 	fmt.Println("cluster is stable")
-	//mesh.Index[metadata.ActivationKey] = metadata.ActivationKey
+	//mesh.index[metadata.ActivationKey] = metadata.ActivationKey
 	//fmt.Println("cluster is activated")
 
 	time.Sleep(15 * time.Second)
-	if len(mesh.Index) != 4 {
-		t.Error(mesh.Index)
+	if mesh.IndexLengthForTestingOnly() != 4 {
+		t.Error(mesh.IndexLengthForTestingOnly())
 	}
 
 	<-x

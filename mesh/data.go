@@ -23,7 +23,7 @@ var Nodes = map[string]string{}
 
 var Rings = map[string]string{}
 
-var Index = map[string]string{}
+var index = map[string]string{}
 
 var NodePattern = ""
 
@@ -41,7 +41,8 @@ func LogSnapshot(m string, w io.Writer, r io.Reader) {
 			}
 			_, _ = ww.WriteString(fmt.Sprintf("Node %s has status %s. Health result is %s\n", k, v, s))
 		}
-		for k, v := range Index {
+		index := index
+		for k, v := range index {
 			_, _ = ww.WriteString(fmt.Sprintf(MeshPattern, k, v) + "\n")
 		}
 		for k, v := range Rings {

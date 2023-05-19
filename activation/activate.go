@@ -66,8 +66,8 @@ func SetupActivation() {
 			if metadata.ActivationKey == "" {
 				break
 			}
-			if mesh.Index[metadata.ActivationKey] != "" {
-				management.UpdateAdminKey(mesh.Index[metadata.ActivationKey])
+			if mesh.GetIndex(metadata.ActivationKey) != "" {
+				management.UpdateAdminKey(mesh.GetIndex(metadata.ActivationKey))
 				activate()
 				break
 			}
@@ -78,7 +78,7 @@ func SetupActivation() {
 
 func startActivation() string {
 	adminKey := drawing.GenerateUniqueKey()
-	mesh.Index[metadata.ActivationKey] = adminKey
+	mesh.SetIndex(metadata.ActivationKey, adminKey)
 	return adminKey
 }
 

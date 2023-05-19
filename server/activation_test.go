@@ -21,7 +21,10 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
+var EndToEndRun = false
+
 func TestClusterActivation(t *testing.T) {
+	EndToEndRun = true
 	_ = os.Chdir("..")
 	x := make(chan int)
 	y := make(chan int)
@@ -40,7 +43,7 @@ func TestClusterActivation(t *testing.T) {
 	}
 
 	fmt.Println("cluster is stable")
-	mesh.Index[metadata.ActivationKey] = metadata.ActivationKey
+	mesh.SetIndex(metadata.ActivationKey, metadata.ActivationKey)
 	fmt.Println("cluster is activated")
 
 	t.Log(billing.IssueVouchers(
@@ -56,8 +59,8 @@ func TestClusterActivation(t *testing.T) {
 	t.Log("management", string(ret))
 
 	time.Sleep(15 * time.Second)
-	if len(mesh.Index) != 5 {
-		t.Error(mesh.Index)
+	if mesh.IndexLengthForTestingOnly() != 5 {
+		t.Error(mesh.IndexLengthForTestingOnly())
 	}
 
 	<-x

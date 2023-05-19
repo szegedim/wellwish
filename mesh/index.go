@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"gitlab.com/eper.io/engine/englang"
 	"io"
+	"sync"
 )
 
 // This document is Licensed under Creative Commons CC0.
@@ -14,7 +15,12 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
+var m sync.Mutex
+
 func UpdateIndex(r io.Reader) {
+	m.Lock()
+	defer m.Unlock()
+
 	scanner := bufio.NewScanner(r)
 
 	for scanner.Scan() {
@@ -25,17 +31,33 @@ func UpdateIndex(r io.Reader) {
 		if err != nil {
 			continue
 		}
-		Index[apikey] = server
+		index[apikey] = server
 	}
 }
 
-func findServerOfApiKey(apiKey string) string {
-	return Index[apiKey]
+func IndexUsed() bool {
+	return len(index) > 0
+}
+
+func IndexLengthForTestingOnly() int {
+	return len(index)
+}
+
+func GetIndex(apiKey string) string {
+	m.Lock()
+	defer m.Unlock()
+	return index[apiKey]
+}
+
+func SetIndex(k string, v string) {
+	m.Lock()
+	defer m.Unlock()
+	index[k] = v
 }
 
 func FilterIndexEntries() *bytes.Buffer {
 	serializedIndex := bytes.Buffer{}
-	index := Index
+	index := index
 	for apiKey, server := range index {
 		serializedIndex.Write([]byte(englang.Printf(MeshPattern, apiKey, server) + "\n"))
 	}

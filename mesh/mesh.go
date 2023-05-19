@@ -26,7 +26,7 @@ import (
 // Mesh containers listen to 7777 and communicate through Englang.
 // Most cloud providers do not require https within the VPC. //TODO Is this still the case?
 // - Mesh reads sack checkpoint backups.
-// - Mesh knows where to find a sack and forwards requests to other nodes using Index.
+// - Mesh knows where to find a sack and forwards requests to other nodes using index.
 // - Mesh can restore an entire cluster from and Englang backup file.
 // - Mesh sets up a node metal file with keys for burst nodes.
 // - Burst nodes log in with the key in the metal file to get tasks to run.
@@ -171,7 +171,7 @@ func Proxy(w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusNotFound)
 		return fmt.Errorf("not found")
 	}
-	server := findServerOfApiKey(apiKey)
+	server := GetIndex(apiKey)
 	if server == "" {
 		w.WriteHeader(http.StatusNotFound)
 		return fmt.Errorf("not found")

@@ -17,7 +17,7 @@ import "time"
 // This makes it easy for distributors to verify what is actually running
 
 // This is an example to fine tune a new docker image
-// (docker pull registry.gitlab.com/eper.io/wellwish | grep 'Downloaded newer image') && docker build -t example.com/wellwish . && docker push example.com/wellwish
+// (docker pull registry.gitlab.com/eper.io/<project> | grep 'Downloaded newer image') && docker build -t example.com/wellwish . && docker push example.com/wellwish
 
 var ActivationKey = "AIFABNTRFGLBONJAFGQSFJBJRHMNFHPKOTRKHOIGHLMLJKRODDCOCQRQLTJOATPR"
 

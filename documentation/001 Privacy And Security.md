@@ -1,5 +1,5 @@
 # Security considerations
-### Author: Author
+### Author: Creative Commons Zero
 ### Date: 2023-05-19
 
 We collected the security considerations and design decisions regarding the project.

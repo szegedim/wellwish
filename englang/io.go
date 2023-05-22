@@ -3,6 +3,7 @@ package englang
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 )
@@ -151,4 +152,19 @@ func Decimal(s string) int64 {
 
 func DecimalString(i int64) string {
 	return strconv.FormatInt(i, 10)
+}
+
+func ReadWith(in io.Reader, closure string) string {
+	var ret = bytes.Buffer{}
+	var p = make([]byte, 1)
+	for {
+		n, _ := in.Read(p)
+		if n == 0 {
+			return ""
+		}
+		ret.WriteString(string(p))
+		if strings.HasSuffix(ret.String(), closure) {
+			return ret.String()
+		}
+	}
 }

@@ -3,10 +3,12 @@ package drawing
 import (
 	"crypto/rand"
 	"fmt"
+	"gitlab.com/eper.io/engine/metadata"
 	"image"
 	"image/png"
 	"io"
-	math "math/rand"
+	random "math/rand"
+	"net/http"
 	"os"
 	"time"
 )
@@ -64,6 +66,14 @@ func NoErrorVoid(err error) {
 }
 
 func NoErrorBytes(data []byte, err error) []byte {
+	if err != nil {
+		fmt.Errorf("%s\n", err)
+		return nil
+	}
+	return data
+}
+
+func NoErrorResponse(data *http.Response, err error) *http.Response {
 	if err != nil {
 		fmt.Errorf("%s\n", err)
 		return nil
@@ -151,19 +161,19 @@ func GenerateUniqueKey() string {
 	// TODO Need to get a better seed from the internet
 	x, _ := os.Stat(os.Args[0])
 	seed := time.Now().UnixNano() ^ x.ModTime().UnixNano()
-	math.Seed(seed)
+	random.Seed(seed)
 
-	letters := []rune("ABCDEFGHIJKLMNOPQRST")
-	key := make([]rune, 64)
+	letters := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	key := make([]rune, 92)
 	for i := 0; i < 1000; i++ {
-		for i := 0; i < 64; i++ {
-			key[i] = letters[(Random()^math.Uint32())%uint32(len(letters))]
+		for i := 0; i < 92; i++ {
+			key[i] = letters[(((Random() ^ random.Uint32()) + uint32(metadata.ActivationKey[i])) % uint32(len(letters)))]
 			time.Sleep(550 * time.Nanosecond)
 		}
-		if key[3] == 'A' {
+		if key[91] == 'A' {
 			break
 		}
 	}
-	key[4] = 'B'
+	key[91] = 'R'
 	return string(key)
 }

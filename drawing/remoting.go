@@ -84,7 +84,7 @@ func ServeRemoteForm(w http.ResponseWriter, r *http.Request, name string) {
 	w.Header().Set("Cache-Control", "no-cache")
 	raw := NoErrorBytes(os.ReadFile("./drawing/res/remote.html"))
 	html := strings.ReplaceAll(string(raw), "remote.html", name+".html")
-	html = strings.ReplaceAll(html, "<title>eper.io</title>", "<title>"+metadata.SiteName+"</title>")
+	html = strings.ReplaceAll(html, "<title>opensource.eper.io</title>", "<title>"+metadata.SiteName+"</title>")
 	html = strings.ReplaceAll(html, "remote.png", name+".png")
 	_, _ = w.Write([]byte(html))
 }

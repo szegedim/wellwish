@@ -39,12 +39,14 @@ func declareCheckoutForm(session *drawing.Session) {
 	if session.Form.Boxes == nil {
 		drawing.DeclareForm(session, "./billing/res/checkout.png")
 
-		const OrderText = 0
-		const BackButton = 1
-		const OrderButton = 2
+		const Logo = 0
+		const OrderText = 1
+		const BackButton = 2
+		const OrderButton = 3
 
 		pattern := metadata.OrderPattern
 		sample := fmt.Sprintf(pattern, "\vExample Buyer Inc.\v", "\v111 S Ave\v, \vSan Fransisco\v, \vCA\v, \v55555\v, \vUSA\v", "\vinfo\v@\vexample.com\v", "\v10\v", metadata.UnitPrice, "USD 10", "0")
+		drawing.SetImage(session, Logo, "./metadata/logo.png", drawing.Content{Text: "", Lines: 1, Editable: false, FontColor: drawing.White, BackgroundColor: drawing.Black, Alignment: 1})
 		drawing.PutText(session, OrderText, drawing.Content{Text: "�" + sample, Lines: 20, Editable: true, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 1})
 		drawing.PutText(session, BackButton, drawing.Content{Text: "    Cancel    ", Lines: 1, Selectable: false, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
 		drawing.PutText(session, OrderButton, drawing.Content{Text: "    Submit    ", Lines: 1, Selectable: false, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})

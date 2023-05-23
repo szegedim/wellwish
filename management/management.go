@@ -89,13 +89,15 @@ func EnsureAdministratorSession(w http.ResponseWriter, r *http.Request) (*drawin
 
 func declareForm(session *drawing.Session) {
 	if session.Form.Boxes == nil {
-		const Contact = 0
-		const Logs = 1
-		const PublicSite = 2
-		const PrivateSite = 3
-		const Backup = 4
-		const Restore = 5
+		const Logo = 0
+		const Contact = 1
+		const Logs = 2
+		const PublicSite = 3
+		const PrivateSite = 4
+		const Backup = 5
+		const Restore = 6
 		drawing.DeclareForm(session, "./management/res/management.png")
+		drawing.SetImage(session, Logo, "./metadata/logo.png", drawing.Content{Text: "", Lines: 1, Editable: false, FontColor: drawing.White, BackgroundColor: drawing.Black, Alignment: 1})
 		drawing.SetImage(session, Contact, "./drawing/res/space.png", drawing.Content{Text: "", Lines: 1, Editable: false, FontColor: drawing.White, BackgroundColor: drawing.Black, Alignment: 1})
 		drawing.PutText(session, Logs, drawing.Content{Text: "     Traces     ", Lines: 1, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
 		drawing.PutText(session, PublicSite, drawing.Content{Text: "     Public     ", Lines: 1, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})

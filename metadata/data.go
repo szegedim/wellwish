@@ -31,10 +31,11 @@ var SiteUrl = "http://127.0.0.1:7777"
 // This is typically an internal node range
 var NodePattern = "http://127.0.0.1:77**"
 
+// Http11Port The container port that will face the public endpoint SiteUrl
+var Http11Port = ":7777"
+
 // StatefulBackupUrl is the standard backup location, if needed. Empty string, if it is not needed.
 var StatefulBackupUrl = "http://127.0.0.1:7777"
-
-var Http11Port = ":7777"
 
 // DataRoot will normally be somewhere in /var/lib in the container to get backed up
 var DataRoot = ""
@@ -43,33 +44,39 @@ var CompanyName = "Example Corporation (SAMPLE)"
 
 var CompanyEmail = "hq@example.com"
 
-var CompanyInfo = `Example Inc.
+var CompanyInfo = `Example Seller Inc.
 1010 Corporate Avenue, San Jose, CA, 55555, USA
 TAX ID: 1234-56 Payment: ACH Routing# 12345 Account# 12345 https://example.com/12345
 `
 var CheckpointPeriod = 10 * 60 * time.Second
 var PaymentPattern = "https://example.com/%s"
-var UnitPrice = "USD 1.03"
 
-// Please update the pattern based on your purchase order format.
+// UnitPrice per coin.
+// We simulate something like a one dollar store.
+// Everything uses the same coin as a vending machine.
+// You can use services for different amounts.
+// This helps to buy vouchers for multiple services in advance.
+var UnitPrice = "USD 0.00"
+
+// OrderPattern Please update the pattern based on your purchase order format.
 var OrderPattern = `
 Company: %s
 Billing address: %s
 Billing email: %s
-Our company places the following order.
-The payment term is Net 30.                 
-Ordering %s remoting vouchers for %s each.
-
+Our company would like to place an order.
+Net 30: Payment is due within 60 days of the invoice date.                 
+We are ordering %s items of remoting vouchers for %s each.
 The order total is %s.
 The final amount includes Sales Tax of %s percent.
 Satisfaction guarantee. Cancel or refund within 30 days.
+The vouchers are not for resale. They can only be used here.
 Notes:
 `
 
 // InvoicePattern Please update the pattern with your locally regulated invoice format.
 var InvoicePattern = `              INVOICE              
 
-Payee: %s
+Pay To: %s
 Date: %s        Invoice Number: %s
 
 Payer: %s
@@ -81,7 +88,7 @@ Satisfaction guarantee.
 Order is cancellable within 30 days.
 Order is refundable within 30 days, if paid.
 
-Ordered %s cloud vouchers for %s each
+Ordered %s cloud vouchers for %s each.
                Invoiced Total %s.
 
 The total amount includes sales tax of 0 percent.
@@ -99,4 +106,4 @@ Invoice: %s
 The voucher status is %s.
 `
 
-var RandomSalt = "AAKNVZJKRIOWSVLFASSGQXWOTDXVAKMGTJOKTQBAKLFCOKMEIDQRSKCTQLTDOVHXZLUKZKALBFDIXBSZHQCRGWZFYILR"
+var RandomSalt = "XBGXTNTKIAVWBNHGODJGSSNUFBDIYPRYVKCFLYBFHPEWBRHQHYUWQLHHOPZLDZREJIAVPGEQMHOJFICSXNWADFHIHFRR"

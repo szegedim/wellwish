@@ -66,10 +66,12 @@ func declareVoucherForm(session *drawing.Session) {
 	if session.Form.Boxes == nil {
 		drawing.DeclareForm(session, "./billing/res/voucher.png")
 
-		const VoucherText = 0
-		const CancelButton = 1
-		const InvoiceButton = 2
+		const Logo = 0
+		const VoucherText = 1
+		const CancelButton = 2
+		const InvoiceButton = 3
 
+		drawing.SetImage(session, Logo, "./metadata/logo.png", drawing.Content{Text: "", Lines: 1, Editable: false, FontColor: drawing.White, BackgroundColor: drawing.Black, Alignment: 1})
 		drawing.PutText(session, VoucherText, drawing.Content{Text: "", Lines: 20, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 1})
 		drawing.PutText(session, CancelButton, drawing.Content{Text: " Cancel/Refund ", Lines: 1, Selectable: false, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
 		drawing.PutText(session, InvoiceButton, drawing.Content{Text: "  Find invoice  ", Lines: 1, Selectable: false, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})

@@ -28,7 +28,7 @@ func SetupRing() {
 	//stateful.RegisterModuleForBackup(&index)
 
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		_, _ = io.Copy(w, bytes.NewBufferString(englang.DecimalString(int64(IndexLengthForTestingOnly()))))
+		_, _ = w.Write([]byte(IndexLengthForTestingOnly()))
 	})
 
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -49,8 +49,8 @@ func SetupRing() {
 			return
 		}
 
-		body := drawing.NoErrorString(io.ReadAll(r.Body))
-		handleRingBody(body, &index)
+		called := drawing.NoErrorString(io.ReadAll(r.Body))
+		handleRingBody(called, &index)
 	})
 
 	http.HandleFunc("/whoami", func(w http.ResponseWriter, r *http.Request) {
@@ -78,10 +78,7 @@ func SetupRing() {
 			body := prepareRingBody(&index)
 
 			localHost := index["host"]
-			nodes := make([]string, 0)
-			for node := range Nodes {
-				nodes = append(nodes, node)
-			}
+			nodes := getNodes(Nodes)
 			sort.Strings(nodes)
 			next := nextRingNode(localHost, nodes, pingItem)
 			if next != "" {
@@ -103,7 +100,6 @@ func getNodes(sample map[string]string) []string {
 		if status != "This node got an eviction notice." {
 			_, err := management.HttpProxyRequest(fmt.Sprintf("%s/health", node), "GET", nil)
 			if err == nil {
-				//fmt.Println(node)
 				nodes = append(nodes, node)
 			}
 		}
@@ -168,7 +164,6 @@ func EnglangRequest1(e string) string {
 		}
 		response, err := management.HttpProxyRequest(fmt.Sprintf("%s%s", server, path), method, strings.NewReader(content))
 		if err != nil {
-			//fmt.Println(err)
 			return ""
 		}
 		if expect == "englang" {

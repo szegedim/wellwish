@@ -6,7 +6,6 @@ import (
 	"gitlab.com/eper.io/engine/management"
 	"gitlab.com/eper.io/engine/metadata"
 	"os"
-	"os/exec"
 	"strings"
 	"testing"
 	"time"
@@ -83,35 +82,12 @@ func TestClusterActivation(t *testing.T) {
 		t.Errorf("Server not activated")
 	}
 
-	<-wait
-	// nowait is not waited for
-	time.Sleep(1 * time.Second)
-}
-
-func runServer(t *testing.T, ready chan int, port string, timeout time.Duration) {
-	p := exec.Cmd{
-		Dir:  ".",
-		Path: "/Users/miklos_szegedi/schmied.us/private/go-darwin-arm64-bootstrap/bin/go",
-		Args: []string{"go", "run", "main.go", port},
+	select {
+	case <-wait:
+		return
+	case <-time.After(60 * time.Second):
+		t.Error("timeout")
+		return
 	}
-	err := p.Start()
-	if err != nil {
-		t.Error(err)
-	}
-	go func() {
-		time.Sleep(timeout)
-		_ = p.Process.Kill()
-	}()
-	err = p.Wait()
-	if err != nil && err.Error() != "signal: killed" {
-		t.Error(err)
-	}
-	b, _ := p.CombinedOutput()
-	if len(b) > 0 {
-		t.Log(string(b))
-	}
-	if p.ProcessState.ExitCode() != 0 && p.ProcessState.ExitCode() != -1 {
-		t.Log(p.ProcessState.ExitCode())
-	}
-	ready <- 1
+	// nowait never exits in case of local cluster
 }

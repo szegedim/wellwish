@@ -3,6 +3,7 @@ package mesh
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"gitlab.com/eper.io/engine/englang"
 	"io"
 )
@@ -48,8 +49,15 @@ func IndexUsed() bool {
 	return len(index) > 0
 }
 
-func IndexLengthForTestingOnly() int {
-	return len(index)
+func IndexLengthForTestingOnly() string {
+	i := 0
+	for k, v := range index {
+		if k != "" && v != "" {
+			i++
+		}
+		fmt.Println(k, v)
+	}
+	return englang.DecimalString(int64(i))
 }
 
 func GetIndex(k string) string {

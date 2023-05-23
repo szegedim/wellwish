@@ -6,6 +6,7 @@ import (
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/management"
 	"io"
+	"sync"
 )
 
 // This document is Licensed under Creative Commons CC0.
@@ -15,7 +16,9 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
-var MeshId = drawing.GenerateUniqueKey()
+var indexLock sync.Mutex
+
+var HostId = drawing.GenerateUniqueKey()
 
 var WhoAmI = ""
 
@@ -35,7 +38,7 @@ func LogSnapshot(m string, w io.Writer, r io.Reader) {
 		_, _ = ww.Write([]byte("\n"))
 		for k, v := range Nodes {
 			s := "unavailable"
-			_, err := management.HttpProxyRequest(fmt.Sprintf("%s/healthz", k), "GET", nil)
+			_, err := management.HttpProxyRequest(fmt.Sprintf("%s/health", k), "GET", nil)
 			if err == nil {
 				s = "ready"
 			}

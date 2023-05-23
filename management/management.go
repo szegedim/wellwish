@@ -3,6 +3,7 @@ package management
 import (
 	"fmt"
 	drawing "gitlab.com/eper.io/engine/drawing"
+	"gitlab.com/eper.io/engine/metadata"
 	"io"
 	"net/http"
 	"time"
@@ -15,16 +16,7 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
-func UpdateAdminKey(s string) {
-	if s != "" {
-		administrationKey = s
-	}
-}
-
-func SetupSiteManagement(traces func(m string, w io.Writer, r io.Reader)) string {
-	if administrationKey == "" {
-		administrationKey = drawing.GenerateUniqueKey()
-	}
+func SetupSiteManagement(traces func(m string, w io.Writer, r io.Reader)) {
 	CheckpointFunc = traces
 
 	http.HandleFunc("/management.html", func(w http.ResponseWriter, r *http.Request) {
@@ -56,11 +48,11 @@ func SetupSiteManagement(traces func(m string, w io.Writer, r io.Reader)) string
 			CheckpointFunc("PUT", nil, r.Body)
 		}
 	})
-	return administrationKey
 }
 
 func IsAdministrator(apiKey string) error {
 	time.Sleep(15 * time.Millisecond)
+	administrationKey := GetAdminKey()
 	if administrationKey == "" || apiKey != administrationKey {
 		return fmt.Errorf("unauthorized")
 	}
@@ -71,6 +63,7 @@ func EnsureAdministrator(w http.ResponseWriter, r *http.Request) (string, error)
 	apiKey := r.URL.Query().Get("apikey")
 
 	time.Sleep(15 * time.Millisecond)
+	administrationKey := GetAdminKey()
 	if apiKey != administrationKey {
 		w.WriteHeader(http.StatusUnauthorized)
 		return "", fmt.Errorf("unauthorized")
@@ -79,7 +72,7 @@ func EnsureAdministrator(w http.ResponseWriter, r *http.Request) (string, error)
 }
 
 func GetAdminKey() string {
-	return administrationKey
+	return metadata.ManagementKey
 }
 
 func EnsureAdministratorSession(w http.ResponseWriter, r *http.Request) (*drawing.Session, error) {
@@ -149,17 +142,6 @@ func declareForm(session *drawing.Session) {
 
 func LogSnapshot(m string, w io.Writer, r io.Reader) {
 	if m == "GET" {
-		_, _ = w.Write([]byte(fmt.Sprintf("This container is running with management key %s ...\n\n", drawing.RedactPublicKey(administrationKey))))
+		_, _ = w.Write([]byte(fmt.Sprintf("This container is running with management key %s ...\n\n", drawing.RedactPublicKey(GetAdminKey()))))
 	}
-}
-
-func Restore(w http.ResponseWriter, r *http.Request) {
-	//apiKey := r.URL.Query().Get("apikey")
-	//if apiKey != "" {
-	//	_, _ = w.Write([]byte(fmt.Sprintf("admin:%s\n\n", drawing.RedactPublicKey(apiKey))))
-	//}
-	//activation.LogSnapshot(w, r)
-	//billing.LogSnapshot(w, r)
-	//mining.LogSnapshot(w, r)
-	//sack.LogSnapshot(w, r)
 }

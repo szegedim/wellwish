@@ -18,6 +18,12 @@ import (
 
 func TestBackup(t *testing.T) {
 	containerIndexLimit = 2
+	module := map[string]string{}
+	RegisterModuleForBackup(&module)
+	metadata.DataRoot = "/tmp"
+	metadata.Http11Port = ":7799"
+	metadata.SiteUrl = "http://127.0.0.1:7799"
+	metadata.StatefulBackupUrl = "http://127.0.0.1:7799"
 
 	SetupStateful()
 
@@ -27,27 +33,28 @@ func TestBackup(t *testing.T) {
 
 	time.Sleep(1 * time.Second)
 
-	expected := map[string]string{}
+	expectedTestResults := map[string]string{}
+
 	go func() {
 		time.Sleep(20 * time.Second)
 		k := drawing.GenerateUniqueKey()
 		v := drawing.GenerateUniqueKey()
-		expected[k] = v
-		SetStatefulItem(k, v)
+		expectedTestResults[k] = v
+		SetStatefulItem(&module, k, v)
 	}()
 	go func() {
 		time.Sleep(7 * time.Second)
 		k := drawing.GenerateUniqueKey()
 		v := drawing.GenerateUniqueKey()
-		expected[k] = v
-		SetStatefulItem(k, v)
+		expectedTestResults[k] = v
+		SetStatefulItem(&module, k, v)
 	}()
 	go func() {
 		time.Sleep(25 * time.Second)
 		k := drawing.GenerateUniqueKey()
 		v := drawing.GenerateUniqueKey()
-		expected[k] = v
-		SetStatefulItem(k, v)
+		expectedTestResults[k] = v
+		SetStatefulItem(&module, k, v)
 	}()
 
 	started := time.Now()
@@ -55,11 +62,11 @@ func TestBackup(t *testing.T) {
 		time.Sleep(3 * time.Second)
 
 		fmt.Println("Next epoch")
-		if len(csi) > containerIndexLimit {
-			t.Error("Cannot delete", len(csi))
+		if len(module) > containerIndexLimit {
+			t.Error("Cannot delete", len(module))
 		}
-		for kk, vv := range expected {
-			vvv := GetStatefulItem(kk)
+		for kk, vv := range expectedTestResults {
+			vvv := GetStatefulItem(&module, kk)
 			if vv != vvv {
 				t.Error(vv, vvv)
 			}

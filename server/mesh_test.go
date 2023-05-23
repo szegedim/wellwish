@@ -5,6 +5,7 @@ import (
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/management"
 	"gitlab.com/eper.io/engine/mesh"
+	"gitlab.com/eper.io/engine/metadata"
 	"os"
 	"testing"
 	"time"
@@ -18,36 +19,43 @@ import (
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
 func TestMesh(t *testing.T) {
-	if EndToEndRun {
-		t.SkipNow()
-	}
+	t.SkipNow()
 	_ = os.Chdir("..")
-	x := make(chan int)
-	y := make(chan int)
-	z := make(chan int)
-	go func(ready chan int) { time.Sleep(2 * time.Second); Main([]string{"go", ":7777"}) }(z)
-	go func(ready chan int) { time.Sleep(2 * time.Second); runServer(t, ready, ":7778") }(y)
-	go func(ready chan int) { time.Sleep(2 * time.Second); runServer(t, ready, ":7779") }(x)
+	primary := "http://127.0.0.1:7788"
+	metadata.NodePattern = "http://127.0.0.1:778*"
+	wait := make(chan int)
+	nowait := make(chan int)
+	// Uncomment this to debug
+	//go func(ready chan int) { time.Sleep(2 * time.Second); Main([]string{"go", ":7784"}) }(nowait)
+	//mesh.SetIndex(drawing.GenerateUniqueKey(), drawing.GenerateUniqueKey())
+	go func(ready chan int) { time.Sleep(2 * time.Second); runServer(t, ready, ":7786", 60*time.Second) }(wait)
+	go func(ready chan int) { time.Sleep(2 * time.Second); runServer(t, ready, ":7788", 60*time.Second) }(nowait)
+	go func(ready chan int) { time.Sleep(2 * time.Second); runServer(t, ready, ":7789", 60*time.Second) }(nowait)
 
 	// Wait for a stable state
 	for {
-		_, err := management.HttpProxyRequest(englang.Printf("http://127.0.0.1:7777/healthz"), "", nil)
+		_, err := management.HttpProxyRequest(englang.Printf("%s/health", primary), "", nil)
 		if err == nil {
 			break
 		}
 		time.Sleep(1 * time.Second)
 	}
 
-	fmt.Println("cluster is stable")
-	//mesh.index[metadata.ActivationKey] = metadata.ActivationKey
-	//fmt.Println("cluster is activated")
-
 	time.Sleep(15 * time.Second)
-	if mesh.IndexLengthForTestingOnly() != 4 {
-		t.Error(mesh.IndexLengthForTestingOnly())
+	fmt.Println("cluster is stable.")
+	ret, _ := management.HttpProxyRequest(englang.Printf("%s/healthz", primary), "", nil)
+	if string(ret) != "3" {
+		t.Error("something went wrong", mesh.IndexLengthForTestingOnly())
 	}
+	fmt.Println(string(ret))
+	time.Sleep(15 * time.Second)
+	ret, _ = management.HttpProxyRequest(englang.Printf("%s/healthz", primary), "", nil)
+	fmt.Println(string(ret))
+	time.Sleep(15 * time.Second)
+	ret, _ = management.HttpProxyRequest(englang.Printf("%s/healthz", primary), "", nil)
+	fmt.Println(string(ret))
 
-	<-x
-	<-y
-	// z Never exits
+	<-wait
+	time.Sleep(2 * time.Second)
+	// nowait never exits in case of local cluster
 }

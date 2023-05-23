@@ -22,8 +22,8 @@ If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
   <table>
     <tr>
       <td><a href="/"><img src="home.png" style="width: 100%;" alt="home"></a></td>
-      <td><a href="/terms.txt"><img src="legal.png" style="width: 100%;" alt="home"></a></td>
-      <td><a href="/contact.txt"><img src="contact.png" style="width: 100%;" alt="home"></a></td>
+      <td><a href="/terms"><img src="legal.png" style="width: 100%;" alt="home"></a></td>
+      <td><a href="/contact"><img src="contact.png" style="width: 100%;" alt="home"></a></td>
     </tr>
   </table>
 </div>
@@ -144,7 +144,8 @@ If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
     flow = 2
   }
   function pasted(e) {
-    typing = typing + (event.clipboardData || window.clipboardData).getData('text');
+    let clp = (event.clipboardData || window.clipboardData).getData('text');
+    typing = clp
     msg = "&T=" + (typing)
     flow = 5
   }

@@ -5,7 +5,6 @@ import (
 	"gitlab.com/eper.io/engine/activation"
 	"gitlab.com/eper.io/engine/billing"
 	"gitlab.com/eper.io/engine/burst"
-	"gitlab.com/eper.io/engine/correspondence"
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/entry"
 	"gitlab.com/eper.io/engine/management"
@@ -13,6 +12,7 @@ import (
 	"gitlab.com/eper.io/engine/metadata"
 	"gitlab.com/eper.io/engine/mining"
 	"gitlab.com/eper.io/engine/sack"
+	"gitlab.com/eper.io/engine/stateful"
 	"io"
 	"net/http"
 	"strings"
@@ -42,16 +42,21 @@ func Main(args []string) {
 		drawing.SetupDrawing()
 	}()
 
+	stateful.SetupStateful()
 	mesh.SetupRing()
 	activation.SetupActivation()
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if metadata.ActivationKey == "" {
+		if !activation.ActivationNeeded {
 			w.Header().Set("Location", "/index.html")
 			w.WriteHeader(http.StatusTemporaryRedirect)
 		} else {
-			w.Header().Set("Location", "/activate.html")
-			w.WriteHeader(http.StatusTemporaryRedirect)
+			if strings.HasSuffix(r.URL.Path, "html") || r.URL.Path == "/" {
+				w.Header().Set("Location", "/activate.html")
+				w.WriteHeader(http.StatusTemporaryRedirect)
+			} else {
+				w.WriteHeader(http.StatusNotFound)
+			}
 		}
 	})
 
@@ -69,8 +74,7 @@ func customizePort(args []string, port string) string {
 		port = args[1]
 	}
 	if strings.HasPrefix(metadata.SiteUrl, "http://127.") {
-		if strings.HasPrefix(metadata.NodeUrl, ":") {
-			metadata.NodeUrl = fmt.Sprintf("http://127.0.0.1%s", port)
+		if strings.HasPrefix(metadata.SiteUrl, ":") {
 			metadata.SiteUrl = fmt.Sprintf("http://127.0.0.1%s", port)
 		}
 	}
@@ -86,8 +90,7 @@ func printUsage(err error) {
 
 func setupSite() {
 	<-activation.Activated
-
-	administrationKey := management.SetupSiteManagement(func(m string, w io.Writer, r io.Reader) {
+	management.SetupSiteManagement(func(m string, w io.Writer, r io.Reader) {
 		management.LogSnapshot(m, w, r)
 		activation.LogSnapshot(m, w, r)
 		billing.LogSnapshot(m, w, r)
@@ -96,7 +99,7 @@ func setupSite() {
 		burst.LogSnapshot(m, w, r)
 		mesh.LogSnapshot(m, w, r)
 	})
-	activation.Activated <- administrationKey
+	activation.Activated <- "Hello Moon!"
 
 	management.SetupSiteRoot()
 
@@ -108,5 +111,4 @@ func setupSite() {
 	billing.SetupVoucher()
 	billing.SetupCheckout()
 	billing.SetupInvoice()
-	correspondence.SetupCorrespondence()
 }

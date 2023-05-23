@@ -33,6 +33,14 @@ func SetupDrawing() {
 		writer.Header().Set("Cache-Control", "no-cache")
 		http.ServeFile(writer, request, "./drawing/res/contact.png")
 	})
+	http.HandleFunc("/contact", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-cache")
+		http.ServeFile(w, r, "./metadata/contact.html")
+	})
+	http.HandleFunc("/terms", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-cache")
+		http.ServeFile(w, r, "./metadata/terms.html")
+	})
 
 	// Now this may actually break the server early.
 	// Break fast, break hard allows users to enforce 2GB of RAM ensuring a stable run later.

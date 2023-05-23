@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"gitlab.com/eper.io/engine/englang"
 	"io"
-	"sync"
 )
 
 // This document is Licensed under Creative Commons CC0.
@@ -15,11 +14,21 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
-var m sync.Mutex
+// Index contains key indexes that are propagated to all servers.
+// This allows us to use even random load balancer without any sticky setting by IP, cookie or apikey
+// Note: the reason we use indexes is not to use cookies that require annoying prompts
+// These are temporary stateless indexes
+
+// Stateful indexes are keys and values that are backed by a stateful disk server backup
+// They can be cleaned in our memory but fetch again from backups
+// Stateful indexes can also be used to support load balancing
+
+// Finally cleaned up indexes can have a rule to clean up periodically
+// Stateful indexes are cleaned up by design
 
 func UpdateIndex(r io.Reader) {
-	m.Lock()
-	defer m.Unlock()
+	indexLock.Lock()
+	defer indexLock.Unlock()
 
 	scanner := bufio.NewScanner(r)
 
@@ -43,16 +52,18 @@ func IndexLengthForTestingOnly() int {
 	return len(index)
 }
 
-func GetIndex(apiKey string) string {
-	m.Lock()
-	defer m.Unlock()
-	return index[apiKey]
+func GetIndex(k string) string {
+	indexLock.Lock()
+	defer indexLock.Unlock()
+	return index[k]
+	//return stateful.GetStatefulItem(&index, k)
 }
 
 func SetIndex(k string, v string) {
-	m.Lock()
-	defer m.Unlock()
+	indexLock.Lock()
+	defer indexLock.Unlock()
 	index[k] = v
+	//stateful.SetStatefulItem(&index, k, v)
 }
 
 func FilterIndexEntries() *bytes.Buffer {
@@ -62,10 +73,4 @@ func FilterIndexEntries() *bytes.Buffer {
 		serializedIndex.Write([]byte(englang.Printf(MeshPattern, apiKey, server) + "\n"))
 	}
 	return &serializedIndex
-}
-
-func englangMergeIndex(in string) string {
-	UpdateIndex(bytes.NewBufferString(in))
-	ret := FilterIndexEntries().String()
-	return ret
 }

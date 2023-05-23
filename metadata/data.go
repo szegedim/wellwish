@@ -19,7 +19,8 @@ import "time"
 // This is an example to fine tune a new docker image
 // (docker pull registry.gitlab.com/eper.io/<project> | grep 'Downloaded newer image') && docker build -t example.com/wellwish . && docker push example.com/wellwish
 
-var ActivationKey = "EGIGYLTDWHNEDMBKNWFQKWTATGMMDWFZDOLZDXSCNXXUHTTHZOJZMARJULWRMKWYMFDQEMBQYGBVJCCFLJSWVWJFJHCR"
+var ActivationKey = "HQVNXPNHYXZISISZALKCPXKGXYOJUKZFHQXQJWEYGYDZCWWMXSDSZFQEDAMZGWLOESBVDKFWBAHHOVJGYJCXOEHXVFFR"
+var ManagementKey = ""
 
 var SiteName = "WellWish\nCloud Decision Engine"
 
@@ -28,13 +29,10 @@ var SiteUrl = "http://127.0.0.1:7777"
 // StatefulBackupUrl is the standard backup location, if needed. Empty string, if it is not needed.
 var StatefulBackupUrl = "http://127.0.0.1:7777"
 
-// NodeUrl is only required if SiteUrl is http://127....
-var NodeUrl = "http://127.0.0.1:7777"
-
 var Http11Port = ":7777"
 
 // DataRoot will normally be somewhere in /var/lib in the container to get backed up
-var DataRoot = "/tmp"
+var DataRoot = ""
 
 // NodePattern is easy to validate and a simple health script tells the nodes that are active.
 // The system scans the cluster at startup.
@@ -99,3 +97,5 @@ It is valid for 365 days from the time of issuance.
 Invoice: %s
 The voucher status is %s.
 `
+
+var RandomSalt = "AAKNVZJKRIOWSVLFASSGQXWOTDXVAKMGTJOKTQBAKLFCOKMEIDQRSKCTQLTDOVHXZLUKZKALBFDIXBSZHQCRGWZFYILR"

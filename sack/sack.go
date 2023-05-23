@@ -9,6 +9,7 @@ import (
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/mesh"
 	"gitlab.com/eper.io/engine/metadata"
+	"gitlab.com/eper.io/engine/stateful"
 	"io"
 	"net/http"
 	"os"
@@ -46,6 +47,8 @@ import (
 // TODO Seek and put into the middle of a tarball
 
 func Setup() {
+	stateful.RegisterModuleForBackup(&Sacks)
+
 	http.HandleFunc("/sack.html", func(w http.ResponseWriter, r *http.Request) {
 		err := drawing.EnsureAPIKey(w, r)
 		if err != nil {

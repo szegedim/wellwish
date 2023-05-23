@@ -5,6 +5,7 @@ import (
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/metadata"
 	"io"
+	"time"
 )
 
 // This document is Licensed under Creative Commons CC0.
@@ -14,9 +15,13 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
+var ActivationNeeded = true
+
 var Activated = make(chan string)
 
 var ActivationHashLog = drawing.RedactPublicKey(metadata.ActivationKey)
+
+var activationPeriod = time.Second
 
 func LogSnapshot(m string, w io.Writer, r io.Reader) {
 	// Activation key is shared with multiple containers of the same version,

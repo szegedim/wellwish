@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"gitlab.com/eper.io/engine/billing"
 	"gitlab.com/eper.io/engine/mesh"
+	"gitlab.com/eper.io/engine/stateful"
 	"net/http"
 	"time"
 )
@@ -18,6 +19,8 @@ import (
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
 func Setup() {
+	stateful.RegisterModuleForBackup(&MiningTicket)
+
 	http.HandleFunc("/cryptonugget", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
 			apiKey, err := billing.IsApiKeyValid(w, r, &MiningTicket, mesh.Proxy)

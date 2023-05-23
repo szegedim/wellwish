@@ -25,51 +25,37 @@ import (
 // TODO make sure only activation keys can spread before activation on index
 
 func SetupRing() {
+	//stateful.RegisterModuleForBackup(&index)
+
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = io.Copy(w, bytes.NewBufferString(englang.DecimalString(int64(IndexLengthForTestingOnly()))))
+	})
+
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 
 	http.HandleFunc("/ring", func(w http.ResponseWriter, r *http.Request) {
-		err := fmt.Errorf("unauthorized")
+		var err error
 		apiKey := r.URL.Query().Get("apikey")
-		administrationKey := management.GetAdminKey()
-		if administrationKey == "" {
-			// Propagate administration key
-			if apiKey == metadata.ActivationKey {
-				err = nil
-			}
-		}
-
-		if err != nil {
-			apiKey, err = management.EnsureAdministrator(w, r)
-		}
 		management.QuantumGradeAuthorization()
+		if apiKey != metadata.ActivationKey {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
-		// TODO stream it?
 		body := drawing.NoErrorString(io.ReadAll(r.Body))
-		nodes := make([]string, 0)
-		for node := range Nodes {
-			nodes = append(nodes, node)
-		}
-		sort.Strings(nodes)
-		i, forward := handleRing(body, nodes, &index, pingItem)
-		if i != -1 {
-			call := englang.Printf("Call server %s path /ring?apikey=%s with method GET and content %s. The call expects success.", nodes[i], apiKey, forward)
-			go func() {
-				ret := EnglangRequest1(call)
-				fmt.Println(call, ret)
-			}()
-		}
+		handleRingBody(body, &index)
 	})
 
 	http.HandleFunc("/whoami", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "PUT" {
-			_, _ = w.Write([]byte(MeshId))
+			_, _ = w.Write([]byte(HostId))
 		}
 		if r.Method == "GET" {
 			_, _ = w.Write([]byte(WhoAmI))
@@ -78,28 +64,35 @@ func SetupRing() {
 
 	InitializeNodeList()
 	go func() {
-		index["host"] = GetWhoAmI()
+		time.Sleep(1 * time.Second)
+		whoAmI := GetWhoAmI()
+		//if whoAmI == "" {
+		//	os.Exit(1)
+		//}
+		index["host"] = whoAmI
 		// For testing
-		index[drawing.GenerateUniqueKey()] = index["host"]
-		fmt.Printf("whoami:%s\n", WhoAmI)
+		SetIndex(drawing.GenerateUniqueKey(), whoAmI)
+		fmt.Printf("whoami:%s\n", whoAmI)
 
 		for {
-			sample := Nodes
-			nodes := getNodes(sample)
-			sort.Strings(nodes)
-			if len(nodes) >= 2 {
-				administrationKey := management.GetAdminKey()
-				if administrationKey == "" {
-					administrationKey = metadata.ActivationKey
-				}
+			body := prepareRingBody(&index)
 
-				call := englang.Printf("Call server %s path /ring?apikey=%s with method GET and content %s. The call expects success.", index["host"], administrationKey, "")
-				ret := EnglangRequest1(call)
-				fmt.Println(call)
-				fmt.Println(ret)
-				fmt.Println(index)
+			localHost := index["host"]
+			nodes := make([]string, 0)
+			for node := range Nodes {
+				nodes = append(nodes, node)
 			}
-			time.Sleep(10 * time.Second)
+			sort.Strings(nodes)
+			next := nextRingNode(localHost, nodes, pingItem)
+			if next != "" {
+				call := englang.Printf("Call server %s path /ring?apikey=%s with method PUT and content %s. The call expects success.", next, metadata.ActivationKey, string(body))
+				ret := EnglangRequest1(call)
+				if ret != "success" {
+					fmt.Println(ret)
+				}
+			}
+
+			time.Sleep(2 * time.Second)
 		}
 	}()
 }
@@ -108,7 +101,7 @@ func getNodes(sample map[string]string) []string {
 	nodes := make([]string, 0)
 	for node, status := range sample {
 		if status != "This node got an eviction notice." {
-			_, err := management.HttpProxyRequest(fmt.Sprintf("%s/healthz", node), "GET", nil)
+			_, err := management.HttpProxyRequest(fmt.Sprintf("%s/health", node), "GET", nil)
 			if err == nil {
 				//fmt.Println(node)
 				nodes = append(nodes, node)
@@ -126,9 +119,10 @@ func GetWhoAmI() string {
 	for node, status := range Nodes {
 		if status != "This node got an eviction notice." {
 			go func(current string, d chan string) {
-				path := fmt.Sprintf("/whoami?apikey=%s", MeshId)
-				meshId := EnglangRequest(fmt.Sprintf("Call server %s path %s with method %s and content %s. The call expects %s.", current, path, "PUT", current, "englang"))
-				if meshId == MeshId {
+				path := fmt.Sprintf("/whoami?apikey=%s", HostId)
+				call := fmt.Sprintf("Call server %s path %s with method %s and content %s. The call expects %s.", current, path, "PUT", current, "englang")
+				meshId := EnglangRequest(call)
+				if meshId == HostId {
 					WhoAmI = current
 					d <- current
 				}
@@ -186,82 +180,60 @@ func EnglangRequest1(e string) string {
 	return ""
 }
 
-func nextRing(current string, ring []string, ping func(host string) bool) int {
+func nextRingNode(current string, ring []string, ping func(host string) bool) string {
 	if ping == nil {
-		ping = pingAwaysSuccess
+		ping = pingDefault
 	}
-	found := ""
-	for i, v := range ring {
-		if v == current {
-			found = ring[(i+1)%len(ring)]
-		}
-	}
-	if found == "" {
-		return -1
-	}
-	for j := 0; j < 2; j++ {
-		for i, v := range ring {
-			if v == found {
-				if ping(v) {
-					return i
-				}
-				found = ring[(i+1)%len(ring)]
+	found := false
+	for i := 0; i < len(ring)*2; i++ {
+		ix := i % len(ring)
+		next := ring[ix]
+		if found {
+			if ping(next) {
+				return next
 			}
+			if next == current {
+				break
+			}
+			continue
+		}
+		if next == current {
+			found = true
 		}
 	}
-	return -1
+	return ""
 }
 
 func pingItem(host string) bool {
-	call := englang.Printf("%s/healthz", host)
-	_, err := management.HttpProxyRequest(call, "", nil)
+	call := englang.Printf("%s/health", host)
+	_, err := management.HttpProxyRequest(call, "GET", nil)
 	return err == nil
 }
 
-func pingAwaysSuccess(host string) bool {
+func pingDefault(host string) bool {
 	return true
 }
 
-func handleRing(body string, ring []string, index *map[string]string, ping func(host string) bool) (int, string) {
-	if body == "" {
-		body = englang.Println("Ring %s on (%s)", "starts", GetWhoAmI()) //TODO index[host]
-	}
+func handleRingBody(body string, index *map[string]string) {
 	scanner := bufio.NewScanner(strings.NewReader(body))
-
-	forward := bytes.Buffer{}
-
-	localHost := (*index)["host"]
-	next := nextRing(localHost, ring, ping)
 
 	for scanner.Scan() {
 		line := scanner.Text()
+		var k, v string
+		drawing.NoErrorVoid(englang.Scanf1(line, "index %s is (%s)", &k, &v))
+		if k != "" && v != "" {
+			(*index)[k] = v
+		}
+	}
+}
 
-		var final, twice string
-		drawing.NoErrorVoid(englang.Scanf1(line, "Ring %s on (%s)", &twice, &final))
-		if final == localHost {
-			if twice == "starts" {
-				// first call
-				forward.WriteString(englang.Println("Ring %s on (%s)", "finishes", final))
-				for k, v := range *index {
-					if k != "host" {
-						forward.WriteString(englang.Println("index %s is (%s)", k, v))
-					}
-				}
-				return next, forward.String()
-			} else if twice == "finishes" {
-				// last call
-				return -1, ""
-			}
-		} else {
-			// ring call
-			forward.WriteString(englang.Println(line))
-			var k, v string
-			drawing.NoErrorVoid(englang.Scanf1(line, "index %s is (%s)", &k, &v))
-			if k != "" && v != "" {
-				(*index)[k] = v
-			}
+func prepareRingBody(index *map[string]string) []byte {
+	forward := bytes.Buffer{}
+	for k, v := range *index {
+		if k != "" && v != "" && k != "host" {
+			forward.WriteString(englang.Println("index %s is (%s)", k, v))
 		}
 	}
 
-	return next, forward.String()
+	return forward.Bytes()
 }

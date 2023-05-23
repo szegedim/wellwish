@@ -3,6 +3,7 @@ package management
 import (
 	"bytes"
 	"fmt"
+	"gitlab.com/eper.io/engine/metadata"
 	"io"
 	"net/http"
 	"strings"
@@ -19,9 +20,9 @@ func QuantumGradeAuthorization() {
 
 func AddAdminForUrl(url string) string {
 	if !strings.Contains(url, "?") {
-		return fmt.Sprintf("%s?apikey=%s", url, administrationKey)
+		return fmt.Sprintf("%s?apikey=%s", url, metadata.ManagementKey)
 	}
-	return fmt.Sprintf("%s&apikey=%s", url, administrationKey)
+	return fmt.Sprintf("%s&apikey=%s", url, metadata.ManagementKey)
 }
 
 func HttpProxyRequest(url string, method string, bodyIn io.Reader) ([]byte, error) {

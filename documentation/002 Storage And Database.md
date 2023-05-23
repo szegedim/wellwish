@@ -19,6 +19,7 @@ This means that the per-user active transactional data is like twenty megabytes.
 Some users may have more but the customer base suggests a small amount.
 
 This can easily be sharded by user buckets to individual servers in string to string apikey memory maps.
+This concept is the analogy of serverless functions to stateful storage containers.
 
 We use the apikey as a sufficient solution for indexing.
 Once the server is chosen, serving the data is quick from memory.

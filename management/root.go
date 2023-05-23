@@ -15,14 +15,4 @@ func SetupSiteRoot() {
 	http.HandleFunc("/index.html", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/entry.html", http.StatusTemporaryRedirect)
 	})
-
-	http.HandleFunc("/contact.txt", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Cache-Control", "no-cache")
-		http.ServeFile(w, r, "./metadata/contact.txt")
-	})
-
-	http.HandleFunc("/terms.txt", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Cache-Control", "no-cache")
-		http.ServeFile(w, r, "./metadata/terms.txt")
-	})
 }

@@ -1,6 +1,7 @@
 package drawing
 
 import (
+	"bytes"
 	"crypto/rand"
 	"fmt"
 	"gitlab.com/eper.io/engine/metadata"
@@ -63,6 +64,18 @@ func NoErrorVoid(err error) {
 	if err != nil {
 		fmt.Errorf("%s\n", err)
 	}
+}
+
+func NoNilReader(response *http.Response) io.Reader {
+	if response == nil {
+		ret := bytes.Buffer{}
+		return &ret
+	}
+	if response.Body == nil {
+		ret := bytes.Buffer{}
+		return &ret
+	}
+	return response.Body
 }
 
 func NoErrorBytes(data []byte, err error) []byte {
@@ -165,9 +178,10 @@ func GenerateUniqueKey() string {
 
 	letters := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 	key := make([]rune, 92)
+	salt := metadata.RandomSalt
 	for i := 0; i < 1000; i++ {
 		for i := 0; i < 92; i++ {
-			key[i] = letters[(((Random() ^ random.Uint32()) + uint32(metadata.ActivationKey[i])) % uint32(len(letters)))]
+			key[i] = letters[(((Random() ^ random.Uint32()) + uint32(salt[i])) % uint32(len(letters)))]
 			time.Sleep(550 * time.Nanosecond)
 		}
 		if key[91] == 'A' {

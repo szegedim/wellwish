@@ -12,13 +12,13 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
-var containerIndexLimit = 1000000
+var containerIndexLimit = 100000
 
 var checkpointPeriod = 10 * time.Second
 
 var lock = sync.Mutex{}
-var csi = map[string]string{}
 var lru = map[string]string{}
+var stateModules = make([]*map[string]string, 0)
 
 var checkpoint *[]byte = nil
 

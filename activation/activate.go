@@ -7,6 +7,7 @@ import (
 	"gitlab.com/eper.io/engine/mesh"
 	"gitlab.com/eper.io/engine/metadata"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
@@ -49,15 +50,27 @@ func SetupActivation() {
 			return
 		}
 		activationKey := r.URL.Query().Get("apikey")
+		// Activation key is private updated in metadata.go
+		// We make sure it is used only once to retrieve the management key for all the data
 		if activationKey == metadata.ActivationKey {
-			adminKey := startActivation()
-			_, _ = w.Write([]byte(fmt.Sprintf("%s/management.html?apikey=%s", metadata.SiteUrl, adminKey)))
+			if ActivationNeeded {
+				adminKey := startActivation()
+				time.Sleep(activationPeriod)
+				_, _ = w.Write([]byte(adminKey))
+			} else {
+				// TODO is this secure? Give them just a hint, if they have the private key
+				_, _ = w.Write([]byte(drawing.RedactPublicKey(metadata.ManagementKey)))
+			}
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)
 		}
 	})
 
 	go func() {
+		key, ok := os.LookupEnv("KEY")
+		if ok && key != "" {
+			metadata.ActivationKey = key
+		}
 		if metadata.ActivationKey == "" {
 			activate()
 			return
@@ -66,20 +79,24 @@ func SetupActivation() {
 			if metadata.ActivationKey == "" {
 				break
 			}
-			if mesh.GetIndex(metadata.ActivationKey) != "" {
-				management.UpdateAdminKey(mesh.GetIndex(metadata.ActivationKey))
+
+			adminKey := mesh.GetIndex(metadata.ActivationKey)
+			if adminKey != "" {
+				// This happens, if another node in the mesh was activated
+				metadata.ManagementKey = adminKey
 				activate()
 				break
 			}
-			time.Sleep(time.Second)
+			time.Sleep(activationPeriod)
 		}
 	}()
 }
 
+// startActivation happens once in a cluster and the key gets propagated.
 func startActivation() string {
-	adminKey := drawing.GenerateUniqueKey()
-	mesh.SetIndex(metadata.ActivationKey, adminKey)
-	return adminKey
+	metadata.ManagementKey = drawing.GenerateUniqueKey()
+	mesh.SetIndex(metadata.ActivationKey, metadata.ManagementKey)
+	return metadata.ManagementKey
 }
 
 func declareActivationForm(session *drawing.Session) {
@@ -89,27 +106,30 @@ func declareActivationForm(session *drawing.Session) {
 		session.SignalTextChange = func(session *drawing.Session, i int, from string, to string) {
 			session.SignalPartialRedrawNeeded(session, i)
 			if strings.Contains(session.Text[i].Text, metadata.ActivationKey) {
-				adminKey := startActivation()
-				session.Data = fmt.Sprintf("/management.html?apikey=%s", adminKey)
-				session.SignalClosed(session)
+				// Activation key is private updated in metadata.go
+				// We make sure it is used only once to retrieve the management key for all the data
+				if ActivationNeeded {
+					adminKey := startActivation()
+					time.Sleep(activationPeriod)
+					session.Data = fmt.Sprintf("/management.html?apikey=%s", adminKey)
+					session.SignalClosed(session)
+				} else {
+					session.Data = fmt.Sprintf("/")
+					session.SignalClosed(session)
+				}
 			}
 		}
 		session.SignalClosed = func(session *drawing.Session) {
-			for {
-				if metadata.ActivationKey == "" {
-					break
-				}
-			}
 			session.SelectedBox = -1
 			session.Redirect = session.Data
 		}
 	}
 }
 
-func activate() string {
+func activate() {
 	Activated <- "Hello World!"
-	adminKey := <-Activated
-	fmt.Println("Activated.", adminKey)
-	metadata.ActivationKey = ""
-	return adminKey
+	<-Activated
+	// TODO is this secure?
+	fmt.Println("Activated.", fmt.Sprintf("%s/management.html?apikey=%s...", metadata.SiteUrl, drawing.RedactPublicKey(metadata.ManagementKey)))
+	ActivationNeeded = false
 }

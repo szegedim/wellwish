@@ -8,6 +8,7 @@ import (
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/mesh"
+	"gitlab.com/eper.io/engine/metadata"
 	"io"
 	"net/http"
 	"os"
@@ -49,7 +50,7 @@ func TestBurst(t *testing.T) {
 	// All containers are host (no access to each other)
 	// Assumes cloud traffic is protected
 
-	go func() { _ = http.ListenAndServe(":7777", nil) }()
+	go func() { _ = http.ListenAndServe(metadata.Http11Port, nil) }()
 
 	Setup()
 	voucher := drawing.GenerateUniqueKey()
@@ -80,19 +81,19 @@ func TestBurst(t *testing.T) {
 
 	burst1 := func(message string) {
 		var burstSession, burst string
-		ret := mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1:7777 path /api with method PUT and content %s. The call expects englang.", payment.String()))
+		ret := mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1%s path /api with method PUT and content %s. The call expects englang.", metadata.Http11Port, payment.String()))
 		if ret != "too early" {
 			burstSession = ret
 		}
 		time.Sleep(100 * time.Millisecond)
-		ret = mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1:7777 path /api?apikey=%s with method GET and content %s. The call expects englang.", burstSession, message))
+		ret = mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1%s path /api?apikey=%s with method GET and content %s. The call expects englang.", metadata.Http11Port, burstSession, message))
 		if ret != "too early" {
 			burst = ret
 		}
 
 		for i := 0; i < 10; i++ {
 			time.Sleep(100 * time.Millisecond)
-			ret = mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1:7777 path /api?apikey=%s with method GET and content %s. The call expects englang.", burst, ""))
+			ret = mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1%s path /api?apikey=%s with method GET and content %s. The call expects englang.", metadata.Http11Port, burst, ""))
 			if ret == message {
 				t.Log(ret)
 				done <- true

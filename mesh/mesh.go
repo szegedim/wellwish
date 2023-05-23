@@ -2,11 +2,9 @@ package mesh
 
 import (
 	"fmt"
-	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/management"
 	"gitlab.com/eper.io/engine/metadata"
-	"io"
 	"net"
 	"net/http"
 	"strings"
@@ -59,52 +57,6 @@ import (
 // TODO It is easier to add port 7778 for stateful writes and disable it in the load balancer.
 // TODO It is easier to disable sack PUT requests i.e. /tmp in the load balancer or firewall.
 // It can be turned off at the standard expiry time, when stateful sacks, etc. expired.
-
-func Setup() {
-
-	http.HandleFunc("/mesh.html", func(w http.ResponseWriter, r *http.Request) {
-		if drawing.EnsureAPIKey(w, r) != nil {
-			return
-		}
-		if drawing.ResetSession(w, r) != nil {
-			return
-		}
-		drawing.ServeRemoteForm(w, r, "mesh")
-	})
-	http.HandleFunc("/mesh.png", func(w http.ResponseWriter, r *http.Request) {
-		if drawing.EnsureAPIKey(w, r) != nil {
-			return
-		}
-		drawing.ServeRemoteFrame(w, r, declareForm)
-	})
-
-	http.HandleFunc("/index", func(w http.ResponseWriter, r *http.Request) {
-		// Load and Propagate server names from api
-		_, err := management.EnsureAdministrator(w, r)
-		management.QuantumGradeAuthorization()
-		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-
-		if r.Method == "PUT" {
-			// Store locally
-			UpdateIndex(r.Body)
-
-			// Merge with existing and forward
-			merged := FilterIndexEntries()
-
-			// Propagate remotely
-			ForwardRoundRobinRingRequestUpdated(r, merged)
-		}
-		if r.Method == "GET" {
-			buf := FilterIndexEntries()
-			_, _ = io.Copy(w, buf)
-		}
-	})
-
-	checkpointingSetup()
-}
 
 func InitializeNodeList() {
 	if len(Nodes) > 0 {
@@ -197,16 +149,4 @@ func Proxy(w http.ResponseWriter, r *http.Request) error {
 	// TODO Is it okay to assume a complete write with HTTP writer?
 	_, _ = w.Write(b)
 	return nil
-}
-
-func declareForm(session *drawing.Session) {
-	if session.Form.Boxes == nil {
-		drawing.DeclareForm(session, "./billing/res/mesh.png")
-
-		var Text = 0
-
-		instruction := fmt.Sprintf("Set up mesh network using health check results from the nodes: %s", metadata.NodePattern)
-		drawing.PutText(session, Text, drawing.Content{Text: "�" + instruction, Lines: 20, Editable: true, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 1})
-
-	}
 }

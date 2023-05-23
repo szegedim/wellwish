@@ -179,7 +179,6 @@ func ForwardRoundRobinRingRequestUpdated(r *http.Request, updated io.Reader) {
 	u := r.URL
 	next, nextNext, err := roundRobinRing(next, session)
 	if err != nil {
-		//Rings[session] = strings.TrimRight(Rings[session], "\n") + r.URL.Path + "\n"
 		return
 	}
 	u.Query().Set("session", session)
@@ -217,7 +216,7 @@ func roundRobinRing(next string, ringSession string) (string, string, error) {
 	nextNext := ""
 	for i := 0; i < len(nodeNames); i++ {
 		if nodeNames[i] == next || next == "" {
-			_, err := management.HttpProxyRequest(fmt.Sprintf("%s/healthz", nodeNames[i]), "GET", nil)
+			_, err := management.HttpProxyRequest(fmt.Sprintf("%s/health", nodeNames[i]), "GET", nil)
 			if err == nil {
 				Rings[ringSession] = fmt.Sprintf("Ring %s started on %s at %s ns", ringSession, time.Now().Format("Jan 2, 2006"), englang.DecimalString(time.Now().UnixNano()))
 				next = nodeNames[i]

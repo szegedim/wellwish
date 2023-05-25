@@ -65,6 +65,15 @@ Consult with a local professional.
 Payments can be done by dragging and dropping an invoice, paid bill or coin file like a vending machine.
 Use a USB stick, if you need more security.
 
+Some may opt for more technologically orthodox, object-oriented conservative systems like Unix, Java, or Python.
+They may use Golang, Node, or Englang.
+
+It is a very low investment marketing funnel from the customer side.
+There is no account, no information needed, no commitments.
+It is a casual solution, they can use the service right away.
+Also, it allows flexibility of the backend technologies used.
+
+
 Cheers...
 
 [Grotto open source code](https://gitlab.com/eper.io/grotto)

@@ -22,7 +22,4 @@ var BurstSession = map[string]string{}
 var Container = map[string]string{}
 var NewTask = make(chan string)
 
-var MetalFilePattern = "/tmp/container*.metal"
-var MetalFiles = make([]string, 0)
-
 var ContainerPattern = "Container with metal file %s uses idle query %s and it is running %s."

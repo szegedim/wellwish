@@ -5,7 +5,10 @@ import (
 	"gitlab.com/eper.io/engine/billing"
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
+	"gitlab.com/eper.io/engine/management"
+	"gitlab.com/eper.io/engine/mesh"
 	"gitlab.com/eper.io/engine/metadata"
+	"gitlab.com/eper.io/engine/stateful"
 	"io"
 	"net/http"
 	"strings"
@@ -33,18 +36,46 @@ import (
 // Example: 1million 100ms reads streamed into 100ms compute will last 100000 seconds,
 // even if there is an extra network latency of 100ms
 
-func Setup() {
+func SetupBurst() {
+	stateful.RegisterModuleForBackup(&BurstSession)
+
 	http.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "PUT" {
 			ok, _, _, voucher := billing.ValidateVoucher(w, r, true)
 			if ok {
 				burst := drawing.GenerateUniqueKey()
-				BurstSession[burst] = englang.Printf(fmt.Sprintf("Burst chain api created from %s is %s/api?apikey=%s. Chain has %s left.", voucher, metadata.SiteUrl, burst, (24 * time.Hour).String()))
+				// TODO cleanup
+				BurstSession[burst] = englang.Printf(fmt.Sprintf("Burst chain api created from %s is %s/api?apikey=%s. Chain is valid until %s.", voucher, metadata.SiteUrl, burst, time.Now().Add(24*time.Hour).String()))
+				mesh.SetIndex(burst, mesh.WhoAmI)
+				management.QuantumGradeAuthorization()
 				_, _ = w.Write([]byte(burst))
 				return
 			} else {
+				management.QuantumGradeAuthorization()
 				_, _ = w.Write([]byte("payment required"))
 				w.WriteHeader(http.StatusPaymentRequired)
+				return
+			}
+		}
+
+		if r.Method == "HEAD" {
+			apiKey := r.URL.Query().Get("apikey")
+			session, sessionValid := BurstSession[apiKey]
+			burst, burstOk := Burst[apiKey]
+			if !sessionValid && !burstOk {
+				management.QuantumGradeAuthorization()
+				_, _ = w.Write([]byte("payment required"))
+				w.WriteHeader(http.StatusPaymentRequired)
+				return
+			}
+			if sessionValid {
+				management.QuantumGradeAuthorization()
+				_, _ = w.Write([]byte(session))
+				return
+			}
+			if burstOk {
+				management.QuantumGradeAuthorization()
+				_, _ = w.Write([]byte(burst))
 				return
 			}
 		}
@@ -54,6 +85,7 @@ func Setup() {
 			_, call := BurstSession[apiKey]
 			_, result := Burst[apiKey]
 			if !call && !result {
+				management.QuantumGradeAuthorization()
 				_, _ = w.Write([]byte("payment required"))
 				w.WriteHeader(http.StatusPaymentRequired)
 			}
@@ -66,6 +98,7 @@ func Setup() {
 				// This is just a perf improvement that can be eliminated
 				go func() { NewTask <- burst }()
 
+				management.QuantumGradeAuthorization()
 				_, _ = w.Write([]byte(burst))
 				return
 			}
@@ -74,32 +107,45 @@ func Setup() {
 				burst, call := Burst[apiKey]
 				if call {
 					if strings.HasPrefix(burst, "Response ") {
+						management.QuantumGradeAuthorization()
 						_, _ = io.Copy(w, strings.NewReader(burst[len("Response "):]))
 						return
 					} else {
 						w.WriteHeader(http.StatusTooEarly)
+						management.QuantumGradeAuthorization()
 						_, _ = w.Write([]byte("too early"))
 						return
 					}
 				}
 			}
 
+			management.QuantumGradeAuthorization()
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
+		management.QuantumGradeAuthorization()
 	})
 
 	http.HandleFunc("/idle", func(w http.ResponseWriter, r *http.Request) {
-		apiKey := r.URL.Query().Get("apikey")
-		if len(apiKey) != len(drawing.GenerateUniqueKey()) {
-			_, _ = w.Write([]byte("payment required"))
+		if !strings.HasPrefix(r.RemoteAddr, "127.0.0.1") {
+			// local burst runner allowed only
 			w.WriteHeader(http.StatusPaymentRequired)
 			return
 		}
+		apiKey := r.URL.Query().Get("apikey")
+		if apiKey == metadata.ActivationKey {
+			time.Sleep(0 * time.Second)
+			currentKey := drawing.GenerateUniqueKey()
+			localRunnerEndpoint := fmt.Sprintf("http://127.0.0.1%s", metadata.Http11Port)
+			content := fmt.Sprintf(ContainerPattern, "any", localRunnerEndpoint, "idle")
+			Container[currentKey] = content
+			_, _ = w.Write([]byte(currentKey))
+			return
+		}
+		containerKey := apiKey
 
 		if r.Method == "GET" {
-			// TODO get paid
-			_, ok := Container[apiKey]
+			_, ok := Container[containerKey]
 			if !ok {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
@@ -118,7 +164,7 @@ func Setup() {
 					if strings.HasPrefix(v, "Request paid with ") {
 						_, _ = w.Write([]byte(v[len(prefix):]))
 						Burst[k] = "running"
-						UpdateContainerWithBurst(apiKey, k)
+						UpdateContainerWithBurst(containerKey, k)
 						started = true
 						return
 					}
@@ -138,15 +184,15 @@ func Setup() {
 			}
 		}
 		if r.Method == "PUT" {
-			burst := UpdateContainerWithBurst(apiKey, "finished")
+			burst := UpdateContainerWithBurst(containerKey, "finished")
 			if burst == "idle" || len(burst) != len(drawing.GenerateUniqueKey()) {
-				_, _ = w.Write([]byte("unauthorized"))
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
 
 			if strings.HasPrefix(Burst[burst], "running") {
-				Burst[burst] = "Response " + string(drawing.NoErrorBytes(io.ReadAll(r.Body)))
+				response := string(drawing.NoErrorBytes(io.ReadAll(r.Body)))
+				Burst[burst] = "Response " + response
 			}
 		}
 	})

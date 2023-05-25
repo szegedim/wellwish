@@ -2,7 +2,6 @@ package burst
 
 import (
 	"fmt"
-	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/mesh"
 	"gitlab.com/eper.io/engine/metadata"
@@ -24,70 +23,37 @@ import (
 
 // This is a module code that runs burst containers.
 // The big difference between these and other modules is that it actually does not have
-// an entry point. The locality is ensured by private keys distributed by mapped files called 'metal'.
+// an entry point.
+// The locality is ensured by private keys distributed early called 'metal'.
 // This ensures that we have a local runner.
-// Each runner connects to the main site as /idle using the metal key
-// The runner restarts after each run, so that any local state is lost
-// Every burst fetches a new metal key from the file.
+// What does this mean?
+// - /idle responds to local endpoints only like a co-located container in the same pod
+// - idle returns a task and a key to complete the task
+// - malicious tasks may go for idle again
+// - we protect against this by letting bursts run for a term e.g. ten seconds
+// - we protect against this also by not issuing a new key until the previous one finishes
+// - Each runner connects to the main site as /idle using the activation key
+// - The activation key is deleted from the container once used
+// - The init task of the container is our burst runner. It should be set debuggable by workload.
+// - The init task kills the container, if the workload tries to kill it.
+// - The final column is time fencing allowing /idle calls only once every minute when workloads are already gone.
+// - The runner restarts after each run, so that any local state and code is lost disabling double /idle calls.
 
 func SetupRunner() {
-	InitializeNodeList()
+	fmt.Println("Initializing burst runners on 127.0.0.1")
 }
 
-func UpdateContainerWithBurst(apiKey string, update string) string {
-	container := Container[apiKey]
+func UpdateContainerWithBurst(containerKey string, update string) string {
+	container := Container[containerKey]
 	var metalfile, url, burstKey string
 	if nil == englang.Scanf(container, ContainerPattern, &metalfile, &url, &burstKey) {
 		container := fmt.Sprintf(ContainerPattern, metalfile, url, update)
-		Container[apiKey] = container
-		RestartFinishedContainer(apiKey, container)
+		Container[containerKey] = container
+		if strings.HasSuffix(container, "finished") {
+			delete(Container, containerKey)
+		}
 	}
 	return burstKey
-}
-
-func RestartFinishedContainer(key string, container string) {
-	if strings.HasSuffix(container, "finished") {
-		delete(Container, key)
-		GenerateNewContainerKey(container)
-		//TODO restart
-		x := time.Duration(uint64(100000/len(Container))) * time.Microsecond
-		time.Sleep(x)
-	}
-}
-
-func GenerateNewContainerKey(container string) {
-	currentKey := drawing.GenerateUniqueKey()
-	Container[currentKey] = container
-	var metalfile, url, burstKey string
-	if nil == englang.Scanf(container, ContainerPattern, &metalfile, &url, &burstKey) {
-		_ = os.WriteFile(metalfile, []byte(currentKey), 0700)
-	}
-}
-
-func InitializeNodeList() {
-	if MetalFilePattern != "" {
-		MetalFiles = make([]string, 0)
-		actual := []string{MetalFilePattern}
-		for {
-			next := make([]string, 0)
-			for _, x := range actual {
-				if strings.Contains(x, "*") {
-					for i := 0; i < 10; i++ {
-						next = append(next, strings.Replace(x, "*", englang.DecimalString(int64(i)), 1))
-					}
-				}
-			}
-			if len(next) == 0 {
-				break
-			}
-			actual = next
-		}
-		for _, name := range actual {
-			content := fmt.Sprintf(ContainerPattern, name, metadata.SiteUrl, "idle")
-			GenerateNewContainerKey(content)
-		}
-		MetalFiles = actual
-	}
 }
 
 func Run(code []byte, stdin io.ReadCloser, stdout io.Writer) {
@@ -144,6 +110,35 @@ func Run(code []byte, stdin io.ReadCloser, stdout io.Writer) {
 		_, _ = stdout.Write([]byte(err.Error()))
 		return
 	}
+}
+
+func runRunner(ready chan int, port string, timeout time.Duration) {
+	goRoot := os.Getenv("GOROOT")
+	p := exec.Cmd{
+		Dir:  ".",
+		Path: path.Join(goRoot, "bin", "go"),
+		Args: []string{"go", "run", "./box/main.go", port},
+	}
+	err := p.Start()
+	if err != nil {
+		fmt.Println(err)
+	}
+	go func() {
+		time.Sleep(timeout)
+		_ = p.Process.Kill()
+	}()
+	err = p.Wait()
+	if err != nil && err.Error() != "signal: killed" {
+		fmt.Println(err)
+	}
+	b, _ := p.CombinedOutput()
+	if len(b) > 0 {
+		fmt.Println(string(b))
+	}
+	if p.ProcessState.ExitCode() != 0 && p.ProcessState.ExitCode() != -1 {
+		fmt.Println(p.ProcessState.ExitCode())
+	}
+	ready <- 1
 }
 
 func LogSnapshot(m string, w io.Writer, r io.Reader) {

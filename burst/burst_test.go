@@ -52,7 +52,7 @@ func TestBurst(t *testing.T) {
 
 	go func() { _ = http.ListenAndServe(metadata.Http11Port, nil) }()
 
-	Setup()
+	SetupBurst()
 	voucher := drawing.GenerateUniqueKey()
 	billing.IssueOrder(voucher, "100",
 		"Example Inc.", "1 First Ave, USA",
@@ -67,17 +67,19 @@ func TestBurst(t *testing.T) {
 
 	SetupRunner()
 
-	go func() {
+	api1 := func() {
 		for i := 0; i < 100; i++ {
 			time.Sleep(100 * time.Millisecond)
-			box.Vars["APIKEY"] = "/tmp/container2.metal"
-			box.Englang("Initialize container with key from file from environment variable APIKEY.")
-			if box.Vars["accumulator"] == "Hello World!" || box.Vars["accumulator"] == "Hello Moon!" {
+			box.Englang("Fetch task with a newly generated burst key into accumulator using key in abc.")
+			ret := box.Context["accumulator"]
+			//box.Englang("Set burst timeout to ten seconds.")
+			if ret == "Hello World!" || ret == "Hello Moon!" {
 				time.Sleep(100 * time.Millisecond)
-				box.Englang("Finish container with content from accumulator and key from file from environment variable APIKEY.")
+				box.Englang("Upload container result content from accumulator and key from environment variable abc.")
 			}
 		}
-	}()
+	}
+	go api1()
 
 	burst1 := func(message string) {
 		var burstSession, burst string
@@ -112,7 +114,7 @@ func TestBurst(t *testing.T) {
 
 	for range messages {
 		select {
-		case <-time.After(10 * time.Second):
+		case <-time.After(60 * time.Second):
 			// Timeout may mean a port conflict
 			t.Error("timeout")
 		case <-done:

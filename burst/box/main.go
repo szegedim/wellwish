@@ -21,6 +21,7 @@ import box "gitlab.com/eper.io/engine/burst/box/englang"
 
 func main() {
 	box.Englang(
-		`Initialize container with key from file from environment variable APIKEY into accumulator.
-Finish container with content from accumulator and key from file from environment variable APIKEY."`)
+		`Set burst timeout to ten seconds.
+Fetch task with a newly generated burst key into accumulator using key in abc.
+Upload container result content from accumulator and key from environment variable abc."`)
 }

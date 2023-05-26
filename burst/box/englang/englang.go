@@ -36,7 +36,7 @@ func englangBurst(acc string) string {
 	if nil == englang.Scanf1(acc, "Set burst timeout to ten seconds.") {
 		go func() {
 			time.Sleep(10 * time.Second)
-			os.Exit(1)
+			os.Exit(2)
 		}()
 		return "success"
 	}

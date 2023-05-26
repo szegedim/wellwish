@@ -1,5 +1,10 @@
 package burst
 
+import (
+	"sync"
+	"time"
+)
+
 // This document is Licensed under Creative Commons CC0.
 // To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights
 // to this document to the public domain worldwide.
@@ -17,9 +22,13 @@ package burst
 // - Communication will shift from REST/XML to Englang processed by ChatGPT like agents
 // - Bursts will be completely transparent allowing bare metal error resolution
 
+var lock = sync.Mutex{}
+
 var Burst = map[string]string{}
 var BurstSession = map[string]string{}
 var Container = map[string]string{}
 var NewTask = make(chan string)
+var Cleanup = make([]func(), 0)
 
+var BurstLimit = 10 * time.Second
 var ContainerPattern = "Container with metal file %s uses idle query %s and it is running %s."

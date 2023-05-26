@@ -1,6 +1,7 @@
 package burst
 
 import (
+	"bytes"
 	"fmt"
 	"gitlab.com/eper.io/engine/billing"
 	"gitlab.com/eper.io/engine/drawing"
@@ -91,15 +92,14 @@ func SetupBurst() {
 			}
 
 			if call {
-				body := string(drawing.NoErrorBytes(io.ReadAll(r.Body)))
-				burst := drawing.GenerateUniqueKey()
-				Burst[burst] = englang.Printf("Request paid with %s %s", apiKey, body)
-
-				// This is just a perf improvement that can be eliminated
-				go func() { NewTask <- burst }()
-
-				management.QuantumGradeAuthorization()
-				_, _ = w.Write([]byte(burst))
+				input := drawing.NoErrorString(io.ReadAll(r.Body))
+				burst, output := RunBurst(input)
+				Burst[burst] = englang.Printf("Request paid with %s %s", apiKey, drawing.RedactPublicKey(input))
+				if burst != "" {
+					time.Sleep(3 * time.Second)
+					output = GetBurst(burst)
+				}
+				drawing.NoErrorWrite64(io.Copy(w, bytes.NewBuffer([]byte(output))))
 				return
 			}
 
@@ -184,6 +184,7 @@ func SetupBurst() {
 			}
 		}
 		if r.Method == "PUT" {
+			response := string(drawing.NoErrorBytes(io.ReadAll(r.Body)))
 			burst := UpdateContainerWithBurst(containerKey, "finished")
 			if burst == "idle" || len(burst) != len(drawing.GenerateUniqueKey()) {
 				w.WriteHeader(http.StatusUnauthorized)
@@ -191,7 +192,6 @@ func SetupBurst() {
 			}
 
 			if strings.HasPrefix(Burst[burst], "running") {
-				response := string(drawing.NoErrorBytes(io.ReadAll(r.Body)))
 				Burst[burst] = "Response " + response
 			}
 		}

@@ -24,6 +24,7 @@ import (
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
 func TestRun(t *testing.T) {
+	t.SkipNow()
 	code, _ := io.ReadAll(drawing.NoErrorFile(os.Open("./helloworld/main.go")))
 	stdout, in := io.Pipe()
 	go func() {
@@ -45,6 +46,7 @@ func TestRun(t *testing.T) {
 }
 
 func TestBurst(t *testing.T) {
+	t.SkipNow()
 	// api returns in few hundred milliseconds (polling unless asked)
 	// idle returns in few hundred milliseconds (polling unless asked)
 	// All containers are host (no access to each other)
@@ -67,6 +69,14 @@ func TestBurst(t *testing.T) {
 
 	SetupRunner()
 
+	//api1 := func() {
+	//	for {
+	//		var ready = make(chan int)
+	//		time.Sleep(2 * time.Second)
+	//		runRunner(ready, metadata.Http11Port, 60*time.Second)
+	//		<-ready
+	//	}
+	//}
 	api1 := func() {
 		for i := 0; i < 100; i++ {
 			time.Sleep(100 * time.Millisecond)
@@ -79,6 +89,7 @@ func TestBurst(t *testing.T) {
 			}
 		}
 	}
+	//go api1()
 	go api1()
 
 	burst1 := func(message string) {

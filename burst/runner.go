@@ -112,14 +112,24 @@ func Run(code []byte, stdin io.ReadCloser, stdout io.Writer) {
 	}
 }
 
-func runRunner(ready chan int, port string, timeout time.Duration) {
+func runRunner(ready chan int, timeout time.Duration) {
 	goRoot := os.Getenv("GOROOT")
+	goroot := path.Join(goRoot, "bin", "go")
+	box := "./burst/box1/main.go"
+	_, err := os.Stat(box)
+	if err != nil {
+		fmt.Println("cannot find " + box)
+	}
+	fmt.Println(goroot)
+	runC := []string{goroot, "help"}
+	fmt.Println(strings.Join(runC, " "))
 	p := exec.Cmd{
 		Dir:  ".",
-		Path: path.Join(goRoot, "bin", "go"),
-		Args: []string{"go", "run", "./box/main.go", port},
+		Path: goroot,
+		Args: runC,
+		Env:  []string{"GOROOT=" + goRoot, "GOPATH=/tmp"},
 	}
-	err := p.Start()
+	err = p.Start()
 	if err != nil {
 		fmt.Println(err)
 	}

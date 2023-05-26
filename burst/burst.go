@@ -1,7 +1,6 @@
 package burst
 
 import (
-	"bytes"
 	"fmt"
 	"gitlab.com/eper.io/engine/billing"
 	"gitlab.com/eper.io/engine/drawing"
@@ -12,7 +11,6 @@ import (
 	"gitlab.com/eper.io/engine/stateful"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -41,28 +39,28 @@ func SetupBurst() {
 	stateful.RegisterModuleForBackup(&BurstSession)
 
 	http.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
+		// Setup burst sessions, a range of time, when a coin can be used for bursts.
 		if r.Method == "PUT" {
-			ok, _, _, voucher := billing.ValidateVoucher(w, r, true)
-			if ok {
-				burst := drawing.GenerateUniqueKey()
-				// TODO cleanup
-				BurstSession[burst] = englang.Printf(fmt.Sprintf("Burst chain api created from %s is %s/api?apikey=%s. Chain is valid until %s.", voucher, metadata.SiteUrl, burst, time.Now().Add(24*time.Hour).String()))
-				mesh.SetIndex(burst, mesh.WhoAmI)
-				management.QuantumGradeAuthorization()
-				_, _ = w.Write([]byte(burst))
-				return
-			} else {
-				management.QuantumGradeAuthorization()
-				_, _ = w.Write([]byte("payment required"))
+			payment := drawing.NoErrorString(io.ReadAll(r.Body))
+			coinToUse, err := billing.RedeemCoin(payment)
+			if err != nil {
 				w.WriteHeader(http.StatusPaymentRequired)
 				return
 			}
+
+			burst := drawing.GenerateUniqueKey()
+			// TODO cleanup
+			BurstSession[burst] = englang.Printf(fmt.Sprintf("Burst chain api created from %s is %s/api?apikey=%s. Chain is valid until %s.", coinToUse, metadata.SiteUrl, burst, time.Now().Add(24*time.Hour).String()))
+			mesh.SetIndex(burst, mesh.WhoAmI)
+			management.QuantumGradeAuthorization()
+			_, _ = w.Write([]byte(burst))
+			return
 		}
 
-		if r.Method == "HEAD" {
+		if r.Method == "GET" {
 			apiKey := r.URL.Query().Get("apikey")
 			session, sessionValid := BurstSession[apiKey]
-			burst, burstOk := Burst[apiKey]
+			burst, burstOk := BurstSession[apiKey]
 			if !sessionValid && !burstOk {
 				management.QuantumGradeAuthorization()
 				_, _ = w.Write([]byte("payment required"))
@@ -78,121 +76,6 @@ func SetupBurst() {
 				management.QuantumGradeAuthorization()
 				_, _ = w.Write([]byte(burst))
 				return
-			}
-		}
-
-		if r.Method == "GET" {
-			apiKey := r.URL.Query().Get("apikey")
-			_, call := BurstSession[apiKey]
-			_, result := Burst[apiKey]
-			if !call && !result {
-				management.QuantumGradeAuthorization()
-				_, _ = w.Write([]byte("payment required"))
-				w.WriteHeader(http.StatusPaymentRequired)
-			}
-
-			if call {
-				input := drawing.NoErrorString(io.ReadAll(r.Body))
-				burst, output := RunBurst(input)
-				Burst[burst] = englang.Printf("Request paid with %s %s", apiKey, drawing.RedactPublicKey(input))
-				if burst != "" {
-					time.Sleep(3 * time.Second)
-					output = GetBurst(burst)
-				}
-				drawing.NoErrorWrite64(io.Copy(w, bytes.NewBuffer([]byte(output))))
-				return
-			}
-
-			if result {
-				burst, call := Burst[apiKey]
-				if call {
-					if strings.HasPrefix(burst, "Response ") {
-						management.QuantumGradeAuthorization()
-						_, _ = io.Copy(w, strings.NewReader(burst[len("Response "):]))
-						return
-					} else {
-						w.WriteHeader(http.StatusTooEarly)
-						management.QuantumGradeAuthorization()
-						_, _ = w.Write([]byte("too early"))
-						return
-					}
-				}
-			}
-
-			management.QuantumGradeAuthorization()
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		management.QuantumGradeAuthorization()
-	})
-
-	http.HandleFunc("/idle", func(w http.ResponseWriter, r *http.Request) {
-		if !strings.HasPrefix(r.RemoteAddr, "127.0.0.1") {
-			// local burst runner allowed only
-			w.WriteHeader(http.StatusPaymentRequired)
-			return
-		}
-		apiKey := r.URL.Query().Get("apikey")
-		if apiKey == metadata.ActivationKey {
-			time.Sleep(0 * time.Second)
-			currentKey := drawing.GenerateUniqueKey()
-			localRunnerEndpoint := fmt.Sprintf("http://127.0.0.1%s", metadata.Http11Port)
-			content := fmt.Sprintf(ContainerPattern, "any", localRunnerEndpoint, "idle")
-			Container[currentKey] = content
-			_, _ = w.Write([]byte(currentKey))
-			return
-		}
-		containerKey := apiKey
-
-		if r.Method == "GET" {
-			_, ok := Container[containerKey]
-			if !ok {
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
-			in := drawing.NoErrorString(io.ReadAll(r.Body))
-			var seconds string
-			_ = englang.Scanf(in, "Wait for %s for a new task.", &seconds)
-			retryFor, _ := time.ParseDuration(seconds)
-			start := time.Now()
-
-			for {
-				started := false
-				for k, v := range Burst {
-					prefix := englang.Printf("Request paid with %s ", drawing.GenerateUniqueKey())
-					if strings.HasPrefix(v, "Request paid with ") {
-						_, _ = w.Write([]byte(v[len(prefix):]))
-						Burst[k] = "running"
-						UpdateContainerWithBurst(containerKey, k)
-						started = true
-						return
-					}
-				}
-				if !started && time.Now().After(start.Add(retryFor)) {
-					w.WriteHeader(http.StatusTooEarly)
-					_, _ = w.Write([]byte("too early"))
-					return
-				}
-				// This is just a perf improvement that can be eliminated
-				select {
-				case <-time.After(time.Now().Sub(start.Add(retryFor))):
-					continue
-				case <-NewTask:
-					continue
-				}
-			}
-		}
-		if r.Method == "PUT" {
-			response := string(drawing.NoErrorBytes(io.ReadAll(r.Body)))
-			burst := UpdateContainerWithBurst(containerKey, "finished")
-			if burst == "idle" || len(burst) != len(drawing.GenerateUniqueKey()) {
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-
-			if strings.HasPrefix(Burst[burst], "running") {
-				Burst[burst] = "Response " + response
 			}
 		}
 	})

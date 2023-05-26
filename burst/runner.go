@@ -44,13 +44,13 @@ func SetupRunner() {
 }
 
 func UpdateContainerWithBurst(containerKey string, update string) string {
-	container := Container[containerKey]
+	container := ContainerRunning[containerKey]
 	var metalfile, url, burstKey string
 	if nil == englang.Scanf(container, ContainerPattern, &metalfile, &url, &burstKey) {
 		container := fmt.Sprintf(ContainerPattern, metalfile, url, update)
-		Container[containerKey] = container
+		ContainerRunning[containerKey] = container
 		if strings.HasSuffix(container, "finished") {
-			delete(Container, containerKey)
+			delete(ContainerRunning, containerKey)
 		}
 	}
 	return burstKey

@@ -6,6 +6,7 @@ import (
 	"gitlab.com/eper.io/engine/burst/php"
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
+	"gitlab.com/eper.io/engine/management"
 	"gitlab.com/eper.io/engine/metadata"
 	"io"
 	"net"
@@ -24,8 +25,17 @@ import (
 // The big difference between these and other modules is that it actually does not have
 // an entry point.
 
-func SetupBurstLambdaEndpoint() {
-	http.HandleFunc("/run", func(writer http.ResponseWriter, request *http.Request) {
+func SetupBurstLambdaEndpoint(path string, paid bool) {
+	http.HandleFunc(path, func(writer http.ResponseWriter, request *http.Request) {
+		if paid {
+			apiKey := request.URL.Query().Get("apikey")
+			_, call := BurstSession[apiKey]
+			if !call {
+				management.QuantumGradeAuthorization()
+				writer.WriteHeader(http.StatusPaymentRequired)
+				writer.Write([]byte("Payment required with a PUT to /api"))
+			}
+		}
 		input := drawing.NoErrorString(io.ReadAll(request.Body))
 		deferredKey, output := RunBurst(input)
 		if deferredKey != "" && output == "" {
@@ -40,7 +50,7 @@ func SetupBurstIdleProcess() {
 	go func() {
 		err := acceptMessage(ProcessBoxMessageEnglang)
 		if err != nil {
-			fmt.Println(err)
+			//fmt.Println(err)
 		}
 	}()
 }
@@ -49,16 +59,16 @@ func acceptMessage(handler func(string) string) error {
 	// Create a UDP address to listen on
 	address, err := net.ResolveUDPAddr("udp", metadata.UdpContainerPort)
 	if err != nil {
-		return fmt.Errorf("error %s", err)
+		return fmt.Errorf("error10 %s", err)
 	}
 
 	// Create a UDP connection
 	conn, err := net.ListenUDP("udp", address)
 	if err != nil {
-		return fmt.Errorf("error %s", err)
+		return fmt.Errorf("error11 %s", err)
 	}
 	cleanup := func() { _ = conn.Close() }
-	Cleanup = append(Cleanup, cleanup)
+	CleanupNetworkResources = append(CleanupNetworkResources, cleanup)
 	defer cleanup()
 
 	fmt.Println("Listening on port ", address)
@@ -70,7 +80,6 @@ func acceptMessage(handler func(string) string) error {
 		n, addr, err := conn.ReadFromUDP(buffer)
 		if err != nil {
 			drawing.NoErrorVoid(conn.Close())
-			//fmt.Println(fmt.Errorf("error %s", err))
 			break
 		}
 
@@ -83,7 +92,6 @@ func acceptMessage(handler func(string) string) error {
 			if reply != "" {
 				n, err = conn.WriteToUDP([]byte(reply), addr)
 				if err != nil {
-					fmt.Println(fmt.Errorf("error %s", err))
 					break
 				}
 			}
@@ -96,21 +104,21 @@ func SendMessage(address string, message string) (string, error) {
 	// Create a UDP address for the destination
 	udp, err := net.ResolveUDPAddr("udp", address)
 	if err != nil {
-		return "", fmt.Errorf("error %s", err)
+		return "", fmt.Errorf("error1 %s", err)
 	}
 
 	// Create a UDP connection
 	conn, err := net.DialUDP("udp", nil, udp)
 	if err != nil {
-		return "", fmt.Errorf("error %s", err)
+		return "", fmt.Errorf("error2 %s", err)
 	}
 	cleanup := func() { _ = conn.Close() }
-	Cleanup = append(Cleanup, cleanup)
+	CleanupNetworkResources = append(CleanupNetworkResources, cleanup)
 	defer cleanup()
 
 	_, err = conn.Write([]byte(message))
 	if err != nil {
-		return "", fmt.Errorf("error %s", err)
+		return "", fmt.Errorf("error3 %s", err)
 	}
 
 	buffer := make([]byte, 1024)
@@ -119,16 +127,13 @@ func SendMessage(address string, message string) (string, error) {
 		// Read data from the connection into the buffer
 		n, addr, err := conn.ReadFromUDP(buffer)
 		if err != nil {
-			return "", fmt.Errorf("error %s", err)
+			return "", fmt.Errorf("error4 %s", err)
 		}
 
 		// Process the received data
 		data := string(buffer[:n])
 		reply = reply + data
 		if IsMessageComplete(reply) {
-			if reply == "" {
-				fmt.Println("error 120")
-			}
 			return reply, nil
 		} else {
 			fmt.Printf("Received %d bytes from %s: %s\n", n, addr.String(), data)
@@ -144,7 +149,7 @@ func IsMessageComplete(s string) bool {
 
 func RunExternalShell(task string) string {
 	var ret string
-	ret = php.EnglangPhp(drawing.GenerateUniqueKey(), task, BurstLimit)
+	ret = php.EnglangPhp(drawing.GenerateUniqueKey(), task, MaxBurstRuntime)
 	if ret != "" {
 		return ret
 	}
@@ -154,12 +159,12 @@ func RunExternalShell(task string) string {
 func StartBurst(code string) string {
 	lock.Lock()
 	defer lock.Unlock()
-	for containerKey, containerContent := range Container {
+	for containerKey, containerContent := range ContainerRunning {
 		var status, key string
 		if nil == englang.Scanf1(containerContent, "Burst container has key %s and it is running %s.", &key, &status) {
 			if status == "idle" {
 				update := englang.Printf("Burst container has key %s and it is running %s.Run this.%s", containerKey, "code", code)
-				Container[containerKey] = update
+				ContainerRunning[containerKey] = update
 				return containerKey
 			}
 		}
@@ -170,12 +175,12 @@ func StartBurst(code string) string {
 func GetBurst(key string) string {
 	lock.Lock()
 	defer lock.Unlock()
-	content, ok := Container[key]
+	content, ok := ContainerRunning[key]
 	if ok {
 		var containerKey, result string
 		if nil == englang.Scanf1(content+"DFFSSFFGGG", "Burst container has key %s and it is finished with the following result %s"+"DFFSSFFGGG", &containerKey, &result) {
 			update := englang.Printf("Burst container has key %s and it is running %s.", containerKey, "idle")
-			Container[containerKey] = update
+			ContainerRunning[containerKey] = update
 			return result
 		}
 	}
@@ -199,8 +204,9 @@ func RunBurst(code string) (string, string) {
 }
 
 func FinishCleanup() {
-	for _, v := range Cleanup {
+	ContainerRunning = map[string]string{}
+	for _, v := range CleanupNetworkResources {
 		v()
 	}
-	Cleanup = make([]func(), 0)
+	CleanupNetworkResources = make([]func(), 0)
 }

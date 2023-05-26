@@ -3,8 +3,8 @@ package burst
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"gitlab.com/eper.io/engine/billing"
-	box "gitlab.com/eper.io/engine/burst/box/englang"
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/mesh"
@@ -13,7 +13,6 @@ import (
 	"net/http"
 	"os"
 	"testing"
-	"time"
 )
 
 // This document is Licensed under Creative Commons CC0.
@@ -46,89 +45,30 @@ func TestRun(t *testing.T) {
 }
 
 func TestBurst(t *testing.T) {
-	t.SkipNow()
-	// api returns in few hundred milliseconds (polling unless asked)
-	// idle returns in few hundred milliseconds (polling unless asked)
-	// All containers are host (no access to each other)
-	// Assumes cloud traffic is protected
+	SetupBurst()
+	payment, order := GenerateTestCoins()
 
 	go func() { _ = http.ListenAndServe(metadata.Http11Port, nil) }()
 
-	SetupBurst()
+	burstSession := mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1%s path /api?apikey=%s with method PUT and content %s. The call expects englang.", metadata.Http11Port, "", payment))
+	fmt.Println("Burst session", burstSession)
+
+	result := mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1%s path /api?apikey=%s with method GET and content %s. The call expects englang.", metadata.Http11Port, burstSession, ""))
+	fmt.Println("Burst session", result)
+
+	finalStatus := bytes.NewBufferString("")
+	billing.GetCoinFile(order, bufio.NewWriter(finalStatus))
+	// There is one used item at the end
+	t.Log(finalStatus.String())
+}
+
+func GenerateTestCoins() (string, string) {
 	voucher := drawing.GenerateUniqueKey()
 	billing.IssueOrder(voucher, "100",
 		"Example Inc.", "1 First Ave, USA",
-		"hq@opensource.eper.io", "USD 3")
+		"hq@example.com", "USD 3")
 
 	payment := bytes.NewBufferString("")
 	billing.GetCoinFile(voucher, bufio.NewWriter(payment))
-	x, _ := billing.RedeemCoin(payment.String())
-	t.Log(x)
-
-	done := make(chan bool)
-
-	SetupRunner()
-
-	//api1 := func() {
-	//	for {
-	//		var ready = make(chan int)
-	//		time.Sleep(2 * time.Second)
-	//		runRunner(ready, metadata.Http11Port, 60*time.Second)
-	//		<-ready
-	//	}
-	//}
-	api1 := func() {
-		for i := 0; i < 100; i++ {
-			time.Sleep(100 * time.Millisecond)
-			box.Englang("Fetch task with a newly generated burst key into accumulator using key in abc.")
-			ret := box.Context["accumulator"]
-			//box.Englang("Set burst timeout to ten seconds.")
-			if ret == "Hello World!" || ret == "Hello Moon!" {
-				time.Sleep(100 * time.Millisecond)
-				box.Englang("Upload container result content from accumulator and key from environment variable abc.")
-			}
-		}
-	}
-	//go api1()
-	go api1()
-
-	burst1 := func(message string) {
-		var burstSession, burst string
-		ret := mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1%s path /api with method PUT and content %s. The call expects englang.", metadata.Http11Port, payment.String()))
-		if ret != "too early" {
-			burstSession = ret
-		}
-		time.Sleep(100 * time.Millisecond)
-		ret = mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1%s path /api?apikey=%s with method GET and content %s. The call expects englang.", metadata.Http11Port, burstSession, message))
-		if ret != "too early" {
-			burst = ret
-		}
-
-		for i := 0; i < 10; i++ {
-			time.Sleep(100 * time.Millisecond)
-			ret = mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1%s path /api?apikey=%s with method GET and content %s. The call expects englang.", metadata.Http11Port, burst, ""))
-			if ret == message {
-				t.Log(ret)
-				done <- true
-				break
-			}
-			if ret != "too early" {
-				t.Log(ret)
-			}
-		}
-	}
-
-	var messages = []string{"Hello World!", "Hello Moon!"}
-	for _, v := range messages {
-		go burst1(v)
-	}
-
-	for range messages {
-		select {
-		case <-time.After(60 * time.Second):
-			// Timeout may mean a port conflict
-			t.Error("timeout")
-		case <-done:
-		}
-	}
+	return payment.String(), voucher
 }

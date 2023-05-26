@@ -24,11 +24,9 @@ import (
 
 var lock = sync.Mutex{}
 
-var Burst = map[string]string{}
 var BurstSession = map[string]string{}
-var Container = map[string]string{}
-var NewTask = make(chan string)
-var Cleanup = make([]func(), 0)
+var ContainerRunning = map[string]string{}
+var CleanupNetworkResources = make([]func(), 0)
 
-var BurstLimit = 10 * time.Second
-var ContainerPattern = "Container with metal file %s uses idle query %s and it is running %s."
+var MaxBurstRuntime = 3 * time.Second
+var ContainerPattern = "ContainerRunning with metal file %s uses idle query %s and it is running %s."

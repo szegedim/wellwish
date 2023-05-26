@@ -46,12 +46,18 @@ func TestRunner(t *testing.T) {
 
 func TestBurstEndToEnd(t *testing.T) {
 	drawing.NoErrorVoid(os.Chdir(".."))
+	// Tests that share the same port udp:2121 must run in a row
 	testContainer(t)
 	testBurstRunner(t)
 	time.Sleep(5 * time.Second)
 	testBurstRunner(t)
 	time.Sleep(5 * time.Second)
-	testBurstEndToEndApi(t)
+	testBurstEndToEndApi(t, "")
+	time.Sleep(5 * time.Second)
+	coinToUse, _ := GenerateTestCoins()
+	t.Log(coinToUse)
+	// TODO use coin
+	testBurstEndToEndApi(t, "")
 	time.Sleep(5 * time.Second)
 }
 
@@ -137,15 +143,16 @@ func testBurstRunner(t *testing.T) {
 	FinishCleanup()
 }
 
-func testBurstEndToEndApi(t *testing.T) {
+func testBurstEndToEndApi(t *testing.T, paidSession string) {
 	const NumberOfContainers = 5
 	const NumberOfLambdaCalls = 2
+	testPath := "/" + drawing.RedactPublicKey(drawing.GenerateUniqueKey())
 
 	done := make(chan interface{})
 
 	// Server
 	go func() {
-		SetupBurstLambdaEndpoint()
+		SetupBurstLambdaEndpoint(testPath, paidSession != "")
 		SetupBurstIdleProcess()
 	}()
 
@@ -153,14 +160,19 @@ func testBurstEndToEndApi(t *testing.T) {
 		_ = http.ListenAndServe(metadata.Http11Port, nil)
 	}()
 
+	if paidSession != "" {
+		result := mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1%s path /api?apikey=%s with method PUT and content %s. The call expects englang.", metadata.Http11Port, paidSession, paidSession))
+		fmt.Println("Burst session", result)
+
+	}
+
 	// Client
 	for i := 0; i < NumberOfLambdaCalls; i++ {
 		go func(delay time.Duration, done chan interface{}) {
 			time.Sleep(1 * time.Second)
 			time.Sleep(delay)
-			containerKey := drawing.GenerateUniqueKey()
 			task := "Run the following php code." + php.MockPhp
-			result := mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1%s path /run?apikey=%s with method GET and content %s. The call expects englang.", metadata.Http11Port, containerKey, task))
+			result := mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1%s path %s?apikey=%s with method GET and content %s. The call expects englang.", metadata.Http11Port, testPath, paidSession, task))
 			if result != "<html><body>Hello World!</body></html>" {
 				t.Error("<html><body>Hello World!</body></html>")
 			}

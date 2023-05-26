@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"gitlab.com/eper.io/engine/burst"
+	"gitlab.com/eper.io/engine/drawing"
 )
 
 // This document is Licensed under Creative Commons CC0.
@@ -23,8 +23,5 @@ import (
 // TODO add timeout logic on paid vouchers
 
 func main() {
-	err := burst.RunBox()
-	if err != nil {
-		fmt.Println(err)
-	}
+	drawing.NoErrorVoid(burst.RunBox())
 }

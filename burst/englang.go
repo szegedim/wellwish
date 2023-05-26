@@ -62,18 +62,18 @@ func ProcessBoxMessageEnglang(input string) string {
 			} else {
 				containerKey = drawing.GenerateUniqueKey()
 				message = englang.Printf("Burst container has key %s and it is running %s.", containerKey, "idle")
-				Container[containerKey] = message
+				ContainerRunning[containerKey] = message
 				go func(key string) {
-					time.Sleep(BurstLimit + 5*time.Second)
+					time.Sleep(MaxBurstRuntime + 5*time.Second)
 					lock.Lock()
 					//TODO
 					defer lock.Unlock()
-					delete(Container, key)
+					delete(ContainerRunning, key)
 				}(containerKey)
 			}
 		}
 		if nil == englang.Scanf1(message, "Get a task for the idle container with key %s.", &containerKey) {
-			containerContent, ok := Container[containerKey]
+			containerContent, ok := ContainerRunning[containerKey]
 			var status, key string
 			if ok && nil == englang.Scanf1(containerContent, "Burst container has key %s and it is running %s.", &key, &status) &&
 				status == "idle" {
@@ -89,13 +89,13 @@ func ProcessBoxMessageEnglang(input string) string {
 		var result string
 		if nil == englang.Scanf1(message+"EOEJNEEIM", "Return the results for container with key %s.Return this.%s"+"EOEJNEEIM", &containerKey, &result) {
 			message = englang.Printf("Burst container has key %s and it is finished with the following result %s", containerKey, result)
-			Container[containerKey] = message
+			ContainerRunning[containerKey] = message
 			go func() {
 				time.Sleep(3 * time.Second)
 				// TODO
 				lock.Lock()
 				defer lock.Unlock()
-				delete(Container, containerKey)
+				delete(ContainerRunning, containerKey)
 			}()
 			message = ""
 		}

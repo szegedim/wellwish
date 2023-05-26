@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
+	"gitlab.com/eper.io/engine/management"
 	"gitlab.com/eper.io/engine/metadata"
 	"net/http"
 	"strconv"
@@ -211,7 +212,7 @@ func ValidateVoucher(w http.ResponseWriter, r *http.Request, consume bool) (bool
 }
 
 func ValidateVoucherKey(apiKey string, consume bool) (bool, bool, string, string) {
-	// TODO management.QuantumGradeAuthorization()
+	management.QuantumGradeAuthorization()
 	// ApiKey may point to an invoice key of a valid voucher
 	invoiceCandidate := fmt.Sprintf(VoucherInvoicePointer, metadata.SiteUrl, apiKey)
 	for key, voucher := range vouchers {

@@ -105,7 +105,7 @@ func declareActivationForm(session *drawing.Session) {
 	if session.Form.Boxes == nil {
 		drawing.DeclareForm(session, "./activation/res/activate.png")
 		drawing.SetImage(session, 0, "./metadata/logo.png", drawing.Content{Text: "", Lines: 1, Editable: false, FontColor: drawing.White, BackgroundColor: drawing.Black, Alignment: 1})
-		drawing.PutText(session, 1, drawing.Content{Text: drawing.RevertAndReturn + "Enter the activation key", Lines: 1, Editable: true, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
+		drawing.PutText(session, 1, drawing.Content{Text: drawing.RevertAndReturn + "Click here and enter the activation key", Lines: 1, Editable: true, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
 		session.SignalTextChange = func(session *drawing.Session, i int, from string, to string) {
 			session.SignalPartialRedrawNeeded(session, i)
 			if strings.Contains(session.Text[i].Text, metadata.ActivationKey) {

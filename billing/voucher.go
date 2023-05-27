@@ -119,6 +119,9 @@ func declareVoucherForm(session *drawing.Session) {
 			}
 
 			chg := session.Text[VoucherText]
+			if invoice != "" {
+				voucher = strings.Replace(voucher, invoice, "REDACTED. Click on find invoice for details.", 1)
+			}
 			chg.Text = voucher
 			session.Text[VoucherText] = chg
 		}

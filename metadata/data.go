@@ -47,7 +47,7 @@ var CompanyName = "Example Corporation (SAMPLE)"
 var CompanyEmail = "hq@example.com"
 
 var CompanyInfo = `Example Seller Inc.
-1010 Corporate Avenue, San Jose, CA, 55555, USA
+1010 Corporate Avenue, San Francsico, CA, 55555, USA
 TAX ID: 1234-56 Payment: ACH Routing# 12345 Account# 12345 https://example.com/12345
 `
 var CheckpointPeriod = 10 * 60 * time.Second
@@ -65,13 +65,13 @@ var OrderPattern = `
 Company: %s
 Billing address: %s
 Billing email: %s
-Our company would like to place an order.
-Net 30: Payment is due within 60 days of the invoice date.                 
+We are placing an order for the following items.
 We are ordering %s items of remoting vouchers for %s each.
 The order total is %s.
-The final amount includes Sales Tax of %s percent.
+The final amount includes Sales and Use Taxes of %s percent.
+Net 30: Payment is due within 60 days of the invoice date.                 
 Satisfaction guarantee. Cancel or refund within 30 days.
-The vouchers are not for resale. They can only be used here.
+The vouchers are not for resale. They can only be used on this site.
 Notes:
 `
 
@@ -88,12 +88,12 @@ Please pay the following remoting vouchers.
 The payment term is Net 30.
 Satisfaction guarantee.
 Order is cancellable within 30 days.
-Order is refundable within 30 days, if paid.
+Order is refundable within 30 days of order, if paid.
 
 Ordered %s cloud vouchers for %s each.
                Invoiced Total %s.
 
-The total amount includes sales tax of 0 percent.
+The total amount includes sales and use taxes of 0 percent.
 Order Status:
 %s.
 `

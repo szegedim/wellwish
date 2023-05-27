@@ -141,3 +141,15 @@ Also, relying on hardware encryption requires expensive expert staff to verify t
 It cannot be broken with traditional or quantum computers in reasonable amount of time.
 The authentication and zero trust authorization of 64 letter tokens should be strong enough to protect against attacks by quantum computers.
 We call this the El Alamein effect. The application level solution can be made up to Quantum Grade Security provided that the channel encryption is symmetric.
+
+
+## License
+
+```
+This document is Licensed under Creative Commons CC0.
+To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights
+to this document to the public domain worldwide.
+This document is distributed without any warranty.
+You should have received a copy of the CC0 Public Domain Dedication along with this document.
+If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
+```

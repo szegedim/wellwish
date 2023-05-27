@@ -4,6 +4,7 @@ ADD . /go/src
 
 WORKDIR /go/src
 
+# This will listen to tcp port 7777 externally.
 CMD go run main.go
 
 # This document is Licensed under Creative Commons CC0.

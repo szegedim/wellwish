@@ -18,12 +18,13 @@ import (
 
 func TestBackup(t *testing.T) {
 	containerIndexLimit = 2
+	metadata.DataRoot = "/tmp"
+	metadata.Http11Port = ":7599"
+	metadata.SiteUrl = "http://127.0.0.1:7599"
+	metadata.StatefulBackupUrl = "http://127.0.0.1:7599"
+
 	module := map[string]string{}
 	RegisterModuleForBackup(&module)
-	metadata.DataRoot = "/tmp"
-	metadata.Http11Port = ":7799"
-	metadata.SiteUrl = "http://127.0.0.1:7799"
-	metadata.StatefulBackupUrl = "http://127.0.0.1:7799"
 
 	SetupStateful()
 
@@ -73,12 +74,4 @@ func TestBackup(t *testing.T) {
 			fmt.Println(kk, vvv)
 		}
 	}
-}
-
-func Clone(data map[string]string) map[string]string {
-	ret := make(map[string]string)
-	for k, v := range data {
-		ret[k] = v
-	}
-	return ret
 }

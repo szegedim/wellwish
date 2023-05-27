@@ -1,20 +1,30 @@
-# WellWish Corporate Decision Engine
+# WellWish
 
-Wellwish is a platform similar to Kubernetes.
+Wellwish is a platform similar to Kubernetes, a Distributed Operating System (DOS).
 
-It allows you to run applets within your company that support decision-making.
+It allows you to run distributed applets within your company that support decision-making.
+
+It is 10K lines of code, so a single developer can master it within a day.
+
+It is open source and our company Schmied Enterprises provides services.
+These services are including but not limited to  support, patented extras, warranties for a fee, if needed.
+
+It is suitable for Internet of Things, Game Streaming, Embedded UI, Scalable Enterprise Applications, Cloud Services.
 
 ## Design
 
-See /documentation for details.
+Refer to [./documentation/000 Concept.md](./documentation/000 Concept.md) for details.
 
 ## Who is it for?
 
 Wellwish targets a specific user base.
+- Companies in this group have a tight IT budget.
+- Companies in this group do their own R&D, and they have their own patents.
+- The Use Case of hobby developers helps to keep it lean.
 
 Creative Commons open source is suitable for biotech, healthcare, robotics research and development businesses, who are patent holders themselves.
-Some open source copyright licenses other than Creative Commons may pose a patent risk of such companies.
-The market is small, but it is lucrative as researchers tend to work with larger clusters individually.
+Some open source copyright licenses other than Creative Commons may pose a patent risk for such companies.
+Researchers tend to work with larger clusters individually.
 
 Also, we target organizations that are low on devops resources.
 A biomedical lab is willing to spend extra money on more experienced scientists.
@@ -26,7 +36,7 @@ Please consult with a professional of your local jurisdiction.
 ## Getting started
 
 ```
-git clone https://gitlab.com/eper.io/engine.git
+git clone https://gitlab.com/eper.io/wellwish.git
 ```
 
 ## License

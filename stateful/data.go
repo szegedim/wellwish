@@ -14,12 +14,18 @@ import (
 
 var containerIndexLimit = 100000
 
-var checkpointPeriod = 10 * time.Second
-
-var lock = sync.Mutex{}
-var lru = map[string]string{}
+// The list of modules that are backed up and restored on startup
 var stateModules = make([]*map[string]string, 0)
 
+// We take a checkpoint every period that contains all data in the node
+var checkpointPeriod = 10 * time.Second
 var checkpoint *[]byte = nil
 
+// We clean up least recently used items that are backed up,
+// if there is memory pressure.
 var startupTime = time.Now()
+var lru = map[string]string{}
+
+const lruSampleSize = 104
+
+var lock = sync.Mutex{}

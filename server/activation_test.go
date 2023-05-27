@@ -26,9 +26,9 @@ func TestClusterActivation(t *testing.T) {
 	nowait := make(chan int)
 	// Uncomment this to debug
 	// go func(ready chan int) { time.Sleep(2 * time.Second); Main([]string{"go", ":7776"}) }(nowait)
-	go func(ready chan int) { time.Sleep(2 * time.Second); runServer(t, ready, ":7776", 60*time.Second) }(nowait)
-	go func(ready chan int) { time.Sleep(2 * time.Second); runServer(t, ready, ":7778", 60*time.Second) }(wait)
-	go func(ready chan int) { time.Sleep(2 * time.Second); runServer(t, ready, ":7779", 60*time.Second) }(nowait)
+	go func(ready chan int) { time.Sleep(2 * time.Second); runTestServer(t, ready, ":7776", 60*time.Second) }(nowait)
+	go func(ready chan int) { time.Sleep(2 * time.Second); runTestServer(t, ready, ":7778", 60*time.Second) }(wait)
+	go func(ready chan int) { time.Sleep(2 * time.Second); runTestServer(t, ready, ":7779", 60*time.Second) }(nowait)
 
 	// Wait for a stable state
 	for {

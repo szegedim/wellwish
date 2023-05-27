@@ -2,58 +2,89 @@
 ### Author: Creative Commons Zero
 ### Date: 2023-05-26
 
-The design is the result of three years of extensive research from 2020-2023 by Schmied Enterprises.
+## Service Mesh
 
-Productivity is the measure of the domestic product achieved per employee.
-It has not improved much in decades, once data centers became mainstream.
-The goal was to address the problem of productivity, with a simple, open benchmark solution.
+We have a different approach to service mesh than the traditional one.
 
-The main concept behind WellWish is that has extremely low support costs.
-The marginal labor cost of running a cluster per node does not increase by the cluster size.
-It requires no-dev, no-ops, no-os. The concept is also known as the personal cloud.
+A load balancer is a cloud or datacenter equipment that randomly spreads requests across
+a unified set of backend nodes.
+Sometimes it can be set sticky to refer to the same server that fulfilled a request already.
+This helps performance in general.
+Unfortunately stickiness usually is by IP or cookies. We advise against these.
 
-There are two ways to achieve this.
-One is that it uses Englang, plain words to describe code and data.
-The second is that the entire state can easily be retrieved, stored, analyzed and ported in Englang.
-Even an accountant can read the bare metal data files that are equivalent to logs.
+Our office is behind a load balancer and firewall in a clustered scenario.
+The data is stored only on a single server.
+This makes sense.
+Application layer logic can easily replicate important data sets due to the simple room design.
 
-Kubernetes can do the same with pods that implement it.
-The main difference is the mesh structure.
-Kubernetes has a master, while Wellwish distributes even administrator requests
-across a unified cluster called the office.
-Each node in an office contains all modules in a proportion as many resources they require.
-The service hey.com, the email service has similar architecture.
+When a node is hit, it uses an index to find the node that has the data.
+This index is repeatedly kept up to date with new items.
+The surface node just proxies the request instead of forwarding with a redirect.
+The reason is that redirecting may cause issues in a load balancer.
+Node addresses are not easily discoverable outside the cluster.
 
-Nodes of the same type scale better and cheaper.
-Resource load differences between microservices are set within each node independently vs. the entire cluster.
-Therefore, each node has a stateful container and many stateless burst containers that pick up requests and restart.
-This structure helps to choose the most efficient node types of major cloud providers.
-It also does not require engineering to decide on scaling policies.
+## Fully stateless modules with load balancing
 
-There are no roles. Each room in the office is reserved for data container or burst code.
-Each of them has a unique private apikey that you can use to knock and use that room.
-This concept is similar to the original Disk Operating System sold by Microsoft decades ago
-in the age of your great-grandfather.
+Modules can be fully stateless, in which case they just respond without any load balancing issues.
 
-The main business advantage is low support cost.
-Each structure is allowed to be twice as large as a classical binary or json.
-This is not a big deal in the 2020s.
-This allows us to use Englang - Engineering English Language.
-Englang writes code in words. If in doubt, the rules of the English language apply. 
-This help users, accountants, debuggers, etc.
-Doubling the buffer size still scales well.
+## Interactive real-time modules with ring indexing
 
-While it is designed to be scalable, we suggest using a cluster size of two nodes for optimal reliability.
-A single node does not ensure scaling when it is needed.
-One thousand nodes may bring in node errors with lost or delayed shards,
-where some customers end up on older versions.
-Two nodes ensure that any node errors surface quickly, and it triggers a drill to fix fast.
-Two nodes ensure that scaling works, and it is easy to add a third node when needed.
+Interactive workloads with strong response time requirements need stickiness with indexing.
+Each node forwards its local indexes to the next server in a ring architecture.
 
-Network issues can surface as a bigger fixed cost with larger clusters,
-making support staff busy with low impact sporadic errors. 
+Indexing discovers and orders all the nodes by a predefined pattern.
+This is set by the NodePattern setting in the metadata.
+Then each time a node in the ring wakes up it pings the servers on the right to find the first active one.
+We allow elasticity and cluster discovery very easily this way.
+Gaps in the node list are just ignored.
+The Nodepattern can be ip address with a cidr like 10.55.0.0/21 or a host name pattern like host**.example.com.
+The wildcard is then replaced with a generated pattern of digits 0-9 to generate 100 node addresses.
+Only nodes that return success on a /health request do participate.
 
-This cluster architecture is stateful versus Kubernetes.
-Data is stored mostly in memory, and it backs up fast to real stateful backup storage.
-This allows quick offloading and shutdown of extra nodes, when room use is sporadic like at night.
-See Storage and Database for details.
+## Stateful big data workloads with snapshot and backup backend
+
+Some workloads like storing images or videos may need regular backups.
+The storage subsystem can be activated for these modules.
+This one offloads and deletes some least recently used items.
+Sometimes the data is offloaded to a backup already.
+Modules can fetch the data from the stateful servers in this case.
+Refer to StatefulBackupUrl setting for details.
+
+## Performance
+
+A typical container has a bandwidth comparable to 1 vCPU/1GB RAM/1Gbps.
+The benchmark is that it can be offloaded and shut down easily.
+The network allows this for 1GB RAM in about ten seconds.
+Large data blobs can be offloaded to backups with snapshots of the same bandwidth characteristics.
+
+This means that a ten seconds indexing frequency is suitable for most applications.
+A shared document review of two team members sitting next to each other is a good example.
+
+The module should have a single entry point apikey.
+Any browser refresh would give the same document for the same key on the same node by the usual default IP stickiness.
+
+If the browser url is shared with the peer, it is normal that they wait for five seconds after opening some new windows to get to the document.
+A ten seconds indexing frequency fulfils this requirement, even if the ip address of the recipient is different, than the ip of the sender.
+
+## Future designs to consider
+
+Smart load balancers can be better by being sticky by the apikey.
+Such a next generational load balancer can eliminate this indexing logic.
+
+Large indexes can be handled by storing only the first few characters of the api keys in the hash maps.
+
+Data retention or indexing usage flags can be set by each module.
+
+An important fact is that this design allows easy compliance with privacy regulations.
+The module is application level knowing the scope and sense of the data and whether it is personal or not.
+
+## License
+
+```
+This document is Licensed under Creative Commons CC0.
+To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights
+to this document to the public domain worldwide.
+This document is distributed without any warranty.
+You should have received a copy of the CC0 Public Domain Dedication along with this document.
+If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
+```

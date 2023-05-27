@@ -37,7 +37,8 @@ func cleanupMemoryCache(data *map[string]string, lru *map[string]string) {
 					lrukey = k
 					lrutime = v
 				}
-				if num == 104 {
+				if num == lruSampleSize {
+					// Take it easy
 					break
 				}
 			}
@@ -49,7 +50,8 @@ func cleanupMemoryCache(data *map[string]string, lru *map[string]string) {
 					delete(*lru, lrukey)
 				} else {
 					// This will rarely happen, when the container is almost full
-					// and the backup server is slow or offline
+					// and the backup server is slow or offline.
+					// Smaller lruSampleSize helps to resolve this.
 					fmt.Printf("out of memory")
 					time.Sleep(checkpointPeriod)
 				}

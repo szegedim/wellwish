@@ -16,6 +16,8 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
+// Add a few index entries and check whether they are propagated through the cluster.
+
 func TestMesh(t *testing.T) {
 	_ = os.Chdir("..")
 	primary := "http://127.0.0.1:7724"
@@ -24,9 +26,9 @@ func TestMesh(t *testing.T) {
 	// Uncomment this to debug
 	//go func(ready chan int) { time.Sleep(2 * time.Second); Main([]string{"go", ":7724"}) }(nowait)
 	//mesh.SetIndex(drawing.GenerateUniqueKey(), drawing.GenerateUniqueKey())
-	go func(ready chan int) { time.Sleep(2 * time.Second); runServer(t, ready, ":7724", 60*time.Second) }(wait)
-	go func(ready chan int) { time.Sleep(2 * time.Second); runServer(t, ready, ":7728", 60*time.Second) }(nowait)
-	go func(ready chan int) { time.Sleep(2 * time.Second); runServer(t, ready, ":7729", 60*time.Second) }(nowait)
+	go func(ready chan int) { time.Sleep(2 * time.Second); runTestServer(t, ready, ":7724", 60*time.Second) }(wait)
+	go func(ready chan int) { time.Sleep(2 * time.Second); runTestServer(t, ready, ":7728", 60*time.Second) }(nowait)
+	go func(ready chan int) { time.Sleep(2 * time.Second); runTestServer(t, ready, ":7729", 60*time.Second) }(nowait)
 
 	// Wait for a stable state
 	for {

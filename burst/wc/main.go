@@ -19,12 +19,19 @@ import (
 
 var wc = 0
 var lc = 0
+var clc = 0
 
 func main() {
 	arr := make([]string, 0)
-	Readdir(&arr, ".")
+	path1 := "."
+	if len(os.Args) > 1 {
+		path1 = os.Args[1]
+	}
+	Readdir(&arr, path1)
 	fmt.Printf("wc:%d\n", wc)
 	fmt.Printf("lc:%d\n", lc)
+	fmt.Printf("clc:%d\n", clc)
+	fmt.Println()
 }
 
 func Readdir(arr *[]string, s string) {
@@ -43,6 +50,9 @@ func Readdir(arr *[]string, s string) {
 				q := drawing.NoErrorString(os.ReadFile(p))
 				wc = wc + len(strings.Split(q, " "))
 				lc = lc + len(strings.Split(q, "\n"))
+				if !strings.HasSuffix(p, "_test.go") {
+					clc = clc + len(strings.Split(q, "\n"))
+				}
 			}
 		}
 	}

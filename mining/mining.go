@@ -19,11 +19,11 @@ import (
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
 func Setup() {
-	stateful.RegisterModuleForBackup(&MiningTicket)
+	stateful.RegisterModuleForBackup(&miningTicket)
 
 	http.HandleFunc("/cryptonugget", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
-			apiKey, err := billing.IsApiKeyValid(w, r, &MiningTicket, mesh.Proxy)
+			apiKey, err := billing.IsApiKeyValid(w, r, &miningTicket, mesh.Proxy)
 			if err != nil {
 				return
 			}
@@ -62,5 +62,5 @@ func random(salt string) uint32 {
 }
 
 func MakeCryptoNuggetMine(voucher string) {
-	MiningTicket[voucher] = fmt.Sprintf(billing.TicketExpiry, time.Now().Add(168*time.Hour).Format("Jan 2, 2006"))
+	miningTicket[voucher] = fmt.Sprintf(billing.TicketExpiry, time.Now().Add(168*time.Hour).Format("Jan 2, 2006"))
 }

@@ -38,6 +38,7 @@ import (
 func SetupBurst() {
 	stateful.RegisterModuleForBackup(&BurstSession)
 
+	SetupBurstLambdaEndpoint("/run", true)
 	http.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
 		// Setup burst sessions, a range of time, when a coin can be used for bursts.
 		if r.Method == "PUT" {
@@ -60,23 +61,15 @@ func SetupBurst() {
 		if r.Method == "GET" {
 			apiKey := r.URL.Query().Get("apikey")
 			session, sessionValid := BurstSession[apiKey]
-			burst, burstOk := BurstSession[apiKey]
-			if !sessionValid && !burstOk {
+			if !sessionValid {
 				management.QuantumGradeAuthorization()
 				_, _ = w.Write([]byte("payment required"))
 				w.WriteHeader(http.StatusPaymentRequired)
 				return
 			}
-			if sessionValid {
-				management.QuantumGradeAuthorization()
-				_, _ = w.Write([]byte(session))
-				return
-			}
-			if burstOk {
-				management.QuantumGradeAuthorization()
-				_, _ = w.Write([]byte(burst))
-				return
-			}
+			management.QuantumGradeAuthorization()
+			_, _ = w.Write([]byte(session))
+			return
 		}
 	})
 }

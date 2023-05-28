@@ -14,11 +14,11 @@ import (
 	"strconv"
 )
 
-var MiningTicket = map[string]string{}
+var miningTicket = map[string]string{}
 
 func LogSnapshot(m string, w io.Writer, r io.Reader) {
 	if m == "GET" {
-		for k, v := range MiningTicket {
+		for k, v := range miningTicket {
 			buf := bytes.NewBufferString("")
 			bufv := []byte(v)
 			buf.WriteString(englang.Printf("Record with type %s, apikey %s, and length %s bytes.", "miningticket", k, strconv.FormatUint(uint64(len(bufv)), 10)))

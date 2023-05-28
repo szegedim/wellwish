@@ -32,7 +32,7 @@ func TestRun(t *testing.T) {
 	}()
 	out, stdin := io.Pipe()
 	go func() {
-		Run(code, stdout, stdin)
+		RunInTest(code, stdout, stdin)
 		_ = stdin.Close()
 	}()
 

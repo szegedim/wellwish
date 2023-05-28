@@ -2,16 +2,11 @@ package burst
 
 import (
 	"fmt"
-	"gitlab.com/eper.io/engine/englang"
-	"gitlab.com/eper.io/engine/mesh"
 	"gitlab.com/eper.io/engine/metadata"
-	"gitlab.com/eper.io/engine/sack"
 	"io"
 	"os"
 	"os/exec"
 	"path"
-	"strings"
-	"time"
 )
 
 // This document is Licensed under Creative Commons CC0.
@@ -43,24 +38,7 @@ func SetupRunner() {
 	fmt.Println("Initializing burst runners on 127.0.0.1")
 }
 
-func UpdateContainerWithBurst(containerKey string, update string) string {
-	container := ContainerRunning[containerKey]
-	var metalfile, url, burstKey string
-	if nil == englang.Scanf(container, ContainerPattern, &metalfile, &url, &burstKey) {
-		container := fmt.Sprintf(ContainerPattern, metalfile, url, update)
-		ContainerRunning[containerKey] = container
-		if strings.HasSuffix(container, "finished") {
-			delete(ContainerRunning, containerKey)
-		}
-	}
-	return burstKey
-}
-
-func Run(code []byte, stdin io.ReadCloser, stdout io.Writer) {
-	if len(sack.Sacks) > 0 || mesh.IndexUsed() {
-		_, _ = stdout.Write([]byte("isolation error running burst on sack/mesh"))
-		return
-	}
+func RunInTest(code []byte, stdin io.ReadCloser, stdout io.Writer) {
 	goPath := path.Join(os.Getenv("GOROOT"), "bin", "go")
 	workDir := path.Join("/tmp")
 	mainGo := path.Join(workDir, "main.go")
@@ -110,45 +88,6 @@ func Run(code []byte, stdin io.ReadCloser, stdout io.Writer) {
 		_, _ = stdout.Write([]byte(err.Error()))
 		return
 	}
-}
-
-func runRunner(ready chan int, timeout time.Duration) {
-	goRoot := os.Getenv("GOROOT")
-	goroot := path.Join(goRoot, "bin", "go")
-	box := "./burst/box1/main.go"
-	_, err := os.Stat(box)
-	if err != nil {
-		fmt.Println("cannot find " + box)
-	}
-	fmt.Println(goroot)
-	runC := []string{goroot, "help"}
-	fmt.Println(strings.Join(runC, " "))
-	p := exec.Cmd{
-		Dir:  ".",
-		Path: goroot,
-		Args: runC,
-		Env:  []string{"GOROOT=" + goRoot, "GOPATH=/tmp"},
-	}
-	err = p.Start()
-	if err != nil {
-		fmt.Println(err)
-	}
-	go func() {
-		time.Sleep(timeout)
-		_ = p.Process.Kill()
-	}()
-	err = p.Wait()
-	if err != nil && err.Error() != "signal: killed" {
-		fmt.Println(err)
-	}
-	b, _ := p.CombinedOutput()
-	if len(b) > 0 {
-		fmt.Println(string(b))
-	}
-	if p.ProcessState.ExitCode() != 0 && p.ProcessState.ExitCode() != -1 {
-		fmt.Println(p.ProcessState.ExitCode())
-	}
-	ready <- 1
 }
 
 func LogSnapshot(m string, w io.Writer, r io.Reader) {

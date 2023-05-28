@@ -1,8 +1,6 @@
 package box
 
 import (
-	"bufio"
-	"bytes"
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/mesh"
@@ -19,17 +17,6 @@ import (
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
 var Context = map[string]string{}
-
-func Englang(s string) {
-	scanner := bufio.NewScanner(bytes.NewBufferString(s))
-	for scanner.Scan() {
-		s := scanner.Text()
-		r := englangBurst(s)
-		if r == "" {
-			break
-		}
-	}
-}
 
 func englangBurst(acc string) string {
 	var ret string

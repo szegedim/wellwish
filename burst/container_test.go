@@ -7,6 +7,7 @@ import (
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/mesh"
 	"gitlab.com/eper.io/engine/metadata"
+	"gitlab.com/eper.io/engine/tests"
 	"io"
 	"net/http"
 	"os"
@@ -23,7 +24,7 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
-func TestRunner(t *testing.T) {
+func TestContainerRunner(t *testing.T) {
 	code, _ := io.ReadAll(drawing.NoErrorFile(os.Open("./helloworld/main.go")))
 	stdout, in := io.Pipe()
 	go func() {
@@ -32,7 +33,7 @@ func TestRunner(t *testing.T) {
 	}()
 	out, stdin := io.Pipe()
 	go func() {
-		Run(code, stdout, stdin)
+		RunInTest(code, stdout, stdin)
 		_ = stdin.Close()
 	}()
 
@@ -44,8 +45,9 @@ func TestRunner(t *testing.T) {
 	t.Log(s)
 }
 
-func TestBurstEndToEnd(t *testing.T) {
-	drawing.NoErrorVoid(os.Chdir(".."))
+func TestContainerEndToEnd(t *testing.T) {
+	tests.MainTestLock.Lock()
+	defer tests.MainTestLock.Unlock()
 	// Tests that share the same port udp:2121 must run in a row
 	testContainer(t)
 	testBurstRunner(t)
@@ -127,7 +129,7 @@ func testBurstRunner(t *testing.T) {
 
 		goRoot := os.Getenv("GOROOT")
 		goroot := path.Join(goRoot, "bin", "go")
-		cmd := exec.Command(goroot, "run", path.Join("burst", "box", "main.go"))
+		cmd := exec.Command(goroot, "run", path.Join("..", "burst", "box", "main.go"))
 		output, err := cmd.Output()
 		if err != nil {
 			output = []byte(err.Error())
@@ -191,7 +193,7 @@ func testBurstEndToEndApi(t *testing.T, paidSession string) {
 			for {
 				goRoot := os.Getenv("GOROOT")
 				goroot := path.Join(goRoot, "bin", "go")
-				cmd := exec.Command(goroot, "run", path.Join("burst", "box", "main.go"))
+				cmd := exec.Command(goroot, "run", path.Join("..", "burst", "box", "main.go"))
 				output, err := cmd.Output()
 				if err != nil {
 					output = []byte(err.Error())

@@ -21,7 +21,7 @@ func TestClusterActivation(t *testing.T) {
 	MainTestLock.Lock()
 	defer MainTestLock.Unlock()
 	primary := "http://127.0.0.1:7778"
-	metadata.NodePattern = "http://127.0.0.1:77**"
+	metadata.NodePattern = "http://127.0.0.1:777*"
 	wait := make(chan int)
 	nowait := make(chan int)
 	// Uncomment this to debug

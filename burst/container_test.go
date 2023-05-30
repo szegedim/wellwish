@@ -110,6 +110,7 @@ func testBurstRunner(t *testing.T) {
 	// Client
 	go func() {
 		time.Sleep(3 * time.Second)
+
 		deferredKey, result := RunBurst("Run the following php code." + php.MockPhp)
 		if deferredKey != "" && result == "" {
 			time.Sleep(3 * time.Second)

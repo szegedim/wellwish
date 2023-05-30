@@ -3,6 +3,8 @@ package main
 import (
 	"gitlab.com/eper.io/engine/burst"
 	"gitlab.com/eper.io/engine/drawing"
+	"os"
+	"time"
 )
 
 // This document is Licensed under Creative Commons CC0.
@@ -23,5 +25,9 @@ import (
 // TODO add timeout logic on paid vouchers
 
 func main() {
+	go func() {
+		time.Sleep(burst.MaxBurstRuntime + burst.MaxBurstRuntime)
+		os.Exit(0)
+	}()
 	drawing.NoErrorVoid(burst.RunBox())
 }

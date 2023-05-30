@@ -32,6 +32,8 @@ var NodePattern = ""
 
 var MeshPattern = "Stateful item %s is stored on %s server."
 
+var ringUpdated = make(chan bool)
+
 func LogSnapshot(m string, w io.Writer, r io.Reader) {
 	if m == "GET" && w != nil {
 		ww := bufio.NewWriter(w)

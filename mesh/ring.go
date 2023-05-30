@@ -51,6 +51,16 @@ func SetupRing() {
 
 		called := drawing.NoErrorString(io.ReadAll(r.Body))
 		handleRingBody(called, &index)
+		//go func() {
+		//	for {
+		//		select {
+		//			case <- ringUpdated:
+		//		default:
+		//			break
+		//		}
+		//	}
+		//	ringUpdated <- true
+		//}()
 	})
 
 	http.HandleFunc("/whoami", func(w http.ResponseWriter, r *http.Request) {
@@ -90,6 +100,10 @@ func SetupRing() {
 			}
 
 			time.Sleep(2 * time.Second)
+			//select {
+			//case <-time.After(5 * time.Second):
+			//case <-ringUpdated:
+			//}
 		}
 	}()
 }

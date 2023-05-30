@@ -45,10 +45,6 @@ func UpdateIndex(r io.Reader) {
 	}
 }
 
-func IndexUsed() bool {
-	return len(index) > 0
-}
-
 func IndexLengthForTestingOnly() string {
 	i := 0
 	for k, v := range index {

@@ -11,6 +11,8 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"os/exec"
+	"strings"
 	"time"
 )
 
@@ -149,11 +151,31 @@ func IsMessageComplete(s string) bool {
 
 func RunExternalShell(task string) string {
 	var ret string
-	ret = php.EnglangPhp(drawing.GenerateUniqueKey(), task, MaxBurstRuntime)
+	ret = php.EnglangPhp(drawing.GenerateUniqueKey(), task, MaxBurstRuntime + 500 * time.Millisecond)
 	if ret != "" {
 		return ret
 	}
+	task = runCommandInBox(task)
 	return "This is the result." + task
+}
+
+func runCommandInBox(task string) string {
+	var command string
+	if nil == englang.Scanf1(task+"DZPSOTHXAYZMZSJQEFMAD", "Run the following command line.%s"+"DZPSOTHXAYZMZSJQEFMAD", &command) {
+		cmds := strings.Split(command, "")
+		cmd := exec.Command(cmds[0], cmds[1:]...)
+		go func() {
+			if !metadata.Simplify {
+				time.Sleep(MaxBurstRuntime + 500 * time.Millisecond)
+				if cmd.Process != nil {
+					_ = cmd.Process.Kill()
+				}
+			}
+		}()
+		ret, _ := cmd.Output()
+		task = string(ret)
+	}
+	return task
 }
 
 func StartBurst(code string) string {

@@ -50,10 +50,10 @@ func TestBurst(t *testing.T) {
 
 	go func() { _ = http.ListenAndServe(metadata.Http11Port, nil) }()
 
-	burstSession := mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1%s path /api?apikey=%s with method PUT and content %s. The call expects englang.", metadata.Http11Port, "", payment))
+	burstSession := mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1%s path /run.coin?apikey=%s with method PUT and content %s. The call expects englang.", metadata.Http11Port, "", payment))
 	fmt.Println("Burst session", burstSession)
 
-	result := mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1%s path /api?apikey=%s with method GET and content %s. The call expects englang.", metadata.Http11Port, burstSession, ""))
+	result := mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1%s path /run.coin?apikey=%s with method GET and content %s. The call expects englang.", metadata.Http11Port, burstSession, ""))
 	fmt.Println("Burst session", result)
 
 	finalStatus := bytes.NewBufferString("")
@@ -65,7 +65,7 @@ func TestBurst(t *testing.T) {
 func GenerateTestCoins() (string, string) {
 	voucher := drawing.GenerateUniqueKey()
 	billing.IssueOrder(voucher, "100",
-		"Example Inc.", "1 First Ave, USA",
+		"Example Inc.", "1 First Ave, United States",
 		"hq@example.com", "USD 3")
 
 	payment := bytes.NewBufferString("")

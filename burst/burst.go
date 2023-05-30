@@ -39,7 +39,7 @@ func SetupBurst() {
 	stateful.RegisterModuleForBackup(&BurstSession)
 
 	SetupBurstLambdaEndpoint("/run", true)
-	http.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/run.coin", func(w http.ResponseWriter, r *http.Request) {
 		// Setup burst sessions, a range of time, when a coin can be used for bursts.
 		if r.Method == "PUT" {
 			payment := drawing.NoErrorString(io.ReadAll(r.Body))
@@ -51,7 +51,7 @@ func SetupBurst() {
 
 			burst := drawing.GenerateUniqueKey()
 			// TODO cleanup
-			BurstSession[burst] = englang.Printf(fmt.Sprintf("Burst chain api created from %s is %s/api?apikey=%s. Chain is valid until %s.", coinToUse, metadata.SiteUrl, burst, time.Now().Add(24*time.Hour).String()))
+			BurstSession[burst] = englang.Printf(fmt.Sprintf("Burst chain api created from %s is %s/run.coin?apikey=%s. Chain is valid until %s.", coinToUse, metadata.SiteUrl, burst, time.Now().Add(24*time.Hour).String()))
 			mesh.SetIndex(burst, mesh.WhoAmI)
 			management.QuantumGradeAuthorization()
 			_, _ = w.Write([]byte(burst))

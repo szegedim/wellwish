@@ -33,7 +33,7 @@ func SetupBurstLambdaEndpoint(path string, paid bool) {
 			if !call {
 				management.QuantumGradeAuthorization()
 				writer.WriteHeader(http.StatusPaymentRequired)
-				writer.Write([]byte("Payment required with a PUT to /api"))
+				writer.Write([]byte("Payment required with a PUT to /run.coin"))
 			}
 		}
 		input := drawing.NoErrorString(io.ReadAll(request.Body))

@@ -1,10 +1,12 @@
 package billing
 
 import (
+	"bytes"
 	"fmt"
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/metadata"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -16,6 +18,8 @@ import (
 // This document is distributed without any warranty.
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
+
+var sample = fmt.Sprintf(metadata.OrderPattern, "\vExample Buyer Inc.\v", "\v111 S Ave\v, \vSan Fransisco\v, \vCA\v, \v55555\v, \vUnited States\v", "\vinfo\v@\vexample.com\v", "\v10\v", metadata.UnitPrice, "USD 10", "0")
 
 func SetupCheckout() {
 	http.HandleFunc("/checkout.html", func(w http.ResponseWriter, r *http.Request) {
@@ -33,6 +37,27 @@ func SetupCheckout() {
 		}
 		drawing.ServeRemoteFrame(w, r, declareCheckoutForm)
 	})
+	http.HandleFunc("/checkout", func(w http.ResponseWriter, r *http.Request) {
+		order := drawing.NoErrorString(io.ReadAll(r.Body))
+		var company string
+		var address string
+		var email string
+		var amount string = "10"
+		var unit string = metadata.UnitPrice
+		var total string = "USD 10"
+		var tax string = "0"
+		err := englang.Scanf(order, metadata.OrderPattern, &company, &address, &email, &amount, &unit, &total, &tax)
+		if err == nil {
+			orderId := drawing.GenerateUniqueKey()
+			IssueOrder(orderId, amount, company, address, email, unit)
+			ret := bytes.NewBuffer([]byte(orderId))
+			_, _ = io.Copy(w, ret)
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+			ret := bytes.NewBufferString("Invalid request. Please use this pattern.\n" + strings.ReplaceAll(sample, "\v", ""))
+			_, _ = io.Copy(w, ret)
+		}
+	})
 }
 
 func declareCheckoutForm(session *drawing.Session) {
@@ -45,7 +70,6 @@ func declareCheckoutForm(session *drawing.Session) {
 		const OrderButton = 3
 
 		pattern := metadata.OrderPattern
-		sample := fmt.Sprintf(pattern, "\vExample Buyer Inc.\v", "\v111 S Ave\v, \vSan Fransisco\v, \vCA\v, \v55555\v, \vUSA\v", "\vinfo\v@\vexample.com\v", "\v10\v", metadata.UnitPrice, "USD 10", "0")
 		drawing.SetImage(session, Logo, "./metadata/logo.png", drawing.Content{Text: "", Lines: 1, Editable: false, FontColor: drawing.White, BackgroundColor: drawing.Black, Alignment: 1})
 		drawing.PutText(session, OrderText, drawing.Content{Text: "�" + sample, Lines: 20, Editable: true, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 1})
 		drawing.PutText(session, BackButton, drawing.Content{Text: "    Cancel    ", Lines: 1, Selectable: false, Editable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})

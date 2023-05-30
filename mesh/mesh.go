@@ -120,16 +120,13 @@ func getCidrAddresses(cidr string) []string {
 func Proxy(w http.ResponseWriter, r *http.Request) error {
 	apiKey := r.Header.Get("apikey")
 	if apiKey == "" {
-		w.WriteHeader(http.StatusNotFound)
 		return fmt.Errorf("not found")
 	}
 	server := GetIndex(apiKey)
 	if server == "" {
-		w.WriteHeader(http.StatusNotFound)
 		return fmt.Errorf("not found")
 	}
 	if englang.Synonym(Nodes[server], "This node got an eviction notice.") {
-		w.WriteHeader(http.StatusGone)
 		return fmt.Errorf("not found")
 	}
 	if strings.HasPrefix(metadata.SiteUrl, "http://") &&
@@ -142,7 +139,6 @@ func Proxy(w http.ResponseWriter, r *http.Request) error {
 	original := r.URL.String()
 	modified := strings.Replace(original, metadata.SiteUrl, server, 1)
 	if modified == original {
-		w.WriteHeader(http.StatusNotFound)
 		return fmt.Errorf("not found")
 	}
 	b, _ := management.HttpProxyRequest(modified, r.Method, r.Body)

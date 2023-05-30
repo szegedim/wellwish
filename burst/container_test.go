@@ -163,7 +163,7 @@ func testBurstEndToEndApi(t *testing.T, paidSession string) {
 	}()
 
 	if paidSession != "" {
-		result := mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1%s path /api?apikey=%s with method PUT and content %s. The call expects englang.", metadata.Http11Port, paidSession, paidSession))
+		result := mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1%s path /run.coin?apikey=%s with method PUT and content %s. The call expects englang.", metadata.Http11Port, paidSession, paidSession))
 		fmt.Println("Burst session", result)
 
 	}

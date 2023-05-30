@@ -109,104 +109,232 @@ func IsNumber(number string) bool {
 	return true
 }
 
-func IsZip(zip string) bool {
-	if IsBeingEdited(zip) {
-		return true
-	}
-	zip = strings.TrimSpace(zip)
-	for _, c := range zip {
-		found := false
-		if c == '.' {
-			found = true
-		}
-		if c == ',' {
-			found = true
-		}
-		if c == '-' {
-			found = true
-		}
-		if c >= '0' && c <= '9' {
-			found = true
-		}
-		if c == '\v' {
-			found = true
-		}
-		if !found {
-			return false
-		}
-	}
-	return true
-}
+func IsAddress(address *string) bool {
+	// We are liberal here, we enforce the country or territory.
+	// The important is that the location of any Supreme Court is known.
 
-func IsCountry(country string) bool {
-	if IsBeingEdited(country) {
+	if IsBeingEdited(*address) {
 		return true
 	}
-	country = strings.TrimSpace(country)
-	var countries = []string{"USA", "United States", "Canada", "Mexico"}
-	for _, i := range countries {
-		if strings.HasPrefix(i, country) {
+	territories := []string{
+		"Afghanistan",
+		"Albania",
+		"Algeria",
+		"Andorra",
+		"Angola",
+		"Antigua and Barbuda",
+		"Argentina",
+		"Armenia",
+		"Australia",
+		"Austria",
+		"Azerbaijan",
+		"Bahamas",
+		"Bahrain",
+		"Bangladesh",
+		"Barbados",
+		"Belarus",
+		"Belgium",
+		"Belize",
+		"Benin",
+		"Bhutan",
+		"Bolivia",
+		"Bosnia and Herzegovina",
+		"Botswana",
+		"Brazil",
+		"Brunei",
+		"Bulgaria",
+		"Burkina Faso",
+		"Burundi",
+		"Cabo Verde",
+		"Cambodia",
+		"Cameroon",
+		"Canada",
+		"Central African Republic",
+		"Chad",
+		"Chile",
+		"China",
+		"Colombia",
+		"Comoros",
+		"Congo, Democratic Republic of the",
+		"Congo, Republic of the",
+		"Costa Rica",
+		"Cote d'Ivoire",
+		"Croatia",
+		"Cuba",
+		"Cyprus",
+		"Czech Republic",
+		"Denmark",
+		"Djibouti",
+		"Dominica",
+		"Dominican Republic",
+		"East Timor (Timor-Leste)",
+		"Ecuador",
+		"Egypt",
+		"El Salvador",
+		"Equatorial Guinea",
+		"Eritrea",
+		"Estonia",
+		"Eswatini",
+		"Ethiopia",
+		"Fiji",
+		"Finland",
+		"France",
+		"Gabon",
+		"Gambia",
+		"Georgia",
+		"Germany",
+		"Ghana",
+		"Greece",
+		"Grenada",
+		"Guatemala",
+		"Guinea",
+		"Guinea-Bissau",
+		"Guyana",
+		"Haiti",
+		"Honduras",
+		"Hungary",
+		"Iceland",
+		"India",
+		"Indonesia",
+		"Iran",
+		"Iraq",
+		"Ireland",
+		"Israel",
+		"Italy",
+		"Jamaica",
+		"Japan",
+		"Jordan",
+		"Kazakhstan",
+		"Kenya",
+		"Kiribati",
+		"Korea, North",
+		"Korea, South",
+		"Kosovo",
+		"Kuwait",
+		"Kyrgyzstan",
+		"Laos",
+		"Latvia",
+		"Lebanon",
+		"Lesotho",
+		"Liberia",
+		"Libya",
+		"Liechtenstein",
+		"Lithuania",
+		"Luxembourg",
+		"Madagascar",
+		"Malawi",
+		"Malaysia",
+		"Maldives",
+		"Mali",
+		"Malta",
+		"Marshall Islands",
+		"Mauritania",
+		"Mauritius",
+		"Mexico",
+		"Micronesia",
+		"Moldova",
+		"Monaco",
+		"Mongolia",
+		"Montenegro",
+		"Morocco",
+		"Mozambique",
+		"Myanmar",
+		"Burma",
+		"Namibia",
+		"Nauru",
+		"Nepal",
+		"Netherlands",
+		"New Zealand",
+		"Nicaragua",
+		"Niger",
+		"Nigeria",
+		"North Macedonia",
+		"Norway",
+		"Oman",
+		"Pakistan",
+		"Palau",
+		"Panama",
+		"Papua New Guinea",
+		"Paraguay",
+		"Peru",
+		"Philippines",
+		"Poland",
+		"Portugal",
+		"Qatar",
+		"Romania",
+		"Russia",
+		"Rwanda",
+		"Saint Kitts and Nevis",
+		"Saint Lucia",
+		"Saint Vincent and the Grenadines",
+		"Samoa",
+		"San Marino",
+		"Sao Tome and Principe",
+		"Saudi Arabia",
+		"Senegal",
+		"Serbia",
+		"Seychelles",
+		"Sierra Leone",
+		"Singapore",
+		"Slovakia",
+		"Slovenia",
+		"Solomon Islands",
+		"Somalia",
+		"South Africa",
+		"South Sudan",
+		"Spain",
+		"Sri Lanka",
+		"Sudan",
+		"Suriname",
+		"Sweden",
+		"Switzerland",
+		"Syria",
+		"Taiwan",
+		"Tajikistan",
+		"Tanzania",
+		"Thailand",
+		"Togo",
+		"Tonga",
+		"Trinidad and Tobago",
+		"Tunisia",
+		"Turkey",
+		"Turkmenistan",
+		"Tuvalu",
+		"Uganda",
+		"Ukraine",
+		"United Arab Emirates",
+		"United Kingdom",
+		"United States",
+		"Uruguay",
+		"Uzbekistan",
+		"Vanuatu",
+		"Vatican City",
+		"Venezuela",
+		"Vietnam",
+		"Yemen",
+		"Zambia",
+		"Zimbabwe"}
+	check := *address
+	check = strings.ReplaceAll(check, "\v", "")
+	check = strings.ReplaceAll(check, "\v", "")
+	for _, x := range territories {
+		if strings.HasSuffix(check, x) {
 			return true
 		}
 	}
-	return false
-}
-
-func IsState(state string) bool {
-	_, ret := FixState(state)
-	return ret
-}
-
-func FixState(state string) (string, bool) {
-	if IsBeingEdited(state) {
-		return state, true
-	}
-	var states = []string{"California", "CA"}
-	for _, i := range states {
-		if strings.ReplaceAll(state, "\v", "") == i {
-			return i, true
+	candidate := ""
+	for _, x := range territories {
+		for i := 1; i < len(x); i++ {
+			if strings.HasPrefix(x, (check)[len(check)-i:]) {
+				if candidate != "" {
+					return true
+				}
+				candidate = x
+			}
 		}
 	}
-	return "", false
-}
-
-func IsAddress(address *string) bool {
-	addressLines := ""
-	city := ""
-	state := ""
-	zip := ""
-	country := ""
-	const format = ", %s, %s, %s,"
-	err := ScanfContains(*address, format, &addressLines, &city, &state, &zip, &country)
-	if IsBeingEdited(addressLines) {
-		return true
-	}
-	if IsBeingEdited(city) {
-		return true
-	}
-	if IsBeingEdited(state) {
-		return true
-	}
-	if !IsState(state) {
-		return false
-	}
-	if IsBeingEdited(zip) {
-		return true
-	}
-	if !IsZip(zip) {
-		return false
-	}
-	if IsBeingEdited(country) {
-		return true
-	}
-	if !IsCountry(country) {
-		return false
-	}
-	if err != nil {
-		return false
-	}
-	*address = fmt.Sprintf("%s"+format+"%s", addressLines, city, state, zip, country)
-	return err == nil
+	return candidate != ""
+	//*address = fmt.Sprintf("%s"+format+"%s", addressLines, city, state, zip, country)
 }
 
 func Evaluate(s string) string {

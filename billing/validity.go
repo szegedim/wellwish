@@ -3,6 +3,7 @@ package billing
 import (
 	"fmt"
 	"gitlab.com/eper.io/engine/englang"
+	"gitlab.com/eper.io/engine/management"
 	"net/http"
 	"time"
 )
@@ -11,18 +12,20 @@ func IsApiKeyValid(w http.ResponseWriter, r *http.Request, validated *map[string
 	apiKey := r.URL.Query().Get("apikey")
 
 	if apiKey == "" {
+		management.QuantumGradeAuthorization()
 		w.WriteHeader(http.StatusPaymentRequired)
 		return "", fmt.Errorf("no apikey")
 	}
-	// TODO management.QuantumGradeAuthorization()
 	// TODO The option is to delete/recreate a lost or stolen apikey
 	// We can add another option to mask it with a newly generated one here.
 	content := (*validated)[apiKey]
 	if content == "" {
 		err := fallback(w, r)
 		if err == nil {
+			management.QuantumGradeAuthorization()
 			return "", fmt.Errorf("handled my mesh")
 		}
+		management.QuantumGradeAuthorization()
 		w.WriteHeader(http.StatusNotFound)
 		return "", fmt.Errorf("no payment")
 	}

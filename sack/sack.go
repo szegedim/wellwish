@@ -7,7 +7,7 @@ import (
 	"gitlab.com/eper.io/engine/billing"
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
-	"gitlab.com/eper.io/engine/mesh"
+	"gitlab.com/eper.io/engine/management"
 	"gitlab.com/eper.io/engine/metadata"
 	"gitlab.com/eper.io/engine/stateful"
 	"io"
@@ -61,37 +61,43 @@ func Setup() {
 		drawing.ServeRemoteFrame(w, r, declareForm)
 	})
 
-	http.HandleFunc("/tmp", func(w http.ResponseWriter, r *http.Request) {
-		apiKey, err := billing.IsApiKeyValid(w, r, &Sacks, mesh.Proxy)
-		if err != nil {
+	http.HandleFunc("/tmp.coin", func(w http.ResponseWriter, r *http.Request) {
+		apiKey := r.URL.Query().Get("apikey")
+		if r.Method == "PUT" {
+			if Sacks[apiKey] != "" {
+				// Want to extend? Let it delete and create a new one.
+				// Reason? Newly generated ids are safer.
+				management.QuantumGradeAuthorization()
+				_, _ = w.Write([]byte(apiKey))
+				return
+			}
+			invoice := apiKey
+			ok, _, _, voucher := billing.ValidateVoucherKey(invoice, true)
+			if !ok {
+				management.QuantumGradeAuthorization()
+				w.WriteHeader(http.StatusPaymentRequired)
+				return
+			}
+			sack := makeSack(voucher)
+			_, _ = w.Write([]byte(fmt.Sprintf("%s", sack)))
 			return
 		}
+	})
+
+	http.HandleFunc("/tmp", func(w http.ResponseWriter, r *http.Request) {
+		apiKey := r.URL.Query().Get("apikey")
 
 		sack := apiKey
-		redirect := ""
-		if r.Method == "PUT" {
-			if Sacks[sack] == "" {
-				invoice := sack
-				ok, _, _, voucher := billing.ValidateVoucherKey(invoice, true)
-				if !ok {
-					w.WriteHeader(http.StatusPaymentRequired)
-					return
-				}
-				sack = makeSack(voucher)
-				redirect = fmt.Sprintf("/tmp?apikey=%s", sack)
-				//if isInvoice {
-				//	redirect = fmt.Sprintf("/tmp?apikey=%s", voucher)
-				//}
-			}
-		}
 		traces := Sacks[sack]
 		if traces == "" {
+			management.QuantumGradeAuthorization()
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 		fileName := sack
 		p := path.Join(fmt.Sprintf("/tmp/%s", fileName))
 		if r.Method == "GET" {
+			management.QuantumGradeAuthorization()
 			http.ServeFile(w, r, p)
 			return
 		}
@@ -116,10 +122,6 @@ func Setup() {
 			f := drawing.NoErrorFile(os.Create(p))
 			defer func() { _ = f.Close() }()
 			drawing.NoErrorWrite64(io.Copy(f, r.Body))
-			if redirect != "" {
-				http.Redirect(w, r, redirect, http.StatusTemporaryRedirect)
-				return
-			}
 			return
 		}
 		if r.Method == "DELETE" {

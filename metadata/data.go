@@ -47,7 +47,7 @@ var CompanyName = "Example Corporation (SAMPLE)"
 var CompanyEmail = "hq@example.com"
 
 var CompanyInfo = `Example Seller Inc.
-1010 Corporate Avenue, San Francsico, CA, 55555, USA
+1010 Corporate Avenue, San Francsico, CA, 55555, United States
 TAX ID: 1234-56 Payment: ACH Routing# 12345 Account# 12345 https://example.com/12345
 `
 var CheckpointPeriod = 10 * 60 * time.Second

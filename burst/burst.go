@@ -3,13 +3,10 @@ package burst
 import (
 	"fmt"
 	"gitlab.com/eper.io/engine/billing"
-	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/management"
-	"gitlab.com/eper.io/engine/mesh"
 	"gitlab.com/eper.io/engine/metadata"
 	"gitlab.com/eper.io/engine/stateful"
-	"io"
 	"net/http"
 	"time"
 )
@@ -35,26 +32,28 @@ import (
 // Example: 1million 100ms reads streamed into 100ms compute will last 100000 seconds,
 // even if there is an extra network latency of 100ms
 
-func SetupBurst() {
+func Setup() {
 	stateful.RegisterModuleForBackup(&BurstSession)
 
+	SetupBoxConnector()
 	SetupBurstLambdaEndpoint("/run", true)
 	http.HandleFunc("/run.coin", func(w http.ResponseWriter, r *http.Request) {
 		// Setup burst sessions, a range of time, when a coin can be used for bursts.
 		if r.Method == "PUT" {
-			payment := drawing.NoErrorString(io.ReadAll(r.Body))
-			coinToUse, err := billing.RedeemCoin(payment)
-			if err != nil {
-				w.WriteHeader(http.StatusPaymentRequired)
+			coinToUse := billing.ValidatedCoinContent(w, r)
+			if coinToUse != "" {
+				// TODO generate new?
+				burst := coinToUse
+				// TODO cleanup
+				BurstSession[burst] = englang.Printf(fmt.Sprintf("Burst chain api created from %s is %s/run.coin?apikey=%s. Chain is valid until %s.", coinToUse, metadata.SiteUrl, burst, time.Now().Add(24*time.Hour).String()))
+				// TODO cleanup
+				// mesh.SetIndex(burst, mesh.WhoAmI)
+				management.QuantumGradeAuthorization()
+				_, _ = w.Write([]byte(burst))
 				return
 			}
-
-			burst := drawing.GenerateUniqueKey()
-			// TODO cleanup
-			BurstSession[burst] = englang.Printf(fmt.Sprintf("Burst chain api created from %s is %s/run.coin?apikey=%s. Chain is valid until %s.", coinToUse, metadata.SiteUrl, burst, time.Now().Add(24*time.Hour).String()))
-			mesh.SetIndex(burst, mesh.WhoAmI)
 			management.QuantumGradeAuthorization()
-			_, _ = w.Write([]byte(burst))
+			w.WriteHeader(http.StatusPaymentRequired)
 			return
 		}
 

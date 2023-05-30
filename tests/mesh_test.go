@@ -19,8 +19,8 @@ import (
 // Add a few index entries and check whether they are propagated through the cluster.
 
 func TestMesh(t *testing.T) {
-	MainTestLock.Lock()
-	defer MainTestLock.Unlock()
+	MainTestLocalPorts.Lock()
+	defer MainTestLocalPorts.Unlock()
 	primary := "http://127.0.0.1:7724"
 	metadata.NodePattern = "http://127.0.0.1:772*"
 	wait := make(chan int)

@@ -18,8 +18,8 @@ import (
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
 func TestClusterActivation(t *testing.T) {
-	MainTestLock.Lock()
-	defer MainTestLock.Unlock()
+	MainTestLocalPorts.Lock()
+	defer MainTestLocalPorts.Unlock()
 	primary := "http://127.0.0.1:7778"
 	metadata.NodePattern = "http://127.0.0.1:777*"
 	wait := make(chan int)

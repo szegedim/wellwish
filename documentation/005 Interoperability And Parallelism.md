@@ -1,4 +1,4 @@
-# Interoperability and Parallelism
+# Interoperability And Parallelism
 ### Author: Creative Commons Zero
 ### Date: 2023-05-29
 

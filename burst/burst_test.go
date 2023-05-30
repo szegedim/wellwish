@@ -45,7 +45,7 @@ func TestRun(t *testing.T) {
 }
 
 func TestBurst(t *testing.T) {
-	SetupBurst()
+	Setup()
 	payment, order := GenerateTestCoins()
 
 	go func() { _ = http.ListenAndServe(metadata.Http11Port, nil) }()

@@ -16,7 +16,7 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
-var MainTestLock = sync.Mutex{}
+var MainTestLocalPorts = sync.Mutex{}
 
 func runTestServer(t *testing.T, ready chan int, port string, timeout time.Duration) {
 	goRoot := os.Getenv("GOROOT")

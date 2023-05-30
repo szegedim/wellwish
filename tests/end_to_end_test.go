@@ -3,6 +3,8 @@ package tests
 import (
 	"bytes"
 	"fmt"
+	burst4 "gitlab.com/eper.io/engine/burst"
+	"gitlab.com/eper.io/engine/burst/php"
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/metadata"
@@ -22,8 +24,8 @@ import (
 
 func TestCustomerScenario(t *testing.T) {
 	// Install a cluster somewhere
-	MainTestLock.Lock()
-	defer MainTestLock.Unlock()
+	MainTestLocalPorts.Lock()
+	defer MainTestLocalPorts.Unlock()
 	metadata.NodePattern = "http://127.0.0.1:771*"
 	metadata.SiteUrl = "http://127.0.0.1:7716"
 	metadata.Http11Port = ":7716"
@@ -51,6 +53,17 @@ func TestCustomerScenario(t *testing.T) {
 	// Get coin file
 	coin := curl(englang.Printf("curl -X GET %s/invoice.coin?apikey=%s", metadata.SiteUrl, invoice), "")
 	fmt.Println("Coin file", coin)
+	// Check vending logic
+	sack0 := curl(englang.Printf("curl -X PUT %s/tmp.coin?apikey=%s", metadata.SiteUrl, invoice), "")
+	fmt.Println("Temporary Sack", sack0)
+	sack1 := curl(englang.Printf("curl -X PUT %s/tmp.coin?apikey=%s", metadata.SiteUrl, invoice), coin)
+	fmt.Println("Temporary Sack From coin", sack1)
+	sack2 := curl(englang.Printf("curl -X PUT %s/tmp.coin?apikey=%s", metadata.SiteUrl, drawing.GenerateUniqueKey()), drawing.GenerateUniqueKey())
+	fmt.Println("Temporary Sack From criminal coin", sack2)
+	if sack2 != "" {
+		t.Error("security issue")
+	}
+
 	// Buy a temporary sack
 	sack := curl(englang.Printf("curl -X PUT %s/tmp.coin?apikey=%s", metadata.SiteUrl, invoice), "")
 	fmt.Println("Sack", sack)
@@ -75,11 +88,31 @@ func TestCustomerScenario(t *testing.T) {
 	}
 	content = curl(englang.Printf("curl -X GET %s/tmp?apikey=%s", metadata.SiteUrl, sack), "")
 	fmt.Println("Sack data", content)
-	// Run a burst
+	// Buy a burst session
+	burst := curl(englang.Printf("curl -X PUT %s/run.coin?apikey=%s", metadata.SiteUrl, invoice), "")
+	fmt.Println("CPU Burst", burst)
+
+	burst2 := curl(englang.Printf("curl -X PUT %s/run.coin?apikey=%s", metadata.SiteUrl, invoice), coin)
+	fmt.Println("CPU Burst From coin", burst2)
+
+	burst3 := curl(englang.Printf("curl -X PUT %s/run.coin?apikey=%s", metadata.SiteUrl, drawing.GenerateUniqueKey()), drawing.GenerateUniqueKey())
+	fmt.Println("CPU Burst From criminal coin", burst3)
+	if burst3 != "" {
+		t.Error("security issue")
+	}
+
+	go func() { _ = burst4.RunBox() }()
+	time.Sleep(500 * time.Millisecond)
+	run0 := curl(englang.Printf("curl -X PUT %s/run?apikey=%s", metadata.SiteUrl, burst), "Run the following php code."+php.MockPhp)
+	fmt.Println("CPU Burst result", run0)
+	if run0 != "<html><body>Hello World!</body></html>" {
+		t.Error("could not run sample php")
+	}
+
 	// Run a burst with a sack
 	// Mine a random number
 	// Stamp a contract with a burst
-	//curl(englang.Printf("curl -X GET %s", metadata.SiteUrl), "")
+
 	<-done
 }
 

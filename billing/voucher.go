@@ -7,6 +7,7 @@ import (
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/management"
 	"gitlab.com/eper.io/engine/metadata"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -207,6 +208,25 @@ func GetCoinFile(invoiceCandidate string, writer *bufio.Writer) {
 		}
 	}
 	_ = writer.Flush()
+}
+
+func ValidatedCoinContent(w http.ResponseWriter, r *http.Request) string {
+	apiKey := r.URL.Query().Get("apikey")
+	invoice := apiKey
+	ok, _, _, voucher := ValidateVoucherKey(invoice, true)
+	if ok {
+		management.QuantumGradeAuthorization()
+		return voucher
+	}
+
+	payment := drawing.NoErrorString(io.ReadAll(r.Body))
+	coinToUse, err := RedeemCoin(payment)
+	if err == nil {
+		management.QuantumGradeAuthorization()
+		return coinToUse
+	}
+	management.QuantumGradeAuthorization()
+	return ""
 }
 
 func ValidateVoucher(w http.ResponseWriter, r *http.Request, consume bool) (bool, bool, string, string) {

@@ -46,7 +46,7 @@ func SetupBurstLambdaEndpoint(path string, paid bool) {
 	})
 }
 
-func SetupBurstIdleProcess() {
+func SetupBoxConnector() {
 	go func() {
 		err := acceptMessage(ProcessBoxMessageEnglang)
 		if err != nil {
@@ -191,7 +191,7 @@ func RunBurst(code string) (string, string) {
 	containerKey := StartBurst(code)
 	if containerKey == "" {
 		// System is busy
-		return "The system is busy. Please reload.", ""
+		return "The system is busy or no containers are launched. Please reload.", ""
 	}
 	for i := 0; i < 15; i++ {
 		result := GetBurst(containerKey)

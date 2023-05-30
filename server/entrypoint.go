@@ -106,6 +106,7 @@ func setupSite() {
 	// It is reliable to do these in order
 	entry.Setup()
 	sack.Setup()
+	burst.Setup()
 	mining.Setup()
 	drawing.SetupUploads()
 	billing.SetupVoucher()

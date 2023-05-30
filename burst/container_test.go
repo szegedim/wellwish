@@ -46,8 +46,8 @@ func TestContainerRunner(t *testing.T) {
 }
 
 func TestContainerEndToEnd(t *testing.T) {
-	tests.MainTestLock.Lock()
-	defer tests.MainTestLock.Unlock()
+	tests.MainTestLocalPorts.Lock()
+	defer tests.MainTestLocalPorts.Unlock()
 	// Tests that share the same port udp:2121 must run in a row
 	testContainer(t)
 	testBurstRunner(t)
@@ -66,7 +66,7 @@ func TestContainerEndToEnd(t *testing.T) {
 func testContainer(t *testing.T) {
 	done := make(chan interface{})
 	// Server
-	go func() { SetupBurstIdleProcess() }()
+	go func() { SetupBoxConnector() }()
 
 	go func() {
 		time.Sleep(3 * time.Second)
@@ -104,7 +104,7 @@ func testBurstRunner(t *testing.T) {
 
 	// Server
 	go func() {
-		SetupBurstIdleProcess()
+		SetupBoxConnector()
 	}()
 
 	// Client
@@ -155,7 +155,7 @@ func testBurstEndToEndApi(t *testing.T, paidSession string) {
 	// Server
 	go func() {
 		SetupBurstLambdaEndpoint(testPath, paidSession != "")
-		SetupBurstIdleProcess()
+		SetupBoxConnector()
 	}()
 
 	go func() {

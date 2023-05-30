@@ -62,26 +62,57 @@ func Setup() {
 	})
 
 	http.HandleFunc("/tmp.coin", func(w http.ResponseWriter, r *http.Request) {
-		apiKey := r.URL.Query().Get("apikey")
+		// Setup burst sessions, a range of time, when a coin can be used for bursts.
 		if r.Method == "PUT" {
-			if Sacks[apiKey] != "" {
-				// Want to extend? Let it delete and create a new one.
-				// Reason? Newly generated ids are safer.
+			coinToUse := billing.ValidatedCoinContent(w, r)
+			if coinToUse != "" {
+				// TODO generate new?
+				// TODO cleanup
+				sack := makeSack(coinToUse)
+				// TODO cleanup
+				// mesh.SetIndex(burst, mesh.WhoAmI)
 				management.QuantumGradeAuthorization()
-				_, _ = w.Write([]byte(apiKey))
+				_, _ = w.Write([]byte(sack))
 				return
 			}
-			invoice := apiKey
-			ok, _, _, voucher := billing.ValidateVoucherKey(invoice, true)
-			if !ok {
+			management.QuantumGradeAuthorization()
+			w.WriteHeader(http.StatusPaymentRequired)
+			return
+		}
+
+		if r.Method == "GET" {
+			apiKey := r.URL.Query().Get("apikey")
+			session, sessionValid := Sacks[apiKey]
+			if !sessionValid {
 				management.QuantumGradeAuthorization()
+				_, _ = w.Write([]byte("payment required"))
 				w.WriteHeader(http.StatusPaymentRequired)
 				return
 			}
-			sack := makeSack(voucher)
-			_, _ = w.Write([]byte(fmt.Sprintf("%s", sack)))
+			management.QuantumGradeAuthorization()
+			_, _ = w.Write([]byte(session))
 			return
 		}
+		//-------------------------------
+		//if r.Method == "PUT" {
+		//	if Sacks[apiKey] != "" {
+		//		// Want to extend? Let it delete and create a new one.
+		//		// Reason? Newly generated ids are safer.
+		//		management.QuantumGradeAuthorization()
+		//		_, _ = w.Write([]byte(apiKey))
+		//		return
+		//	}
+		//	invoice := apiKey
+		//	ok, _, _, voucher := billing.ValidateVoucherKey(invoice, true)
+		//	if !ok {
+		//		management.QuantumGradeAuthorization()
+		//		w.WriteHeader(http.StatusPaymentRequired)
+		//		return
+		//	}
+		//	sack := makeSack(voucher)
+		//	_, _ = w.Write([]byte(fmt.Sprintf("%s", sack)))
+		//	return
+		//}
 	})
 
 	http.HandleFunc("/tmp", func(w http.ResponseWriter, r *http.Request) {

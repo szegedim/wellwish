@@ -23,5 +23,6 @@ import (
 // TODO add timeout logic on paid vouchers
 
 func main() {
+	burst.ShutdownOnFinish = true
 	drawing.NoErrorVoid(burst.RunBox())
 }

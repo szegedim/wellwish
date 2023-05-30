@@ -5,6 +5,7 @@ import (
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/metadata"
+	"os"
 	"time"
 )
 
@@ -128,7 +129,13 @@ func ProcessBurstMessageEnglang(input string) string {
 		if nil == englang.Scanf1(message+"RHBABDCLF", "Burst container has key %s and it is running %s.Run this.%sRHBABDCLF", &key, &status, &task) {
 			result := RunExternalShell(task)
 			message = englang.Printf("Return the results for container with key %s.Return this.%s", key, result)
-			// TODO The container must shut down at this point to be restarted by Docker/Kubernetes/etc. clean.
+			if ShutdownOnFinish {
+				// The container must shut down at this point to be restarted by Docker/Kubernetes/etc. clean.
+				go func() {
+					time.Sleep(500 * time.Millisecond)
+					os.Exit(0)
+				}()
+			}
 		}
 		if message == "We need the activation key." {
 			fmt.Println(fmt.Errorf(message))

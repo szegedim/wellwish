@@ -29,4 +29,5 @@ var ContainerRunning = map[string]string{}
 var CleanupNetworkResources = make([]func(), 0)
 
 var MaxBurstRuntime = 3 * time.Second
+var ShutdownOnFinish = false
 var ContainerPattern = "ContainerRunning with metal file %s uses idle query %s and it is running %s."

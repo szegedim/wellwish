@@ -5,6 +5,7 @@ import (
 	"gitlab.com/eper.io/engine/billing"
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/management"
+	"gitlab.com/eper.io/engine/mesh"
 	"gitlab.com/eper.io/engine/metadata"
 	"gitlab.com/eper.io/engine/stateful"
 	"net/http"
@@ -46,6 +47,7 @@ func Setup() {
 				burst := coinToUse
 				// TODO cleanup
 				BurstSession[burst] = englang.Printf(fmt.Sprintf("Burst chain api created from %s is %s/run.coin?apikey=%s. Chain is valid until %s.", coinToUse, metadata.SiteUrl, burst, time.Now().Add(24*time.Hour).String()))
+				mesh.RegisterIndex(burst)
 				// TODO cleanup
 				// mesh.SetIndex(burst, mesh.WhoAmI)
 				management.QuantumGradeAuthorization()

@@ -28,6 +28,8 @@ func TestCustomerScenario(t *testing.T) {
 	defer MainTestLocalPorts.Unlock()
 	metadata.NodePattern = "http://127.0.0.1:771*"
 	metadata.SiteUrl = "http://127.0.0.1:7716"
+	var StreamPort = ":7717"
+	var SiteSecondaryNodeUrl = "http://127.0.0.1" + StreamPort
 	metadata.Http11Port = ":7716"
 	done := make(chan int)
 	// Uncomment this to debug
@@ -37,6 +39,7 @@ func TestCustomerScenario(t *testing.T) {
 	//	server.Main([]string{"go", metadata.Http11Port})
 	//}(done)
 	go func(ready chan int) { time.Sleep(2 * time.Second); runTestServer(t, ready, ":7716", 60*time.Second) }(done)
+	go func(ready chan int) { time.Sleep(2 * time.Second); runTestServer(t, ready, StreamPort, 60*time.Second) }(done)
 
 	time.Sleep(3 * time.Second)
 	// Install a backup server
@@ -81,13 +84,28 @@ func TestCustomerScenario(t *testing.T) {
 	if !strings.Contains(info, "Validated until") {
 		t.Error("sack info invalid")
 	}
+	time.Sleep(20 * time.Second)
+	secondary := curl(englang.Printf("curl -X TRACE %s/tmp?apikey=%s", SiteSecondaryNodeUrl, sack), "")
+	fmt.Println("Sack info", secondary)
+	if !strings.Contains(secondary, "Validated until") {
+		t.Error("indexing does not work", sack)
+		secondary = curl(englang.Printf("curl -X TRACE %s/healthz", metadata.SiteUrl), "")
+		fmt.Println("Sack info", secondary)
+		secondary = curl(englang.Printf("curl -X TRACE %s/healthz", SiteSecondaryNodeUrl), "")
+		fmt.Println("Sack info", secondary)
+	}
+
 	deleted := curl(englang.Printf("curl -X DELETE %s/tmp?apikey=%s", metadata.SiteUrl, sack), "")
 	fmt.Println("Sack deleted", deleted)
 	if deleted != "success" {
-		t.Error("sack should be deleted")
+		t.Error("404 page not found")
 	}
 	content = curl(englang.Printf("curl -X GET %s/tmp?apikey=%s", metadata.SiteUrl, sack), "")
 	fmt.Println("Sack data", content)
+	if deleted != "success" {
+		t.Error("sack should be deleted")
+	}
+
 	// Buy a burst session
 	burst := curl(englang.Printf("curl -X PUT %s/run.coin?apikey=%s", metadata.SiteUrl, invoice), "")
 	fmt.Println("CPU Burst", burst)
@@ -102,7 +120,7 @@ func TestCustomerScenario(t *testing.T) {
 	}
 
 	go func() { _ = burst4.RunBox() }()
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(2 * time.Second)
 	run0 := curl(englang.Printf("curl -X PUT %s/run?apikey=%s", metadata.SiteUrl, burst), "Run the following php code."+php.MockPhp)
 	fmt.Println("CPU Burst result", run0)
 	if run0 != "<html><body>Hello World!</body></html>" {
@@ -117,7 +135,6 @@ func TestCustomerScenario(t *testing.T) {
 	fmt.Println("Temporary Sack From coin", goldMine1)
 	goldNugget := curl(englang.Printf("curl -X GET %s/cryptonugget?apikey=%s", metadata.SiteUrl, goldMine0), "")
 	fmt.Println("Crypto gold nugget data", goldNugget)
-	// Stamp a contract with a burst
 
 	<-done
 }

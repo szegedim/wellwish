@@ -1,12 +1,9 @@
 package mesh
 
 import (
-	"fmt"
 	"gitlab.com/eper.io/engine/englang"
-	"gitlab.com/eper.io/engine/management"
 	"gitlab.com/eper.io/engine/metadata"
 	"net"
-	"net/http"
 	"strings"
 )
 
@@ -115,34 +112,4 @@ func getCidrAddresses(cidr string) []string {
 		ret = append(ret, ip.String())
 	}
 	return ret
-}
-
-func Proxy(w http.ResponseWriter, r *http.Request) error {
-	apiKey := r.Header.Get("apikey")
-	if apiKey == "" {
-		return fmt.Errorf("not found")
-	}
-	server := GetIndex(apiKey)
-	if server == "" {
-		return fmt.Errorf("not found")
-	}
-	if englang.Synonym(Nodes[server], "This node got an eviction notice.") {
-		return fmt.Errorf("not found")
-	}
-	if strings.HasPrefix(metadata.SiteUrl, "http://") &&
-		!strings.HasPrefix(server, "http://") {
-		server = "http://" + server
-	} else if strings.HasPrefix(metadata.SiteUrl, "https://") &&
-		!strings.HasPrefix(server, "https://") {
-		server = "https://" + server
-	}
-	original := r.URL.String()
-	modified := strings.Replace(original, metadata.SiteUrl, server, 1)
-	if modified == original {
-		return fmt.Errorf("not found")
-	}
-	b, _ := management.HttpProxyRequest(modified, r.Method, r.Body)
-	// TODO Is it okay to assume a complete write with HTTP writer?
-	_, _ = w.Write(b)
-	return nil
 }

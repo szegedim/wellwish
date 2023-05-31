@@ -24,17 +24,12 @@ var WhoAmI = ""
 
 var Nodes = map[string]string{}
 
-var Rings = map[string]string{}
-
 var index = map[string]string{}
 
 var NodePattern = ""
 
-var MeshPattern = "Stateful item %s is stored on %s server."
-
-var ringUpdated = make(chan bool)
-
 func LogSnapshot(m string, w io.Writer, r io.Reader) {
+	// TODO
 	if m == "GET" && w != nil {
 		ww := bufio.NewWriter(w)
 		_, _ = ww.Write([]byte("\n"))
@@ -48,10 +43,7 @@ func LogSnapshot(m string, w io.Writer, r io.Reader) {
 		}
 		index := index
 		for k, v := range index {
-			_, _ = ww.WriteString(fmt.Sprintf(MeshPattern, k, v) + "\n")
-		}
-		for k, v := range Rings {
-			_, _ = ww.WriteString(fmt.Sprintf("Ring %s has status %s.\n", k, v))
+			_, _ = ww.WriteString(fmt.Sprintf("Index %s is %s here.", k, v) + "\n")
 		}
 		_ = ww.Flush()
 	}

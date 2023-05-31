@@ -8,6 +8,7 @@ import (
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/management"
+	"gitlab.com/eper.io/engine/mesh"
 	"gitlab.com/eper.io/engine/metadata"
 	"gitlab.com/eper.io/engine/stateful"
 	"io"
@@ -50,6 +51,9 @@ func Setup() {
 	stateful.RegisterModuleForBackup(&Sacks)
 
 	http.HandleFunc("/sack.html", func(w http.ResponseWriter, r *http.Request) {
+		if nil == mesh.RedirectToPeerServer(w, r) {
+			return
+		}
 		err := drawing.EnsureAPIKey(w, r)
 		if err != nil {
 			return
@@ -58,10 +62,16 @@ func Setup() {
 	})
 
 	http.HandleFunc("/sack.png", func(w http.ResponseWriter, r *http.Request) {
+		if nil == mesh.RedirectToPeerServer(w, r) {
+			return
+		}
 		drawing.ServeRemoteFrame(w, r, declareForm)
 	})
 
 	http.HandleFunc("/tmp.coin", func(w http.ResponseWriter, r *http.Request) {
+		if nil == mesh.RedirectToPeerServer(w, r) {
+			return
+		}
 		// Setup burst sessions, a range of time, when a coin can be used for bursts.
 		if r.Method == "PUT" {
 			coinToUse := billing.ValidatedCoinContent(w, r)
@@ -97,6 +107,9 @@ func Setup() {
 	})
 
 	http.HandleFunc("/tmp", func(w http.ResponseWriter, r *http.Request) {
+		if nil == mesh.RedirectToPeerServer(w, r) {
+			return
+		}
 		apiKey := r.URL.Query().Get("apikey")
 
 		sack := apiKey
@@ -263,6 +276,7 @@ func declareForm(session *drawing.Session) {
 func makeSack(sack string) string {
 	trace := fmt.Sprintf(billing.TicketExpiry, time.Now().Add(4*168*time.Hour).Format("Jan 2, 2006"))
 	Sacks[sack] = trace
+	mesh.RegisterIndex(sack)
 	path1 := path.Join(fmt.Sprintf("/tmp/%s", sack))
 	newSack := drawing.NoErrorFile(os.Create(path1))
 	w := bufio.NewWriter(newSack)

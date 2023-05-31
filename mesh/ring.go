@@ -28,6 +28,7 @@ func SetupRing() {
 	//stateful.RegisterModuleForBackup(&index)
 
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		//_, _ = w.Write([]byte(fmt.Sprintf("%v", index)))
 		_, _ = w.Write([]byte(IndexLengthForTestingOnly()))
 	})
 
@@ -51,16 +52,6 @@ func SetupRing() {
 
 		called := drawing.NoErrorString(io.ReadAll(r.Body))
 		handleRingBody(called, &index)
-		//go func() {
-		//	for {
-		//		select {
-		//			case <- ringUpdated:
-		//		default:
-		//			break
-		//		}
-		//	}
-		//	ringUpdated <- true
-		//}()
 	})
 
 	http.HandleFunc("/whoami", func(w http.ResponseWriter, r *http.Request) {
@@ -76,9 +67,9 @@ func SetupRing() {
 	go func() {
 		time.Sleep(1 * time.Second)
 		whoAmI := GetWhoAmI()
-		//if whoAmI == "" {
-		//	os.Exit(1)
-		//}
+		if whoAmI == "" {
+			fmt.Println("I do not know my own address. I will probably make errors.")
+		}
 		index["host"] = whoAmI
 		// For testing
 		SetIndex(drawing.GenerateUniqueKey(), whoAmI)
@@ -100,10 +91,6 @@ func SetupRing() {
 			}
 
 			time.Sleep(2 * time.Second)
-			//select {
-			//case <-time.After(5 * time.Second):
-			//case <-ringUpdated:
-			//}
 		}
 	}()
 }

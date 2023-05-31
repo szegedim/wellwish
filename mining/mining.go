@@ -59,7 +59,7 @@ func Setup() {
 
 	http.HandleFunc("/cryptonugget", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
-			apiKey, err := billing.IsApiKeyValid(w, r, &miningTicket, mesh.Proxy)
+			apiKey, err := billing.IsApiKeyValid(w, r, &miningTicket, mesh.RedirectToPeerServer)
 			if err != nil {
 				return
 			}
@@ -72,16 +72,6 @@ func Setup() {
 			_ = writer.Flush()
 			return
 		}
-		//if r.Method == "PUT" {
-		//	ok, _, _, voucher := billing.ValidateVoucher(w, r, true)
-		//	if ok {
-		//
-		//		http.Redirect(w, r, fmt.Sprintf("/cryptonugget?apikey=%s", voucher), http.StatusTemporaryRedirect)
-		//	} else {
-		//		w.WriteHeader(http.StatusPaymentRequired)
-		//	}
-		//	return
-		//}
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	})
 }

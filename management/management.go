@@ -115,7 +115,7 @@ func declareForm(session *drawing.Session) {
 				session.SelectedBox = -1
 			}
 			if i == PublicSite {
-				session.Redirect = fmt.Sprintf("/index.html")
+				session.Redirect = fmt.Sprintf("/")
 				session.SelectedBox = -1
 			}
 			if i == PrivateSite {

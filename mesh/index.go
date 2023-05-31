@@ -1,11 +1,8 @@
 package mesh
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
 	"gitlab.com/eper.io/engine/englang"
-	"io"
 )
 
 // This document is Licensed under Creative Commons CC0.
@@ -26,24 +23,6 @@ import (
 
 // Finally cleaned up indexes can have a rule to clean up periodically
 // Stateful indexes are cleaned up by design
-
-func UpdateIndex(r io.Reader) {
-	indexLock.Lock()
-	defer indexLock.Unlock()
-
-	scanner := bufio.NewScanner(r)
-
-	for scanner.Scan() {
-		apikey := ""
-		server := ""
-		t := scanner.Text()
-		err := englang.Scanf(t, MeshPattern, &apikey, &server)
-		if err != nil {
-			continue
-		}
-		index[apikey] = server
-	}
-}
 
 func IndexLengthForTestingOnly() string {
 	i := 0
@@ -70,11 +49,6 @@ func SetIndex(k string, v string) {
 	//stateful.SetStatefulItem(&index, k, v)
 }
 
-func FilterIndexEntries() *bytes.Buffer {
-	serializedIndex := bytes.Buffer{}
-	index := index
-	for apiKey, server := range index {
-		serializedIndex.Write([]byte(englang.Printf(MeshPattern, apiKey, server) + "\n"))
-	}
-	return &serializedIndex
+func RegisterIndex(index string) {
+	SetIndex(index, WhoAmI)
 }

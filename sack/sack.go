@@ -66,7 +66,8 @@ func Setup() {
 		if r.Method == "PUT" {
 			coinToUse := billing.ValidatedCoinContent(w, r)
 			if coinToUse != "" {
-				// TODO generate new?
+				// Want to extend? Let it delete and create a new one.
+				// Reason? Newly generated ids are safer.
 				// TODO cleanup
 				sack := makeSack(coinToUse)
 				// TODO cleanup
@@ -93,26 +94,6 @@ func Setup() {
 			_, _ = w.Write([]byte(session))
 			return
 		}
-		//-------------------------------
-		//if r.Method == "PUT" {
-		//	if Sacks[apiKey] != "" {
-		//		// Want to extend? Let it delete and create a new one.
-		//		// Reason? Newly generated ids are safer.
-		//		management.QuantumGradeAuthorization()
-		//		_, _ = w.Write([]byte(apiKey))
-		//		return
-		//	}
-		//	invoice := apiKey
-		//	ok, _, _, voucher := billing.ValidateVoucherKey(invoice, true)
-		//	if !ok {
-		//		management.QuantumGradeAuthorization()
-		//		w.WriteHeader(http.StatusPaymentRequired)
-		//		return
-		//	}
-		//	sack := makeSack(voucher)
-		//	_, _ = w.Write([]byte(fmt.Sprintf("%s", sack)))
-		//	return
-		//}
 	})
 
 	http.HandleFunc("/tmp", func(w http.ResponseWriter, r *http.Request) {

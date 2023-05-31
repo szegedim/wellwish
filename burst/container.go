@@ -151,11 +151,14 @@ func IsMessageComplete(s string) bool {
 
 func RunExternalShell(task string) string {
 	var ret string
-	ret = php.EnglangPhp(drawing.GenerateUniqueKey(), task, MaxBurstRuntime + 500 * time.Millisecond)
+	ret = php.EnglangPhp(drawing.GenerateUniqueKey(), task, MaxBurstRuntime+500*time.Millisecond)
 	if ret != "" {
 		return ret
 	}
 	task = runCommandInBox(task)
+	if ret != "" {
+		return ret
+	}
 	return "This is the result." + task
 }
 
@@ -166,7 +169,7 @@ func runCommandInBox(task string) string {
 		cmd := exec.Command(cmds[0], cmds[1:]...)
 		go func() {
 			if !metadata.Simplify {
-				time.Sleep(MaxBurstRuntime + 500 * time.Millisecond)
+				time.Sleep(MaxBurstRuntime + 500*time.Millisecond)
 				if cmd.Process != nil {
 					_ = cmd.Process.Kill()
 				}

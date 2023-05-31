@@ -127,6 +127,7 @@ func ProcessBurstMessageEnglang(input string) string {
 		}
 		var task string
 		if nil == englang.Scanf1(message+"RHBABDCLF", "Burst container has key %s and it is running %s.Run this.%sRHBABDCLF", &key, &status, &task) {
+			// HOTSPOT
 			result := RunExternalShell(task)
 			message = englang.Printf("Return the results for container with key %s.Return this.%s", key, result)
 			if ShutdownOnFinish {

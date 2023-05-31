@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"gitlab.com/eper.io/engine/billing"
+	"gitlab.com/eper.io/engine/management"
 	"gitlab.com/eper.io/engine/mesh"
 	"gitlab.com/eper.io/engine/stateful"
 	"net/http"
@@ -21,6 +22,41 @@ import (
 func Setup() {
 	stateful.RegisterModuleForBackup(&miningTicket)
 
+	http.HandleFunc("/cryptonugget.coin", func(w http.ResponseWriter, r *http.Request) {
+		// Setup burst sessions, a range of time, when a coin can be used for bursts.
+		if r.Method == "PUT" {
+			coinToUse := billing.ValidatedCoinContent(w, r)
+			if coinToUse != "" {
+				// Want to extend? Let it delete and create a new one.
+				// Reason? Newly generated ids are safer.
+				// TODO cleanup
+				mineTicket := MakeCryptoNuggetMine(coinToUse)
+				// TODO cleanup
+				// mesh.SetIndex(burst, mesh.WhoAmI)
+				management.QuantumGradeAuthorization()
+				_, _ = w.Write([]byte(mineTicket))
+				return
+			}
+			management.QuantumGradeAuthorization()
+			w.WriteHeader(http.StatusPaymentRequired)
+			return
+		}
+
+		if r.Method == "GET" {
+			apiKey := r.URL.Query().Get("apikey")
+			session, sessionValid := miningTicket[apiKey]
+			if !sessionValid {
+				management.QuantumGradeAuthorization()
+				_, _ = w.Write([]byte("payment required"))
+				w.WriteHeader(http.StatusPaymentRequired)
+				return
+			}
+			management.QuantumGradeAuthorization()
+			_, _ = w.Write([]byte(session))
+			return
+		}
+	})
+
 	http.HandleFunc("/cryptonugget", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
 			apiKey, err := billing.IsApiKeyValid(w, r, &miningTicket, mesh.Proxy)
@@ -36,16 +72,16 @@ func Setup() {
 			_ = writer.Flush()
 			return
 		}
-		if r.Method == "PUT" {
-			ok, _, _, voucher := billing.ValidateVoucher(w, r, true)
-			if ok {
-				MakeCryptoNuggetMine(voucher)
-				http.Redirect(w, r, fmt.Sprintf("/cryptonugget?apikey=%s", voucher), http.StatusTemporaryRedirect)
-			} else {
-				w.WriteHeader(http.StatusPaymentRequired)
-			}
-			return
-		}
+		//if r.Method == "PUT" {
+		//	ok, _, _, voucher := billing.ValidateVoucher(w, r, true)
+		//	if ok {
+		//
+		//		http.Redirect(w, r, fmt.Sprintf("/cryptonugget?apikey=%s", voucher), http.StatusTemporaryRedirect)
+		//	} else {
+		//		w.WriteHeader(http.StatusPaymentRequired)
+		//	}
+		//	return
+		//}
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	})
 }
@@ -61,6 +97,7 @@ func random(salt string) uint32 {
 	return y
 }
 
-func MakeCryptoNuggetMine(voucher string) {
+func MakeCryptoNuggetMine(voucher string) string {
 	miningTicket[voucher] = fmt.Sprintf(billing.TicketExpiry, time.Now().Add(168*time.Hour).Format("Jan 2, 2006"))
+	return voucher
 }

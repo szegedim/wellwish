@@ -111,6 +111,12 @@ func TestCustomerScenario(t *testing.T) {
 
 	// Run a burst with a sack
 	// Mine a random number
+	goldMine0 := curl(englang.Printf("curl -X PUT %s/cryptonugget.coin?apikey=%s", metadata.SiteUrl, invoice), "")
+	fmt.Println("Temporary Sack", goldMine0)
+	goldMine1 := curl(englang.Printf("curl -X PUT %s/cryptonugget.coin?apikey=%s", metadata.SiteUrl, invoice), coin)
+	fmt.Println("Temporary Sack From coin", goldMine1)
+	goldNugget := curl(englang.Printf("curl -X GET %s/cryptonugget?apikey=%s", metadata.SiteUrl, goldMine0), "")
+	fmt.Println("Crypto gold nugget data", goldNugget)
 	// Stamp a contract with a burst
 
 	<-done

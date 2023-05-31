@@ -18,6 +18,12 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
+// So, why don't we use true type?
+// It is that we do not want to deal with vectors.
+// Servers may lack the necessary GPU resources.
+// You can write a vector upgrade to reduce latency, if your servers have GPU.
+// However, it will likely be more expensive for sporadic workloads.
+
 func LoadFont(indexes string, name string, logs string) {
 	f := NoErrorFile(os.Open(name))
 	defer func() { _ = f.Close() }()

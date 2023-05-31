@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"gitlab.com/eper.io/engine/activation"
+	"gitlab.com/eper.io/engine/bag"
 	"gitlab.com/eper.io/engine/billing"
 	"gitlab.com/eper.io/engine/burst"
 	"gitlab.com/eper.io/engine/drawing"
@@ -11,7 +12,6 @@ import (
 	"gitlab.com/eper.io/engine/mesh"
 	"gitlab.com/eper.io/engine/metadata"
 	"gitlab.com/eper.io/engine/mining"
-	"gitlab.com/eper.io/engine/sack"
 	"gitlab.com/eper.io/engine/stateful"
 	"io"
 	"net/http"
@@ -30,7 +30,7 @@ import (
 // - It propagates to local servers matching the pattern NodePattern
 // - The service is redirected to a management and administration page using a new api key
 // - Bookmark this page with the admin key to return and get backup or traces
-// - It has a pointer to public pages that can create sacks bursts, etc.
+// - It has a pointer to public pages that can create bags bursts, etc.
 
 // ## Design.
 // Why activate?
@@ -95,7 +95,7 @@ func setupSite() {
 		activation.LogSnapshot(m, w, r)
 		billing.LogSnapshot(m, w, r)
 		mining.LogSnapshot(m, w, r)
-		sack.LogSnapshot(m, w, r)
+		bag.LogSnapshot(m, w, r)
 		burst.LogSnapshot(m, w, r)
 		mesh.LogSnapshot(m, w, r)
 	})
@@ -105,7 +105,7 @@ func setupSite() {
 
 	// It is reliable to do these in order
 	entry.Setup()
-	sack.Setup()
+	bag.Setup()
 	burst.Setup()
 	mining.Setup()
 	drawing.SetupUploads()

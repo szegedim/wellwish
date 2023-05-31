@@ -24,8 +24,8 @@ import (
 // Data locality is important in some cases, especially UI driven code like ours.
 // However, bursts are designed to handle the longer running process.
 
-// Because of this UI should be low latency using just sacks and direct code
-// Bursts should scale out. They are okay to be located elsewhere than the data sacks.
+// Because of this UI should be low latency using just bags and direct code
+// Bursts should scale out. They are okay to be located elsewhere than the data bags.
 // The reason is that large computation will require streaming, and
 // streaming is driven by pipelined steps without replies and feedbacks.
 // Streaming bandwidth is not affected by co-location of data and code.

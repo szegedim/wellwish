@@ -2,7 +2,7 @@
 
 # Run this script on each node
 # Create a load balancer TLS closure from SiteUrl:443 to 7777 on each node.
-# Nodes will take care of propagating the index for stateful sacks
+# Nodes will take care of propagating the index for stateful bags
 
 #docker pull php@sha256:b0eca9a9cb893d096dc0fc4a80a44697cabe6e1ed965cbccf5fd6046b4eda341
 #docker pull node@sha256:14f0471d0478fbb9177d0f9e8c146dc872273dcdcfc7fea93a27ed81fc6b0e96

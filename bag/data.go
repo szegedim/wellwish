@@ -1,4 +1,4 @@
-package sack
+package bag
 
 import (
 	"bytes"
@@ -17,23 +17,23 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
-var Sacks = map[string]string{}
+var bags = map[string]string{}
 
 const RecordPattern = "Record with type %s, apikey %s, info %s, file name %s and length of %s bytes."
 
-const RecordType = "sack"
+const RecordType = "bag"
 
 func LogSnapshot(m string, w io.Writer, r io.Reader) {
 	if m == "GET" {
-		for k, v := range Sacks {
-			sack := k
+		for k, v := range bags {
+			bag := k
 			filePath := path.Join(fmt.Sprintf("/tmp/%s", k))
 			info := v
 
 			content, _ := os.ReadFile(filePath)
 
 			buf := bytes.NewBuffer([]byte{})
-			buf.WriteString(englang.Printf(RecordPattern, RecordType, sack, info, filePath, strconv.FormatInt(int64(len(content)), 10)))
+			buf.WriteString(englang.Printf(RecordPattern, RecordType, bag, info, filePath, strconv.FormatInt(int64(len(content)), 10)))
 			buf.Write(content)
 			_, _ = w.Write(buf.Bytes())
 		}
@@ -46,11 +46,11 @@ func LogSnapshot(m string, w io.Writer, r io.Reader) {
 		i := 0
 		for {
 			record := ""
-			sack := ""
+			bag := ""
 			info := ""
 			filePath := ""
 			length := ""
-			n, err := englang.ScanfStream(buf, i, RecordPattern, &record, &sack, &info, &filePath, &length)
+			n, err := englang.ScanfStream(buf, i, RecordPattern, &record, &bag, &info, &filePath, &length)
 			if err != nil {
 				break
 			}
@@ -59,10 +59,10 @@ func LogSnapshot(m string, w io.Writer, r io.Reader) {
 				break
 			}
 			// Storing the length ensures to avoid Englang injection vulnerabilities
-			// if the file contains Englang of sacks.
-			Sacks[sack] = info
+			// if the file contains Englang of bags.
+			bags[bag] = info
 			if l > 0 {
-				_ = os.WriteFile(path.Join("/tmp", sack), buf[n:n+int(l)], 0700)
+				_ = os.WriteFile(path.Join("/tmp", bag), buf[n:n+int(l)], 0700)
 			}
 			i = n
 		}

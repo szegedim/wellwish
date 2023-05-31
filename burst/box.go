@@ -19,7 +19,7 @@ import (
 // There are two ways to input and output data to and from boxes
 // One is the burst `/run.coin` body request and return.
 // Keep this small as it contains Englang that is duplicated in memory two times at least.
-// The other way is to pass a sack url or cloud bucket url where the box streams any input or results.
+// The other way is to pass a bag url or cloud bucket url where the box streams any input or results.
 // We do not log runtime or errors, the server takes care of that.
 // TODO add timeout logic on paid vouchers
 

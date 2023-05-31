@@ -5,6 +5,9 @@ import (
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/management"
 	"gitlab.com/eper.io/engine/metadata"
+	"os"
+	"os/exec"
+	"path"
 	"testing"
 	"time"
 )
@@ -68,4 +71,33 @@ func TestMesh(t *testing.T) {
 		return
 	}
 	// nowait never exits in case of local cluster
+}
+
+func runTestServer(t *testing.T, ready chan int, port string, timeout time.Duration) {
+	goRoot := os.Getenv("GOROOT")
+	p := exec.Cmd{
+		Dir:  "../",
+		Path: path.Join(goRoot, "bin", "go"),
+		Args: []string{"go", "run", "main.go", port},
+	}
+	err := p.Start()
+	if err != nil {
+		t.Error(err)
+	}
+	go func() {
+		time.Sleep(timeout)
+		_ = p.Process.Kill()
+	}()
+	err = p.Wait()
+	if err != nil && err.Error() != "signal: killed" {
+		t.Error(err)
+	}
+	b, _ := p.CombinedOutput()
+	if len(b) > 0 {
+		t.Log(string(b))
+	}
+	if p.ProcessState.ExitCode() != 0 && p.ProcessState.ExitCode() != -1 {
+		t.Log(p.ProcessState.ExitCode())
+	}
+	ready <- 1
 }

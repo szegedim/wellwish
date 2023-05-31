@@ -1,12 +1,7 @@
 package tests
 
 import (
-	"os"
-	"os/exec"
-	"path"
 	"sync"
-	"testing"
-	"time"
 )
 
 // This document is Licensed under Creative Commons CC0.
@@ -17,32 +12,3 @@ import (
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
 var MainTestLocalPorts = sync.Mutex{}
-
-func runTestServer(t *testing.T, ready chan int, port string, timeout time.Duration) {
-	goRoot := os.Getenv("GOROOT")
-	p := exec.Cmd{
-		Dir:  "../",
-		Path: path.Join(goRoot, "bin", "go"),
-		Args: []string{"go", "run", "main.go", port},
-	}
-	err := p.Start()
-	if err != nil {
-		t.Error(err)
-	}
-	go func() {
-		time.Sleep(timeout)
-		_ = p.Process.Kill()
-	}()
-	err = p.Wait()
-	if err != nil && err.Error() != "signal: killed" {
-		t.Error(err)
-	}
-	b, _ := p.CombinedOutput()
-	if len(b) > 0 {
-		t.Log(string(b))
-	}
-	if p.ProcessState.ExitCode() != 0 && p.ProcessState.ExitCode() != -1 {
-		t.Log(p.ProcessState.ExitCode())
-	}
-	ready <- 1
-}

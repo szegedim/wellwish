@@ -57,53 +57,53 @@ func TestCustomerScenario(t *testing.T) {
 	coin := curl(englang.Printf("curl -X GET %s/invoice.coin?apikey=%s", metadata.SiteUrl, invoice), "")
 	fmt.Println("Coin file", coin)
 	// Check vending logic
-	sack0 := curl(englang.Printf("curl -X PUT %s/tmp.coin?apikey=%s", metadata.SiteUrl, invoice), "")
-	fmt.Println("Temporary Sack", sack0)
-	sack1 := curl(englang.Printf("curl -X PUT %s/tmp.coin?apikey=%s", metadata.SiteUrl, invoice), coin)
-	fmt.Println("Temporary Sack From coin", sack1)
-	sack2 := curl(englang.Printf("curl -X PUT %s/tmp.coin?apikey=%s", metadata.SiteUrl, drawing.GenerateUniqueKey()), drawing.GenerateUniqueKey())
-	fmt.Println("Temporary Sack From criminal coin", sack2)
-	if sack2 != "" {
+	bag0 := curl(englang.Printf("curl -X PUT %s/tmp.coin?apikey=%s", metadata.SiteUrl, invoice), "")
+	fmt.Println("Temporary bag", bag0)
+	bag1 := curl(englang.Printf("curl -X PUT %s/tmp.coin?apikey=%s", metadata.SiteUrl, invoice), coin)
+	fmt.Println("Temporary bag From coin", bag1)
+	bag2 := curl(englang.Printf("curl -X PUT %s/tmp.coin?apikey=%s", metadata.SiteUrl, drawing.GenerateUniqueKey()), drawing.GenerateUniqueKey())
+	fmt.Println("Temporary bag From criminal coin", bag2)
+	if bag2 != "" {
 		t.Error("security issue")
 	}
 
-	// Buy a temporary sack
-	sack := curl(englang.Printf("curl -X PUT %s/tmp.coin?apikey=%s", metadata.SiteUrl, invoice), "")
-	fmt.Println("Sack", sack)
-	// Save a temporary sack
-	upload := curl(englang.Printf("curl -X PUT %s/tmp?apikey=%s", metadata.SiteUrl, sack), "abc")
-	fmt.Println("Sack upload", upload)
-	// Read back the sack
-	content := curl(englang.Printf("curl -X GET %s/tmp?apikey=%s", metadata.SiteUrl, sack), "")
-	fmt.Println("Sack data", content)
+	// Buy a temporary bag
+	bag := curl(englang.Printf("curl -X PUT %s/tmp.coin?apikey=%s", metadata.SiteUrl, invoice), "")
+	fmt.Println("bag", bag)
+	// Save a temporary bag
+	upload := curl(englang.Printf("curl -X PUT %s/tmp?apikey=%s", metadata.SiteUrl, bag), "abc")
+	fmt.Println("bag upload", upload)
+	// Read back the bag
+	content := curl(englang.Printf("curl -X GET %s/tmp?apikey=%s", metadata.SiteUrl, bag), "")
+	fmt.Println("bag data", content)
 	if content != "abc" {
 		t.Error("content not stored")
 	}
-	info := curl(englang.Printf("curl -X TRACE %s/tmp?apikey=%s", metadata.SiteUrl, sack), "")
-	fmt.Println("Sack info", info)
+	info := curl(englang.Printf("curl -X TRACE %s/tmp?apikey=%s", metadata.SiteUrl, bag), "")
+	fmt.Println("bag info", info)
 	if !strings.Contains(info, "Validated until") {
-		t.Error("sack info invalid")
+		t.Error("bag info invalid")
 	}
 	time.Sleep(20 * time.Second)
-	secondary := curl(englang.Printf("curl -X TRACE %s/tmp?apikey=%s", SiteSecondaryNodeUrl, sack), "")
-	fmt.Println("Sack info", secondary)
+	secondary := curl(englang.Printf("curl -X TRACE %s/tmp?apikey=%s", SiteSecondaryNodeUrl, bag), "")
+	fmt.Println("bag info", secondary)
 	if !strings.Contains(secondary, "Validated until") {
-		t.Error("indexing does not work", sack)
+		t.Error("indexing does not work", bag)
 		secondary = curl(englang.Printf("curl -X TRACE %s/healthz", metadata.SiteUrl), "")
-		fmt.Println("Sack info", secondary)
+		fmt.Println("bag info", secondary)
 		secondary = curl(englang.Printf("curl -X TRACE %s/healthz", SiteSecondaryNodeUrl), "")
-		fmt.Println("Sack info", secondary)
+		fmt.Println("bag info", secondary)
 	}
 
-	deleted := curl(englang.Printf("curl -X DELETE %s/tmp?apikey=%s", metadata.SiteUrl, sack), "")
-	fmt.Println("Sack deleted", deleted)
+	deleted := curl(englang.Printf("curl -X DELETE %s/tmp?apikey=%s", metadata.SiteUrl, bag), "")
+	fmt.Println("bag deleted", deleted)
 	if deleted != "success" {
 		t.Error("404 page not found")
 	}
-	content = curl(englang.Printf("curl -X GET %s/tmp?apikey=%s", metadata.SiteUrl, sack), "")
-	fmt.Println("Sack data", content)
+	content = curl(englang.Printf("curl -X GET %s/tmp?apikey=%s", metadata.SiteUrl, bag), "")
+	fmt.Println("bag data", content)
 	if deleted != "success" {
-		t.Error("sack should be deleted")
+		t.Error("bag should be deleted")
 	}
 
 	// Buy a burst session
@@ -127,12 +127,12 @@ func TestCustomerScenario(t *testing.T) {
 		t.Error("could not run sample php")
 	}
 
-	// Run a burst with a sack
+	// Run a burst with a bag
 	// Mine a random number
 	goldMine0 := curl(englang.Printf("curl -X PUT %s/cryptonugget.coin?apikey=%s", metadata.SiteUrl, invoice), "")
-	fmt.Println("Temporary Sack", goldMine0)
+	fmt.Println("Temporary bag", goldMine0)
 	goldMine1 := curl(englang.Printf("curl -X PUT %s/cryptonugget.coin?apikey=%s", metadata.SiteUrl, invoice), coin)
-	fmt.Println("Temporary Sack From coin", goldMine1)
+	fmt.Println("Temporary bag From coin", goldMine1)
 	goldNugget := curl(englang.Printf("curl -X GET %s/cryptonugget?apikey=%s", metadata.SiteUrl, goldMine0), "")
 	fmt.Println("Crypto gold nugget data", goldNugget)
 

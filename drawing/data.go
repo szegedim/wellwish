@@ -14,7 +14,6 @@ import (
 )
 
 const RevertAndReturn = "\r"
-const InitialHint = RevertAndReturn
 
 var Loaded sync.Mutex
 

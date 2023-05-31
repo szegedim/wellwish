@@ -20,7 +20,7 @@ func TestLongTermCosts(t *testing.T) {
 	var begin, lines, end string
 	_ = englang.ScanfContains(ret, "clc:%s\n", &begin, &lines, &end)
 	fmt.Println(lines)
-	if englang.Decimal(lines) > 5800 {
+	if englang.Decimal(lines) > 5700 {
 		t.Error("project became larger than what can be handled by 0.6 developer")
 		t.Log("\n" + ret)
 	}

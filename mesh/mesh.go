@@ -15,13 +15,13 @@ import (
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
 // Mesh module functions do some heavy lifting for the entire cluster.
-// Individual sack and burst containers are not aware of the cluster details.
+// Individual bag and burst containers are not aware of the cluster details.
 // They have only a pointer to the cluster entry point, a https site address.
 
 // Mesh containers listen to 7777 and communicate through Englang.
 // Most cloud providers do not require https within the VPC. //TODO Is this still the case?
-// - Mesh reads sack checkpoint backups.
-// - Mesh knows where to find a sack and forwards requests to other nodes using index.
+// - Mesh reads bag checkpoint backups.
+// - Mesh knows where to find a bag and forwards requests to other nodes using index.
 // - Mesh can restore an entire cluster from and Englang backup file.
 // - Mesh sets up a node metal file with keys for burst nodes.
 // - Burst nodes log in with the key in the metal file to get tasks to run.
@@ -30,8 +30,8 @@ import (
 
 // We store checkpoints locally on each node periodically.
 // The period is set in the metadata.
-// A Redis runner can pick them up using a simple sack GET and back them up regularly.
-// How? It is mapped to a sack and a burst with Redis client can pick it up.
+// A Redis runner can pick them up using a simple bag GET and back them up regularly.
+// How? It is mapped to a bag and a burst with Redis client can pick it up.
 
 // How often?
 // Checkpoints too rare may lose important recent changes, ergo support costs.
@@ -44,16 +44,16 @@ import (
 // This also means that mesh is 100% letter A = Available in the CAP theorem.
 // Consistency is implied by running personal cloud items independently by apikey.
 // The application layer can add consistency features. We are eventually consistent.
-// Partition tolerance can be implemented at the application level buying two sacks.
-// The temporary nature of sacks also helps to down prioritize partition tolerance.
+// Partition tolerance can be implemented at the application level buying two bags.
+// The temporary nature of bags also helps to down prioritize partition tolerance.
 
 // We use just a node pattern instead of having configuration to add each node.
 // This allows simple node addition and removal.
 // Adding a node is as simple as turning it on with the activation key propagated from the existing cluster.
 // Removing a node is simple. Mark it as "This node got an eviction notice."
 // TODO It is easier to add port 7778 for stateful writes and disable it in the load balancer.
-// TODO It is easier to disable sack PUT requests i.e. /tmp in the load balancer or firewall.
-// It can be turned off at the standard expiry time, when stateful sacks, etc. expired.
+// TODO It is easier to disable bag PUT requests i.e. /tmp in the load balancer or firewall.
+// It can be turned off at the standard expiry time, when stateful bags, etc. expired.
 
 func InitializeNodeList() {
 	if len(Nodes) > 0 {

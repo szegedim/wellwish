@@ -1,4 +1,4 @@
-package sack
+package bag
 
 import (
 	"bufio"
@@ -32,14 +32,14 @@ import (
 //  - the client does not need to log in with an asymmetric key protocol
 //  - we work with cUrl and http directly, there is no need to mess with REST
 //  - complex datasets, directories can use tarballs
-//  - the sack disposes itself after expiry reducing privacy risks with a magnitude
+//  - the bag disposes itself after expiry reducing privacy risks with a magnitude
 //  - do not use them as a long term backup but as a cache instead
-//  - buy and upload to multiple sacks to support redundancy
+//  - buy and upload to multiple bags to support redundancy
 //  - you can do RAID 0, 1, 2, 3 etc. from simple client scripts if needed
 
-// Sack stands for a sack of grain for example.
+// bag stands for a bag of grain for example.
 //
-// Benefits of sacks:
+// Benefits of bags:
 // They can be used to send large attachments to clients like DropBox.
 // They can be used as interim datasets for data streaming queries.
 // They can hold your code temporarily as a backup until it is committed.
@@ -48,9 +48,9 @@ import (
 // TODO Seek and put into the middle of a tarball
 
 func Setup() {
-	stateful.RegisterModuleForBackup(&Sacks)
+	stateful.RegisterModuleForBackup(&bags)
 
-	http.HandleFunc("/sack.html", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/bag.html", func(w http.ResponseWriter, r *http.Request) {
 		if nil == mesh.RedirectToPeerServer(w, r) {
 			return
 		}
@@ -58,10 +58,10 @@ func Setup() {
 		if err != nil {
 			return
 		}
-		drawing.ServeRemoteForm(w, r, "sack")
+		drawing.ServeRemoteForm(w, r, "bag")
 	})
 
-	http.HandleFunc("/sack.png", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/bag.png", func(w http.ResponseWriter, r *http.Request) {
 		if nil == mesh.RedirectToPeerServer(w, r) {
 			return
 		}
@@ -79,11 +79,11 @@ func Setup() {
 				// Want to extend? Let it delete and create a new one.
 				// Reason? Newly generated ids are safer.
 				// TODO cleanup
-				sack := makeSack(coinToUse)
+				bag := makebag(coinToUse)
 				// TODO cleanup
 				// mesh.SetIndex(burst, mesh.WhoAmI)
 				management.QuantumGradeAuthorization()
-				_, _ = w.Write([]byte(sack))
+				_, _ = w.Write([]byte(bag))
 				return
 			}
 			management.QuantumGradeAuthorization()
@@ -93,7 +93,7 @@ func Setup() {
 
 		if r.Method == "GET" {
 			apiKey := r.URL.Query().Get("apikey")
-			session, sessionValid := Sacks[apiKey]
+			session, sessionValid := bags[apiKey]
 			if !sessionValid {
 				management.QuantumGradeAuthorization()
 				_, _ = w.Write([]byte("payment required"))
@@ -112,14 +112,14 @@ func Setup() {
 		}
 		apiKey := r.URL.Query().Get("apikey")
 
-		sack := apiKey
-		traces := Sacks[sack]
+		bag := apiKey
+		traces := bags[bag]
 		if traces == "" {
 			management.QuantumGradeAuthorization()
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		fileName := sack
+		fileName := bag
 		p := path.Join(fmt.Sprintf("/tmp/%s", fileName))
 		if r.Method == "GET" {
 			management.QuantumGradeAuthorization()
@@ -134,9 +134,9 @@ func Setup() {
 				size = 0
 			}
 			size = stat.Size()
-			drawing.NoErrorWrite(bw.WriteString(fmt.Sprintf("This is a sack storage of a single file\n")))
+			drawing.NoErrorWrite(bw.WriteString(fmt.Sprintf("This is a bag storage of a single file\n")))
 			drawing.NoErrorWrite(bw.WriteString(fmt.Sprintf("The current size is %d bytes.\n", size)))
-			drawing.NoErrorWrite(bw.WriteString(fmt.Sprintf("Sack record follows\n%s\n", Sacks[sack])))
+			drawing.NoErrorWrite(bw.WriteString(fmt.Sprintf("bag record follows\n%s\n", bags[bag])))
 			drawing.NoErrorVoid(bw.Flush())
 			return
 		}
@@ -157,10 +157,10 @@ func Setup() {
 
 	go func() {
 		for {
-			if len(Sacks) > 0 {
-				nanos := time.Duration(metadata.CheckpointPeriod.Nanoseconds() / int64(len(Sacks)))
-				for sack := range Sacks {
-					CleanupExpiredSack(sack)
+			if len(bags) > 0 {
+				nanos := time.Duration(metadata.CheckpointPeriod.Nanoseconds() / int64(len(bags)))
+				for bag := range bags {
+					CleanupExpiredbag(bag)
 					time.Sleep(nanos)
 				}
 			}
@@ -169,8 +169,8 @@ func Setup() {
 	}()
 }
 
-func CleanupExpiredSack(sack string) {
-	info := Sacks[sack]
+func CleanupExpiredbag(bag string) {
+	info := bags[bag]
 	dt := ""
 	begin := ""
 	end := ""
@@ -183,12 +183,12 @@ func CleanupExpiredSack(sack string) {
 		return
 	}
 	if time.Now().After(expiry) {
-		path1 := path.Join(fmt.Sprintf("/tmp/%s", sack))
+		path1 := path.Join(fmt.Sprintf("/tmp/%s", bag))
 		_ = os.Remove(path1)
 	}
 }
 
-func MakeSackWithCoin(coinUrlList string) string {
+func MakebagWithCoin(coinUrlList string) string {
 	scanner := bufio.NewScanner(bytes.NewBufferString(coinUrlList))
 	for scanner.Scan() {
 		var voucher, begin, end, site string
@@ -196,12 +196,12 @@ func MakeSackWithCoin(coinUrlList string) string {
 		if err == nil {
 			ok, isInvoice, _, valid := billing.ValidateVoucherKey(voucher, true)
 			if ok {
-				sack := makeSack(valid)
+				bag := makebag(valid)
 				if isInvoice {
-					Sacks[sack] = Sacks[sack] + fmt.Sprintf("\nInvoice used: %s\n", drawing.RedactPublicKey(voucher))
+					bags[bag] = bags[bag] + fmt.Sprintf("\nInvoice used: %s\n", drawing.RedactPublicKey(voucher))
 				}
-				Sacks[sack] = Sacks[sack] + fmt.Sprintf("\nVoucher used: %s\n", drawing.RedactPublicKey(valid))
-				return sack
+				bags[bag] = bags[bag] + fmt.Sprintf("\nVoucher used: %s\n", drawing.RedactPublicKey(valid))
+				return bag
 			}
 		}
 	}
@@ -210,11 +210,11 @@ func MakeSackWithCoin(coinUrlList string) string {
 
 func declareForm(session *drawing.Session) {
 	if session.Form.Boxes == nil {
-		drawing.DeclareForm(session, "./sack/media/page.png")
+		drawing.DeclareForm(session, "./bag/media/page.png")
 
 		init := "Click here to pay with a coin file."
-		if Sacks[session.ApiKey] != "" {
-			init = "Click here to preview sack."
+		if bags[session.ApiKey] != "" {
+			init = "Click here to preview bag."
 		}
 		CommandText := drawing.PutText(session, -1, drawing.Content{Text: init, Lines: 1, Editable: false, Selectable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
 
@@ -226,7 +226,7 @@ func declareForm(session *drawing.Session) {
 				if session.Text[CommandText].Text == "Click here to upload content." {
 					session.Upload = "*.*"
 				}
-				if session.Text[CommandText].Text == "Click here to preview sack." && Sacks[session.ApiKey] != "" {
+				if session.Text[CommandText].Text == "Click here to preview bag." && bags[session.ApiKey] != "" {
 					session.Redirect = fmt.Sprintf("/tmp?apikey=%s", session.ApiKey)
 					session.SelectedBox = -1
 				}
@@ -237,7 +237,7 @@ func declareForm(session *drawing.Session) {
 		session.SignalUploaded = func(session *drawing.Session, upload drawing.Upload) {
 			if session.Text[CommandText].Text == "Click here to pay with a coin file." {
 				// session.Data is going to the voucher id
-				session.Data = MakeSackWithCoin(string(upload.Body))
+				session.Data = MakebagWithCoin(string(upload.Body))
 				if session.Data != "" {
 					drawing.PutText(session, CommandText, drawing.Content{Text: "Click here to upload content.", Lines: 1, Editable: false, Selectable: false, FontColor: drawing.Black, BackgroundColor: drawing.White, Alignment: 0})
 					session.SignalPartialRedrawNeeded(session, CommandText)
@@ -251,8 +251,8 @@ func declareForm(session *drawing.Session) {
 			}
 			if session.Text[CommandText].Text == "Click here to upload content." && session.Data != "" {
 				// session.Data is the voucher id
-				sack := session.Data
-				fileName := sack
+				bag := session.Data
+				fileName := bag
 				p := path.Join(fmt.Sprintf("/tmp/%s", fileName))
 				_ = os.WriteFile(p, upload.Body, 0700)
 				session.Data = ""
@@ -263,7 +263,7 @@ func declareForm(session *drawing.Session) {
 				session.SignalPartialRedrawNeeded(session, CommandText)
 
 				session.SelectedBox = -1
-				session.Redirect = fmt.Sprintf("/sack.html?apikey=%s", sack)
+				session.Redirect = fmt.Sprintf("/bag.html?apikey=%s", bag)
 			}
 		}
 
@@ -273,15 +273,15 @@ func declareForm(session *drawing.Session) {
 	}
 }
 
-func makeSack(sack string) string {
+func makebag(bag string) string {
 	trace := fmt.Sprintf(billing.TicketExpiry, time.Now().Add(4*168*time.Hour).Format("Jan 2, 2006"))
-	Sacks[sack] = trace
-	mesh.RegisterIndex(sack)
-	path1 := path.Join(fmt.Sprintf("/tmp/%s", sack))
-	newSack := drawing.NoErrorFile(os.Create(path1))
-	w := bufio.NewWriter(newSack)
-	_, _ = w.WriteString(fmt.Sprintf("curl -X GET %s/tmp?apikey=%s", metadata.SiteUrl, sack))
+	bags[bag] = trace
+	mesh.RegisterIndex(bag)
+	path1 := path.Join(fmt.Sprintf("/tmp/%s", bag))
+	newbag := drawing.NoErrorFile(os.Create(path1))
+	w := bufio.NewWriter(newbag)
+	_, _ = w.WriteString(fmt.Sprintf("curl -X GET %s/tmp?apikey=%s", metadata.SiteUrl, bag))
 	_ = w.Flush()
-	_ = newSack.Close()
-	return sack
+	_ = newbag.Close()
+	return bag
 }

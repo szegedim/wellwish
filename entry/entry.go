@@ -64,7 +64,7 @@ func declareCorrespondenceForm(session *drawing.Session) {
 				session.SignalClosed(session)
 			}
 			if i == DocumentButton {
-				session.Redirect = fmt.Sprintf("/sack.html?apikey=%s", drawing.GenerateUniqueKey())
+				session.Redirect = fmt.Sprintf("/bag.html?apikey=%s", drawing.GenerateUniqueKey())
 				session.SignalClosed(session)
 			}
 		}

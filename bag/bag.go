@@ -44,6 +44,7 @@ import (
 // They can be used as interim datasets for data streaming queries.
 // They can hold your code temporarily as a backup until it is committed.
 // They can be a low latency part of your continuous delivery pipeline.
+// Want to extend a bag period? Let it delete and create a new one. Reason? Newly generated ids are safer.
 
 // TODO Seek and put into the middle of a tarball
 
@@ -76,12 +77,7 @@ func Setup() {
 		if r.Method == "PUT" {
 			coinToUse := billing.ValidatedCoinContent(w, r)
 			if coinToUse != "" {
-				// Want to extend? Let it delete and create a new one.
-				// Reason? Newly generated ids are safer.
-				// TODO cleanup
-				bag := makebag(coinToUse)
-				// TODO cleanup
-				// mesh.SetIndex(burst, mesh.WhoAmI)
+				bag := makeBag(coinToUse)
 				management.QuantumGradeAuthorization()
 				_, _ = w.Write([]byte(bag))
 				return
@@ -170,21 +166,11 @@ func Setup() {
 }
 
 func CleanupExpiredbag(bag string) {
-	info := bags[bag]
-	dt := ""
-	begin := ""
-	end := ""
-	err := englang.ScanfContains(info, billing.TicketExpiry, &begin, &dt, &end)
-	if err != nil {
-		return
-	}
-	expiry, err := time.Parse("Jan 2, 2006", dt)
-	if err != nil {
-		return
-	}
-	if time.Now().After(expiry) {
+	valid := mesh.GetIndex(bag)
+	if valid == "" {
 		path1 := path.Join(fmt.Sprintf("/tmp/%s", bag))
 		_ = os.Remove(path1)
+		delete(bags, bag)
 	}
 }
 
@@ -196,7 +182,7 @@ func MakebagWithCoin(coinUrlList string) string {
 		if err == nil {
 			ok, isInvoice, _, valid := billing.ValidateVoucherKey(voucher, true)
 			if ok {
-				bag := makebag(valid)
+				bag := makeBag(valid)
 				if isInvoice {
 					bags[bag] = bags[bag] + fmt.Sprintf("\nInvoice used: %s\n", drawing.RedactPublicKey(voucher))
 				}
@@ -273,15 +259,15 @@ func declareForm(session *drawing.Session) {
 	}
 }
 
-func makebag(bag string) string {
-	trace := fmt.Sprintf(billing.TicketExpiry, time.Now().Add(4*168*time.Hour).Format("Jan 2, 2006"))
-	bags[bag] = trace
+func makeBag(bag string) string {
+	bags[bag] = "Bag is valid."
 	mesh.RegisterIndex(bag)
+	mesh.SetExpiry(bag, ValidPeriod)
 	path1 := path.Join(fmt.Sprintf("/tmp/%s", bag))
-	newbag := drawing.NoErrorFile(os.Create(path1))
-	w := bufio.NewWriter(newbag)
+	bagFile := drawing.NoErrorFile(os.Create(path1))
+	w := bufio.NewWriter(bagFile)
 	_, _ = w.WriteString(fmt.Sprintf("curl -X GET %s/tmp?apikey=%s", metadata.SiteUrl, bag))
 	_ = w.Flush()
-	_ = newbag.Close()
+	_ = bagFile.Close()
 	return bag
 }

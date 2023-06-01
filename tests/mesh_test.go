@@ -2,6 +2,7 @@ package tests
 
 import (
 	"fmt"
+	"gitlab.com/eper.io/engine/burst"
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/management"
 	"gitlab.com/eper.io/engine/metadata"
@@ -22,8 +23,15 @@ import (
 // Add a few index entries and check whether they are propagated through the cluster.
 
 func TestMesh(t *testing.T) {
+	time.Sleep(100 * time.Millisecond)
 	MainTestLocalPorts.Lock()
 	defer MainTestLocalPorts.Unlock()
+	defer func() {
+		time.Sleep(2 * burst.MaxBurstRuntime)
+		burst.FinishCleanup()
+		time.Sleep(2 * burst.MaxBurstRuntime)
+	}()
+
 	primary := "http://127.0.0.1:7724"
 	metadata.NodePattern = "http://127.0.0.1:772*"
 	wait := make(chan int)
@@ -63,6 +71,7 @@ func TestMesh(t *testing.T) {
 		t.Error("something went wrong", string(ret))
 	}
 
+	burst.FinishCleanup()
 	select {
 	case <-wait:
 		return

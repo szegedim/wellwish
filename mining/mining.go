@@ -27,12 +27,7 @@ func Setup() {
 		if r.Method == "PUT" {
 			coinToUse := billing.ValidatedCoinContent(w, r)
 			if coinToUse != "" {
-				// Want to extend? Let it delete and create a new one.
-				// Reason? Newly generated ids are safer.
-				// TODO cleanup
-				mineTicket := MakeCryptoNuggetMine(coinToUse)
-				// TODO cleanup
-				// mesh.SetIndex(burst, mesh.WhoAmI)
+				mineTicket := makeCryptoNuggetMine(coinToUse)
 				management.QuantumGradeAuthorization()
 				_, _ = w.Write([]byte(mineTicket))
 				return
@@ -58,17 +53,24 @@ func Setup() {
 	})
 
 	http.HandleFunc("/cryptonugget", func(w http.ResponseWriter, r *http.Request) {
+		apiKey := r.URL.Query().Get("apikey")
 		if r.Method == "GET" {
-			apiKey, err := billing.IsApiKeyValid(w, r, &miningTicket, mesh.RedirectToPeerServer)
-			if err != nil {
+			bag := apiKey
+			traces := miningTicket[bag]
+			if traces == "" {
+				management.QuantumGradeAuthorization()
+				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
+
 			writer := bufio.NewWriter(w)
-			r := uint32(0)
-			for i := 0; i < 3 || r == 0; i++ {
-				r = random(apiKey)
+			for j := 0; j < 4096/8/4; j++ {
+				r := uint32(0)
+				for i := 0; i < 3 || r == 0; i++ {
+					r = random(apiKey)
+				}
+				_, _ = writer.WriteString(fmt.Sprintf("%08x", r))
 			}
-			_, _ = writer.WriteString(fmt.Sprintf("%8x", r))
 			_ = writer.Flush()
 			return
 		}
@@ -87,7 +89,9 @@ func random(salt string) uint32 {
 	return y
 }
 
-func MakeCryptoNuggetMine(voucher string) string {
-	miningTicket[voucher] = fmt.Sprintf(billing.TicketExpiry, time.Now().Add(168*time.Hour).Format("Jan 2, 2006"))
+func makeCryptoNuggetMine(voucher string) string {
+	mesh.RegisterIndex(voucher)
+	mesh.SetExpiry(voucher, ValidPeriod)
+	miningTicket[voucher] = fmt.Sprintf("Mine expires on %s.", time.Now().Add(ValidPeriod).Format("Jan 2, 2006"))
 	return voucher
 }

@@ -47,11 +47,11 @@ func Readdir(arr *[]string, s string) {
 			*arr = append(*arr, p)
 			fmt.Println(p)
 			if strings.HasSuffix(p, ".go") {
-				q := drawing.NoErrorString(os.ReadFile(p))
-				wc = wc + len(strings.Split(q, " "))
-				lc = lc + len(strings.Split(q, "\n"))
+				goContent := drawing.NoErrorString(os.ReadFile(p))
+				wc = wc + len(strings.Split(goContent, " "))
+				lc = lc + len(strings.Split(goContent, "\n"))
 				if !strings.HasSuffix(p, "_test.go") {
-					clc = clc + len(strings.Split(q, "\n"))
+					clc = clc + len(strings.Split(goContent, "\n"))
 				}
 			}
 		}

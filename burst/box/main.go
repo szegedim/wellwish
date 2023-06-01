@@ -1,8 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"gitlab.com/eper.io/engine/burst"
 	"gitlab.com/eper.io/engine/drawing"
+	"gitlab.com/eper.io/engine/englang"
+	"gitlab.com/eper.io/engine/metadata"
+	"io"
+	"net/http"
+	"strings"
 )
 
 // This document is Licensed under Creative Commons CC0.
@@ -23,6 +29,39 @@ import (
 // TODO add timeout logic on paid vouchers
 
 func main() {
-	burst.ShutdownOnFinish = true
-	drawing.NoErrorVoid(burst.RunBox())
+	content := curl(englang.Printf("curl -X GET http://127.0.0.1%s/idle?apikey=%s", metadata.Http11Port, "bag"), "")
+
+	var command, port, key string
+	_ = englang.Scanf1(content, "Run this %s and return in http://127.0.0.1%s/idle?apikey=%s.", &command, &port, &key)
+	ret := burst.RunExternalShell(command)
+
+	x := englang.Printf("Run this %s and return in http://127.0.0.1%s/idle?apikey=%s.", ret, port, key)
+	curl(englang.Printf("curl -X PUT http://127.0.0.1%s/idle?apikey=%s", port, key), x)
+}
+
+func curl(command string, data string) string {
+	options := ""
+	method := "GET"
+	var url string
+	_ = englang.Scanf1(command+"fdsgdfgfdvdds", "curl %s-X %s %s"+"fdsgdfgfdvdds", &options, &method, &url)
+	redirect := false
+	if strings.Contains(options, "-L") {
+		redirect = true
+	}
+	upload := bytes.NewBufferString(data)
+	request, _ := http.NewRequest(method, url, upload)
+	var c http.Client
+	resp, _ := c.Do(request)
+	download := make([]byte, 0)
+	if resp != nil && resp.StatusCode == http.StatusTemporaryRedirect && redirect {
+		target := resp.Header.Get("Location")
+		curl(strings.Replace(command, url, target, 1), data)
+	}
+	if resp != nil {
+		download = drawing.NoErrorBytes(io.ReadAll(resp.Body))
+	}
+	if resp != nil && resp.StatusCode == http.StatusOK && len(download) == 0 {
+		return "success"
+	}
+	return string(download)
 }

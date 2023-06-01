@@ -49,6 +49,15 @@ func SetIndex(k string, v string) {
 	//stateful.SetStatefulItem(&index, k, v)
 }
 
+func DeleteIndex(k string) {
+	indexLock.Lock()
+	defer indexLock.Unlock()
+	_, ok := index[k]
+	if ok {
+		delete(index, k)
+	}
+}
+
 func RegisterIndex(index string) {
 	SetIndex(index, WhoAmI)
 }

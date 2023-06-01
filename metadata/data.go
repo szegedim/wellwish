@@ -19,7 +19,7 @@ import "time"
 // This is an example to fine tune a new docker image
 // (docker pull registry.gitlab.com/eper.io/<project> | grep 'Downloaded newer image') && docker build -t example.com/wellwish . && docker push example.com/wellwish
 
-var ActivationKey = "HQVNXPNHYXZISISZALKCPXKGXYOJUKZFHQXQJWEYGYDZCWWMXSDSZFQEDAMZGWLOESBVDKFWBAHHOVJGYJCXOEHXVFFR"
+var ActivationKey = "XPSZMNHVHDSOUOFNZBUQLBVVACMWASPLGXSQIZSDMXMDGJCKEXKCDQGLZWALMWWTJAFQILWYUMHSPZYSDHPDMSKVDXRR"
 var ManagementKey = ""
 
 var SiteName = "WellWish\nCloud Decision Engine"

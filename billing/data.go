@@ -37,5 +37,3 @@ func LogSnapshot(m string, w io.Writer, r io.Reader) {
 	}
 	return
 }
-
-const TicketExpiry = "Validated until %s."

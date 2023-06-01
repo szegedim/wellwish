@@ -7,6 +7,7 @@ import (
 	"gitlab.com/eper.io/engine/management"
 	"io"
 	"sync"
+	"time"
 )
 
 // This document is Licensed under Creative Commons CC0.
@@ -26,7 +27,11 @@ var Nodes = map[string]string{}
 
 var index = map[string]string{}
 
+var expiry = map[string]string{}
+
 var NodePattern = ""
+
+var updateFrequency = 2 * time.Second
 
 func LogSnapshot(m string, w io.Writer, r io.Reader) {
 	// TODO
@@ -43,6 +48,9 @@ func LogSnapshot(m string, w io.Writer, r io.Reader) {
 		}
 		index := index
 		for k, v := range index {
+			_, _ = ww.WriteString(fmt.Sprintf("Index %s is %s here.", k, v) + "\n")
+		}
+		for k, v := range expiry {
 			_, _ = ww.WriteString(fmt.Sprintf("Index %s is %s here.", k, v) + "\n")
 		}
 		_ = ww.Flush()

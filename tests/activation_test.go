@@ -2,6 +2,7 @@ package tests
 
 import (
 	"fmt"
+	"gitlab.com/eper.io/engine/burst"
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/management"
 	"gitlab.com/eper.io/engine/metadata"
@@ -20,6 +21,12 @@ import (
 func TestClusterActivation(t *testing.T) {
 	MainTestLocalPorts.Lock()
 	defer MainTestLocalPorts.Unlock()
+	defer func() {
+		time.Sleep(2 * burst.MaxBurstRuntime)
+		burst.FinishCleanup()
+		time.Sleep(2 * burst.MaxBurstRuntime)
+	}()
+
 	primary := "http://127.0.0.1:7778"
 	metadata.NodePattern = "http://127.0.0.1:777*"
 	wait := make(chan int)
@@ -56,6 +63,7 @@ func TestClusterActivation(t *testing.T) {
 			continue
 		} else {
 			fmt.Println("Activated in ", i, "seconds.")
+			time.Sleep(3 * time.Second)
 			break
 		}
 	}
@@ -90,4 +98,5 @@ func TestClusterActivation(t *testing.T) {
 		return
 	}
 	// nowait never exits in case of local cluster
+	burst.FinishCleanup()
 }

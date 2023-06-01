@@ -73,11 +73,6 @@ func customizePort(args []string, port string) string {
 	if len(args) > 1 {
 		port = args[1]
 	}
-	//if strings.HasPrefix(metadata.SiteUrl, "http://127.") {
-	//	if strings.HasPrefix(metadata.SiteUrl, ":") {
-	//		metadata.SiteUrl = fmt.Sprintf("http://127.0.0.1%s", port)
-	//	}
-	//}
 	return port
 }
 
@@ -105,6 +100,7 @@ func setupSite() {
 
 	// It is reliable to do these in order
 	entry.Setup()
+	mesh.SetupExpiry()
 	bag.Setup()
 	burst.Setup()
 	mining.Setup()

@@ -2,7 +2,9 @@ package burst
 
 import (
 	"fmt"
-	"gitlab.com/eper.io/engine/metadata"
+	"os"
+	"os/exec"
+	"path"
 	"time"
 )
 
@@ -24,25 +26,14 @@ import (
 // TODO add timeout logic on paid vouchers
 
 func RunBox() error {
-	reply := ""
 	for {
-		reply = ProcessBurstMessageEnglang(reply)
-		if reply == "" {
-			return fmt.Errorf("protocol error")
-		}
-		var err error
-		for i := 0; i < 3; i++ {
-			reply, err = SendMessage(metadata.UdpContainerPort, reply)
-			if IsEmptyMessage(reply) {
-				return nil
-			}
-			if reply == "" {
-				time.Sleep(1 * time.Second)
-				continue
-			}
-		}
+		time.Sleep(100 * time.Millisecond)
+
+		goRoot := os.Getenv("GOROOT")
+		goroot := path.Join(goRoot, "bin", "go")
+		err := exec.Command(goroot, "run", path.Join("..", "burst", "box", "main.go")).Run()
 		if err != nil {
-			return err
+			fmt.Println("local result", err)
 		}
 	}
 }

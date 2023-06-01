@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"time"
 )
 
 // This document is Licensed under Creative Commons CC0.
@@ -18,6 +19,8 @@ import (
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
 var bags = map[string]string{}
+
+const ValidPeriod = 168 * time.Hour
 
 const RecordPattern = "Record with type %s, apikey %s, info %s, file name %s and length of %s bytes."
 

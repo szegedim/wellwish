@@ -12,9 +12,12 @@ import (
 	"gitlab.com/eper.io/engine/englang"
 	"io"
 	"strconv"
+	"time"
 )
 
 var miningTicket = map[string]string{}
+
+const ValidPeriod = 4 * 168 * time.Hour
 
 func LogSnapshot(m string, w io.Writer, r io.Reader) {
 	if m == "GET" {

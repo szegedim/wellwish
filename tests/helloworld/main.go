@@ -1,8 +1,6 @@
-package burst
+package main
 
-import (
-	"io"
-)
+import "fmt"
 
 // This document is Licensed under Creative Commons CC0.
 // To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights
@@ -11,6 +9,6 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
-func LogSnapshot(m string, w io.Writer, r io.Reader) {
+// A simple helloworld application
 
-}
+func main() { fmt.Println("Hello World!") }

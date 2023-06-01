@@ -24,8 +24,8 @@ import (
 func TestCustomerScenario(t *testing.T) {
 	// Install a cluster somewhere
 	time.Sleep(900 * time.Millisecond)
-	MainTestLocalPorts.Lock()
-	defer MainTestLocalPorts.Unlock()
+	mainTestLocalPorts.Lock()
+	defer mainTestLocalPorts.Unlock()
 	defer func() {
 		time.Sleep(2 * burst.MaxBurstRuntime)
 		burst.FinishCleanup()

@@ -40,8 +40,6 @@ func Setup() {
 	stateful.RegisterModuleForBackup(&BurstSession)
 
 	http.HandleFunc("/run", func(writer http.ResponseWriter, request *http.Request) {
-		lock.Lock()
-		defer lock.Unlock()
 		apiKey := request.URL.Query().Get("apikey")
 		_, call := BurstSession[apiKey]
 		if !call {
@@ -56,47 +54,58 @@ func Setup() {
 		var instruction string
 		var key string
 		for instruction == "" {
-			for k, v := range ContainerRunning {
-				if v == "I am idle." {
-					key = k
-					instruction = englang.Printf("Run this %s and return in http://127.0.0.1%s/idle?apikey=%s.", input, metadata.Http11Port, key)
-					ContainerRunning[k] = instruction
-					break
+			func() {
+				lock.Lock()
+				defer lock.Unlock()
+
+				for k, v := range ContainerRunning {
+					if v == "I am idle." {
+						key = k
+						instruction = englang.Printf("Run this %s and return in http://127.0.0.1%s/idle?apikey=%s.", input, metadata.Http11Port, key)
+						ContainerRunning[k] = instruction
+						break
+					}
 				}
-			}
+			}()
 			time.Sleep(100 * time.Millisecond)
 		}
 
 		var output string
 		for output == "" {
-			current := ContainerRunning[key]
-			if current != instruction {
-				output = current
-				delete(ContainerRunning, apiKey)
-			}
+			func() {
+				lock.Lock()
+				defer lock.Unlock()
+				current := ContainerRunning[key]
+				if current != instruction {
+					output = current
+					delete(ContainerRunning, apiKey)
+				}
+			}()
 			time.Sleep(100 * time.Millisecond)
 		}
 
 		drawing.NoErrorWrite64(io.Copy(writer, bytes.NewBuffer([]byte(output))))
 	})
 	http.HandleFunc("/idle", func(writer http.ResponseWriter, request *http.Request) {
-		lock.Lock()
-		defer lock.Unlock()
 		apiKey := request.URL.Query().Get("apikey")
 		if request.Method == "GET" {
-			for k, v := range ContainerRunning {
-				var instruction, port, key string
-				if nil == englang.Scanf1(v, "Run this %s and return in http://127.0.0.1%s/idle?apikey=%s.", &instruction, &port, &key) {
-					if k == key {
-						cmd1 := bytes.NewBufferString(v)
-						drawing.NoErrorWrite64(io.Copy(writer, cmd1))
-						return
+			func() {
+				lock.Lock()
+				defer lock.Unlock()
+				for k, v := range ContainerRunning {
+					var instruction, port, key string
+					if nil == englang.Scanf1(v, "Run this %s and return in http://127.0.0.1%s/idle?apikey=%s.", &instruction, &port, &key) {
+						if k == key {
+							cmd1 := bytes.NewBufferString(v)
+							drawing.NoErrorWrite64(io.Copy(writer, cmd1))
+							return
+						}
 					}
 				}
-			}
+				ContainerRunning[apiKey] = "I am idle."
+			}()
 			apiKey = drawing.GenerateUniqueKey()
 			query := englang.Printf("Idle.")
-			ContainerRunning[apiKey] = "I am idle."
 			cmd1 := englang.Printf("Run this %s and return in http://127.0.0.1%s/idle?apikey=%s.", query, metadata.Http11Port, apiKey)
 			ret := bytes.NewBufferString(cmd1)
 			drawing.NoErrorWrite64(io.Copy(writer, ret))
@@ -108,30 +117,36 @@ func Setup() {
 			var instruction, port, key string
 			if nil == englang.Scanf1(result, "Run this %s and return in http://127.0.0.1%s/idle?apikey=%s.", &instruction, &port, &key) {
 				if key == apiKey {
-					idle := ContainerRunning[apiKey]
-					if idle != "I am idle." {
-						ContainerRunning[apiKey] = instruction
-					}
+					func() {
+						lock.Lock()
+						defer lock.Unlock()
+						idle := ContainerRunning[apiKey]
+						if idle != "I am idle." {
+							ContainerRunning[apiKey] = instruction
+						}
+					}()
 				}
 			}
 		}
 	})
 	http.HandleFunc("/run.coin", func(w http.ResponseWriter, r *http.Request) {
-		lock.Lock()
-		defer lock.Unlock()
 		// Setup burst sessions, a range of time, when a coin can be used for bursts.
 		if r.Method == "PUT" {
 			coinToUse := billing.ValidatedCoinContent(w, r)
 			if coinToUse != "" {
-				// TODO generate new?
-				burst := coinToUse
-				// TODO cleanup
-				BurstSession[burst] = englang.Printf(fmt.Sprintf("Burst chain api created from %s is %s/run.coin?apikey=%s. Chain is valid until %s.", coinToUse, metadata.SiteUrl, burst, time.Now().Add(24*time.Hour).String()))
-				mesh.RegisterIndex(burst)
-				// TODO cleanup
-				// mesh.SetIndex(burst, mesh.WhoAmI)
-				management.QuantumGradeAuthorization()
-				_, _ = w.Write([]byte(burst))
+				func() {
+					lock.Lock()
+					defer lock.Unlock()
+					// TODO generate new?
+					burst := coinToUse
+					// TODO cleanup
+					BurstSession[burst] = englang.Printf(fmt.Sprintf("Burst chain api created from %s is %s/run.coin?apikey=%s. Chain is valid until %s.", coinToUse, metadata.SiteUrl, burst, time.Now().Add(24*time.Hour).String()))
+					mesh.RegisterIndex(burst)
+					// TODO cleanup
+					// mesh.SetIndex(burst, mesh.WhoAmI)
+					management.QuantumGradeAuthorization()
+					_, _ = w.Write([]byte(burst))
+				}()
 				return
 			}
 			management.QuantumGradeAuthorization()

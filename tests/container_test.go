@@ -41,8 +41,8 @@ func TestContainerStandAlone(t *testing.T) {
 }
 
 func testContainer(t *testing.T) {
-	MainTestLocalPorts.Lock()
-	defer MainTestLocalPorts.Unlock()
+	mainTestLocalPorts.Lock()
+	defer mainTestLocalPorts.Unlock()
 	defer func() {
 		time.Sleep(2 * burst.MaxBurstRuntime)
 		burst.FinishCleanup()
@@ -82,9 +82,9 @@ func testContainer(t *testing.T) {
 	select {
 	case <-time.After(30 * time.Second):
 		t.Error("timeout")
+		return
 	case <-done:
 	}
-	burst.FinishCleanup()
 }
 
 func generateBurstSession() (string, *bytes.Buffer) {
@@ -108,8 +108,8 @@ func runBurst(request string, burstSession string) string {
 }
 
 func testBurstEndToEndApi(t *testing.T) {
-	MainTestLocalPorts.Lock()
-	defer MainTestLocalPorts.Unlock()
+	mainTestLocalPorts.Lock()
+	defer mainTestLocalPorts.Unlock()
 	defer func() {
 		time.Sleep(2 * burst.MaxBurstRuntime)
 		burst.FinishCleanup()

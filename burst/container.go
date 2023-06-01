@@ -59,8 +59,4 @@ func runCommandInBox(task string) string {
 func FinishCleanup() {
 	ContainerRunning = map[string]string{}
 	BurstSession = map[string]string{}
-	for _, v := range CleanupNetworkResources {
-		v()
-	}
-	CleanupNetworkResources = make([]func(), 0)
 }

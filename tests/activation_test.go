@@ -19,8 +19,8 @@ import (
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
 func TestClusterActivation(t *testing.T) {
-	MainTestLocalPorts.Lock()
-	defer MainTestLocalPorts.Unlock()
+	mainTestLocalPorts.Lock()
+	defer mainTestLocalPorts.Unlock()
 	defer func() {
 		time.Sleep(2 * burst.MaxBurstRuntime)
 		burst.FinishCleanup()

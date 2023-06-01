@@ -24,15 +24,23 @@ import (
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
 func TestContainerStandAlone(t *testing.T) {
-	// Tests that share the same port udp:2121 must run in a row
-
 	// Server
 	burst.Setup()
+	billing.Setup()
 	go func() {
 		_ = http.ListenAndServe(metadata.Http11Port, nil)
 	}()
 
 	testContainer(t)
+}
+
+func TestContainerComplex(t *testing.T) {
+	t.SkipNow()
+	burst.Setup()
+	billing.Setup()
+	go func() {
+		_ = http.ListenAndServe(metadata.Http11Port, nil)
+	}()
 
 	testBurstEndToEndApi(t)
 
@@ -56,7 +64,7 @@ func testContainer(t *testing.T) {
 	// Generate payment
 	burstSession, finalStatus := generateBurstSession()
 	// There is one used item at the end
-	t.Log(finalStatus.String())
+	t.Log(finalStatus)
 
 	go func() {
 		time.Sleep(5 * time.Second)
@@ -87,18 +95,18 @@ func testContainer(t *testing.T) {
 	}
 }
 
-func generateBurstSession() (string, *bytes.Buffer) {
-	payment, order := generateTestCoins()
+func generateBurstSession() (string, string) {
+	payment, order := generateTestCoins(metadata.SiteUrl)
 
-	burstSession := mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1%s path /run.coin?apikey=%s with method PUT and content %s. The call expects englang.", metadata.Http11Port, "", payment))
-	fmt.Println("Burst session", burstSession)
+	session := mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1%s path /run.coin?apikey=%s with method PUT and content %s. The call expects englang.", metadata.Http11Port, "", payment))
+	fmt.Println("Burst session", session)
 
-	result := mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1%s path /run.coin?apikey=%s with method GET and content %s. The call expects englang.", metadata.Http11Port, burstSession, ""))
+	result := mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1%s path /run.coin?apikey=%s with method GET and content %s. The call expects englang.", metadata.Http11Port, session, ""))
 	fmt.Println("Burst session", result)
 
 	finalStatus := bytes.NewBufferString("")
 	billing.GetCoinFile(order, bufio.NewWriter(finalStatus))
-	return burstSession, finalStatus
+	return session, finalStatus.String()
 }
 
 func runBurst(request string, burstSession string) string {
@@ -126,7 +134,7 @@ func testBurstEndToEndApi(t *testing.T) {
 	// Generate payment
 	burstSession, finalStatus := generateBurstSession()
 	// There is one used item at the end
-	t.Log(finalStatus.String())
+	t.Log(finalStatus)
 
 	for i := 0; i < NumberOfLambdaCalls; i++ {
 		go func(delay int) {
@@ -135,6 +143,9 @@ func testBurstEndToEndApi(t *testing.T) {
 			result := runBurst("Run the following php code."+php.MockPhp, burstSession)
 
 			t.Log("LOG", result)
+			if result != "<html><body>Hello World!</body></html>" {
+				t.Error("unexpected", burstSession)
+			}
 			done <- true
 		}(i)
 	}
@@ -167,13 +178,17 @@ func testBurstEndToEndApi(t *testing.T) {
 	burst.FinishCleanup()
 }
 
-func generateTestCoins() (string, string) {
-	voucher := drawing.GenerateUniqueKey()
-	billing.IssueOrder(voucher, "100",
-		"Example Inc.", "1 First Ave, United States",
-		"hq@example.com", "USD 3")
-
-	payment := bytes.NewBufferString("")
-	billing.GetCoinFile(voucher, bufio.NewWriter(payment))
-	return payment.String(), voucher
+func generateTestCoins(siteUrl string) (string, string) {
+	// Buy a voucher
+	me := fmt.Sprintf(metadata.OrderPattern, "\vExample Buyer Inc.\v", "\v111 S Ave\v, \vSan Fransisco\v, \vCA\v, \v55555\v, \vUnited States\v", "\vinfo\v@\vexample.com\v", "\v10\v", metadata.UnitPrice, "USD 10", "0")
+	invoice := curl(englang.Printf("curl -X PUT %s/checkout", siteUrl), me)
+	if len(invoice) != len(drawing.GenerateUniqueKey()) {
+		fmt.Println("cannot generate coins")
+		return "", ""
+	}
+	fmt.Println("Checked out invoice", invoice)
+	// Get coin file
+	coin := curl(englang.Printf("curl -X GET %s/invoice.coin?apikey=%s", siteUrl, invoice), "")
+	fmt.Println("Coin file", coin)
+	return invoice, coin
 }

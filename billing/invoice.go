@@ -18,7 +18,7 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
-func SetupInvoice() {
+func setupInvoice() {
 	http.HandleFunc("/invoice.html", func(w http.ResponseWriter, r *http.Request) {
 		if drawing.EnsureAPIKey(w, r) != nil {
 			return

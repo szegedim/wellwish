@@ -26,5 +26,8 @@ var lock = sync.Mutex{}
 
 var BurstSession = map[string]string{}
 var ContainerRunning = map[string]string{}
+var ContainerResults = map[string]chan string{}
 
+// Use DummyBroker, if this is 0
+var BurstRunners = 0
 var MaxBurstRuntime = 3 * time.Second

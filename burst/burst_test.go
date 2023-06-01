@@ -27,14 +27,25 @@ import (
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
 func TestBurst(t *testing.T) {
-	Setup()
-	payment, order := generateTestCoins()
-
-	go func() { _ = http.ListenAndServe(metadata.Http11Port, nil) }()
-
 	go func() {
-		RunBox()
+		err := http.ListenAndServe(metadata.Http11Port, nil)
+		if err != nil {
+			t.Error(err)
+		}
 	}()
+
+	if BurstRunners == 0 {
+		DummyBroker()
+	}
+	Setup()
+	billing.Setup()
+
+	time.Sleep(time.Second)
+	payment, order := generateTestCoins(englang.Printf("http://127.0.0.1%s", metadata.Http11Port))
+	finalStatus := bytes.NewBufferString("")
+	billing.GetCoinFile(order, bufio.NewWriter(finalStatus))
+	// There is one used item at the end
+	t.Log(finalStatus.String())
 
 	burstSession := mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1%s path /run.coin?apikey=%s with method PUT and content %s. The call expects englang.", metadata.Http11Port, "", payment))
 	fmt.Println("Burst session", burstSession)
@@ -42,12 +53,7 @@ func TestBurst(t *testing.T) {
 	result := mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1%s path /run.coin?apikey=%s with method GET and content %s. The call expects englang.", metadata.Http11Port, burstSession, ""))
 	fmt.Println("Burst session", result)
 
-	finalStatus := bytes.NewBufferString("")
-	billing.GetCoinFile(order, bufio.NewWriter(finalStatus))
-	// There is one used item at the end
-	t.Log(finalStatus.String())
-
-	time.Sleep(3 * time.Second)
+	time.Sleep(1 * time.Second)
 
 	result = mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1%s path /run?apikey=%s with method PUT and content %s. The call expects englang.", metadata.Http11Port, burstSession, "Run the following php code."+php.MockPhp))
 	fmt.Println("Burst result", result)
@@ -55,17 +61,23 @@ func TestBurst(t *testing.T) {
 		t.Error("not expected")
 	}
 
+	time.Sleep(MaxBurstRuntime)
+	if len(ContainerResults) > 0 {
+		t.Error("no cleanup")
+	}
 }
 
-func generateTestCoins() (string, string) {
-	voucher := drawing.GenerateUniqueKey()
-	billing.IssueOrder(voucher, "100",
-		"Example Inc.", "1 First Ave, United States",
-		"hq@example.com", "USD 3")
-
-	payment := bytes.NewBufferString("")
-	billing.GetCoinFile(voucher, bufio.NewWriter(payment))
-	return payment.String(), voucher
+func generateTestCoins(siteUrl string) (string, string) {
+	me := fmt.Sprintf(metadata.OrderPattern, "\vExample Buyer Inc.\v", "\v111 S Ave\v, \vSan Fransisco\v, \vCA\v, \v55555\v, \vUnited States\v", "\vinfo\v@\vexample.com\v", "\v10\v", metadata.UnitPrice, "USD 10", "0")
+	invoice := Curl(englang.Printf("curl -X PUT %s/checkout", siteUrl), me)
+	if len(invoice) != len(drawing.GenerateUniqueKey()) {
+		return "We could not order voucher", "We could not order voucher"
+	}
+	fmt.Println("Checked out invoice", invoice)
+	// Get coin file
+	coin := Curl(englang.Printf("curl -X GET %s/invoice.coin?apikey=%s", siteUrl, invoice), "")
+	fmt.Println("Coin file", coin)
+	return invoice, coin
 }
 
 // This is a module code that runs burst containers.

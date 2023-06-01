@@ -38,6 +38,10 @@ import (
 // The activation key can also help to open up clusters in a few hundred milliseconds to customers who just paid.
 
 func Main(args []string) {
+	port := metadata.Http11Port
+	port = customizePort(args, port)
+	metadata.Http11Port = port
+
 	go func() {
 		drawing.SetupDrawing()
 	}()
@@ -62,9 +66,6 @@ func Main(args []string) {
 
 	go setupSite()
 
-	port := metadata.Http11Port
-
-	port = customizePort(args, port)
 	err := http.ListenAndServe(port, nil)
 	printUsage(err)
 }
@@ -105,7 +106,5 @@ func setupSite() {
 	burst.Setup()
 	mining.Setup()
 	drawing.SetupUploads()
-	billing.SetupVoucher()
-	billing.SetupCheckout()
-	billing.SetupInvoice()
+	billing.Setup()
 }

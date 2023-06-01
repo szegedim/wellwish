@@ -36,6 +36,10 @@ import (
 // Example: 1million 100ms reads streamed into 100ms compute will last 100000 seconds,
 // even if there is an extra network latency of 100ms
 
+var startTime = time.Now()
+var code = make(chan chan string)
+var firstRun = true
+
 func Setup() {
 	stateful.RegisterModuleForBackup(&BurstSession)
 
@@ -51,82 +55,90 @@ func Setup() {
 
 		input := drawing.NoErrorString(io.ReadAll(request.Body))
 
-		var instruction string
-		var key string
-		for instruction == "" {
-			func() {
-				lock.Lock()
-				defer lock.Unlock()
+		call1 := make(chan string)
 
-				for k, v := range ContainerRunning {
-					if v == "I am idle." {
-						key = k
-						instruction = englang.Printf("Run this %s and return in http://127.0.0.1%s/idle?apikey=%s.", input, metadata.Http11Port, key)
-						ContainerRunning[k] = instruction
-						break
-					}
-				}
-			}()
-			time.Sleep(100 * time.Millisecond)
+		select {
+		case <-time.After(MaxBurstRuntime):
+			break
+		case code <- call1:
+			call1 <- input
+			break
 		}
 
-		var output string
-		for output == "" {
-			func() {
-				lock.Lock()
-				defer lock.Unlock()
-				current := ContainerRunning[key]
-				if current != instruction {
-					output = current
-					delete(ContainerRunning, apiKey)
-				}
-			}()
-			time.Sleep(100 * time.Millisecond)
+		select {
+		case <-time.After(MaxBurstRuntime + MaxBurstRuntime):
+			break
+		case output := <-call1:
+			drawing.NoErrorWrite64(io.Copy(writer, bytes.NewBuffer([]byte(output))))
+			break
 		}
-
-		drawing.NoErrorWrite64(io.Copy(writer, bytes.NewBuffer([]byte(output))))
 	})
 	http.HandleFunc("/idle", func(writer http.ResponseWriter, request *http.Request) {
 		apiKey := request.URL.Query().Get("apikey")
 		if request.Method == "GET" {
-			func() {
+			if apiKey == metadata.ActivationKey {
 				lock.Lock()
-				defer lock.Unlock()
-				for k, v := range ContainerRunning {
-					var instruction, port, key string
-					if nil == englang.Scanf1(v, "Run this %s and return in http://127.0.0.1%s/idle?apikey=%s.", &instruction, &port, &key) {
-						if k == key {
-							cmd1 := bytes.NewBufferString(v)
-							drawing.NoErrorWrite64(io.Copy(writer, cmd1))
-							return
-						}
+				idle := drawing.GenerateUniqueKey()
+				ContainerRunning[apiKey] = fmt.Sprintf("Burst box %s registered at %s second.", idle, englang.DecimalString(int64(time.Now().Sub(startTime).Seconds())))
+				ret := bytes.NewBufferString(idle)
+				drawing.NoErrorWrite64(io.Copy(writer, ret))
+				lock.Unlock()
+				go func(key string) {
+					if !firstRun {
+						time.Sleep(MaxBurstRuntime * 2)
+					}
+					lock.Lock()
+					ContainerRunning[key] = fmt.Sprintf("Burst box %s registered at %s second is ready.", idle, englang.DecimalString(int64(time.Now().Sub(startTime).Seconds())))
+					lock.Unlock()
+				}(idle)
+				return
+			}
+			lock.Lock()
+			v, ok := ContainerRunning[apiKey]
+			if ok {
+				var key, started string
+				if nil == englang.Scanf1(v, "Burst box %s registered at %s second is ready.", &key, &started) {
+					firstRun = false
+					select {
+					case <-time.After(MaxBurstRuntime):
+						break
+					case callChannel := <-code:
+						request := <-callChannel
+						delete(ContainerRunning, apiKey)
+						ContainerResults[apiKey] = callChannel
+						go func(key string) {
+							time.Sleep(MaxBurstRuntime * 2)
+							lock.Lock()
+							delete(ContainerResults, key)
+							lock.Unlock()
+						}(apiKey)
+						ret := bytes.NewBufferString(request)
+						drawing.NoErrorWrite64(io.Copy(writer, ret))
+						break
 					}
 				}
-				ContainerRunning[apiKey] = "I am idle."
-			}()
-			apiKey = drawing.GenerateUniqueKey()
-			query := englang.Printf("Idle.")
-			cmd1 := englang.Printf("Run this %s and return in http://127.0.0.1%s/idle?apikey=%s.", query, metadata.Http11Port, apiKey)
-			ret := bytes.NewBufferString(cmd1)
-			drawing.NoErrorWrite64(io.Copy(writer, ret))
+			} else {
+				// Not ready
+			}
+			lock.Unlock()
 			return
 		}
 		if request.Method == "PUT" {
+			// TODO Get container result
 			result := drawing.NoErrorString(io.ReadAll(request.Body))
-
-			var instruction, port, key string
-			if nil == englang.Scanf1(result, "Run this %s and return in http://127.0.0.1%s/idle?apikey=%s.", &instruction, &port, &key) {
-				if key == apiKey {
-					func() {
-						lock.Lock()
-						defer lock.Unlock()
-						idle := ContainerRunning[apiKey]
-						if idle != "I am idle." {
-							ContainerRunning[apiKey] = instruction
-						}
-					}()
+			lock.Lock()
+			replyCh, ok := ContainerResults[apiKey]
+			if ok {
+				select {
+				case <-time.After(10 * time.Millisecond):
+					break
+				case replyCh <- result:
+					break
 				}
+				delete(ContainerResults, apiKey)
 			}
+			lock.Unlock()
+			return
 		}
 	})
 	http.HandleFunc("/run.coin", func(w http.ResponseWriter, r *http.Request) {
@@ -140,7 +152,7 @@ func Setup() {
 					// TODO generate new?
 					burst := coinToUse
 					// TODO cleanup
-					BurstSession[burst] = englang.Printf(fmt.Sprintf("Burst chain api created from %s is %s/run.coin?apikey=%s. Chain is valid until %s.", coinToUse, metadata.SiteUrl, burst, time.Now().Add(24*time.Hour).String()))
+					BurstSession[burst] = englang.Printf(fmt.Sprintf("Burst chain api created from %s is %s/run.coin?apikey=%s. Chain is valid until %s.", coinToUse, metadata.Http11Port, burst, time.Now().Add(24*time.Hour).String()))
 					mesh.RegisterIndex(burst)
 					// TODO cleanup
 					// mesh.SetIndex(burst, mesh.WhoAmI)
@@ -168,4 +180,31 @@ func Setup() {
 			return
 		}
 	})
+
+	for i := 0; i < BurstRunners; i++ {
+		go func() {
+			time.Sleep(10 * time.Millisecond)
+			// TODO docker
+			_ = RunBox()
+		}()
+	}
+}
+
+func DummyBroker() {
+	go func() {
+		// Broker
+		for {
+			BoxCore()
+			continue
+			select {
+			case <-time.After(MaxBurstRuntime):
+				break
+			case callChannel := <-code:
+				code := <-callChannel
+				fmt.Println(code)
+				callChannel <- "<html><body>Hello World!</body></html>"
+				break
+			}
+		}
+	}()
 }

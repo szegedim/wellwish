@@ -2,6 +2,7 @@ package burst
 
 import (
 	"fmt"
+	"gitlab.com/eper.io/engine/metadata"
 	"os"
 	"os/exec"
 	"path"
@@ -31,7 +32,9 @@ func RunBox() error {
 
 		goRoot := os.Getenv("GOROOT")
 		goroot := path.Join(goRoot, "bin", "go")
-		err := exec.Command(goroot, "run", path.Join("..", "burst", "box", "main.go")).Run()
+		p := path.Join("..", "burst", "box", "main.go")
+		fmt.Println(p, metadata.Http11Port)
+		err := exec.Command(goroot, "run", p, metadata.Http11Port).Run()
 		if err != nil {
 			fmt.Println("local result", err)
 		}

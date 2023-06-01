@@ -1,5 +1,14 @@
 package burst
 
+import (
+	"bytes"
+	"gitlab.com/eper.io/engine/drawing"
+	"gitlab.com/eper.io/engine/englang"
+	"io"
+	"net/http"
+	"strings"
+)
+
 // This document is Licensed under Creative Commons CC0.
 // To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights
 // to this document to the public domain worldwide.
@@ -30,3 +39,30 @@ package burst
 // - The runner restarts after each run, so that any local state and code is lost disabling double /idle calls.
 // - The init task also terminates the container, if the workload tries to kill it.
 // - The final column is time fencing allowing /idle calls only once every minute when workloads are already gone. //TODO
+
+func Curl(command string, data string) string {
+	options := ""
+	method := "GET"
+	var url string
+	_ = englang.Scanf1(command+"fdsgdfgfdvdds", "curl %s-X %s %s"+"fdsgdfgfdvdds", &options, &method, &url)
+	redirect := false
+	if strings.Contains(options, "-L") {
+		redirect = true
+	}
+	upload := bytes.NewBufferString(data)
+	request, _ := http.NewRequest(method, url, upload)
+	var c http.Client
+	resp, _ := c.Do(request)
+	download := make([]byte, 0)
+	if resp != nil && resp.StatusCode == http.StatusTemporaryRedirect && redirect {
+		target := resp.Header.Get("Location")
+		return Curl(strings.Replace(command, url, target, 1), data)
+	}
+	if resp != nil {
+		download = drawing.NoErrorBytes(io.ReadAll(resp.Body))
+	}
+	if resp != nil && resp.StatusCode == http.StatusOK && len(download) == 0 {
+		return "success"
+	}
+	return string(download)
+}

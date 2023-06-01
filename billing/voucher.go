@@ -23,7 +23,7 @@ import (
 
 const VoucherInvoicePointer = "%s/invoice.html?apikey=%s"
 
-func SetupVoucher() {
+func setupVoucher() {
 	http.HandleFunc("/voucher.html", func(w http.ResponseWriter, r *http.Request) {
 		if drawing.EnsureAPIKey(w, r) != nil {
 			return

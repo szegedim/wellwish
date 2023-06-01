@@ -34,8 +34,6 @@ var NodePattern = "http://127.0.0.1:77**"
 // Http11Port The container port that will face the public endpoint SiteUrl
 var Http11Port = ":7777"
 
-var UdpContainerPort = "127.0.0.1:2121"
-
 // StatefulBackupUrl is the standard backup location, if needed. Empty string, if it is not needed.
 var StatefulBackupUrl = "http://127.0.0.1:7777"
 

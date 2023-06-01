@@ -28,11 +28,15 @@ func SetupRing() {
 	//stateful.RegisterModuleForBackup(&index)
 
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		//_, _ = w.Write([]byte(fmt.Sprintf("%v", index)))
-		_, _ = w.Write([]byte(IndexLengthForTestingOnly()))
+		write := bufio.NewWriter(w)
+		drawing.NoErrorWrite(write.WriteString(IndexLengthForTestingOnly()))
+		drawing.NoErrorVoid(write.Flush())
 	})
 
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		write := bufio.NewWriter(w)
+		drawing.NoErrorWrite(write.WriteString(metadata.Http11Port))
+		drawing.NoErrorVoid(write.Flush())
 		w.WriteHeader(http.StatusOK)
 	})
 

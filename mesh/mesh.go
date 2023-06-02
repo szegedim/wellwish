@@ -18,7 +18,7 @@ import (
 // Individual bag and burst containers are not aware of the cluster details.
 // They have only a pointer to the cluster entry point, a https site address.
 
-// Mesh containers listen to 7777 and communicate through Englang.
+// Mesh containers listen to metadata.Http11Port and communicate through Englang.
 // Most cloud providers do not require https within the VPC. //TODO Is this still the case?
 // - Mesh reads bag checkpoint backups.
 // - Mesh knows where to find a bag and forwards requests to other nodes using index.

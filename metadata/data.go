@@ -19,24 +19,26 @@ import "time"
 // This is an example to fine tune a new docker image
 // (docker pull registry.gitlab.com/eper.io/<project> | grep 'Downloaded newer image') && docker build -t example.com/wellwish . && docker push example.com/wellwish
 
-// var ActivationKey = "XPSZMNHVHDSOUOFNZBUQLBVVACMWASPLGXSQIZSDMXMDGJCKEXKCDQGLZWALMWWTJAFQILWYUMHSPZYSDHPDMSKVDXRR"
-var ActivationKey = ""
+var ActivationKey = "XPSZMNHVHDSOUOFNZBUQLBVVACMWASPLGXSQIZSDMXMDGJCKEXKCDQGLZWALMWWTJAFQILWYUMHSPZYSDHPDMSKVDXRR"
 var ManagementKey = ""
 
 var SiteName = "WellWish\nCloud Decision Engine"
 
-var SiteUrl = "http://127.0.0.1:80"
+// SiteUrl is the public facing external endpoint.
+// This is typically a format like https://wellwish.example.com
+var SiteUrl = ""
+
+// Http11Port The container port that will face the public endpoint SiteUrl
+var Http11Port = ":7777"
 
 // NodePattern is easy to validate and a simple health script tells the nodes that are active.
 // The system scans the cluster at startup.
 // This is typically an internal node range
-var NodePattern = "http://127.0.0.1:80"
-
-// Http11Port The container port that will face the public endpoint SiteUrl
-var Http11Port = ":80"
+// You can use "10.55.0.0/21" for Kubernetes clusters
+var NodePattern = "http://127.0.0.1" + Http11Port
 
 // StatefulBackupUrl is the standard backup location, if needed. Empty string, if it is not needed.
-var StatefulBackupUrl = "http://127.0.0.1:80"
+var StatefulBackupUrl = "http://127.0.0.1" + Http11Port
 
 // DataRoot will normally be somewhere in /var/lib in the container to get backed up
 var DataRoot = ""

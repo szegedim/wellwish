@@ -13,7 +13,7 @@ import (
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
 // Stage 1. Load balancer
-// We rely on load balancers to each node port :7777
+// We rely on load balancers to each node port metadata.Http11Port
 // We use a single port that reduces support and development cost by a magnitude
 // compared to behemoths like Kubernetes.
 

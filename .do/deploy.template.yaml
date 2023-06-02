@@ -2,6 +2,9 @@ spec:
   name: wellwish
   services:
     - name: web
+      http_port: 7777
+      instance_count: 1
+      instance_size_slug: professional-m
       git:
         branch: main
         repo_clone_url: https://github.com/szegedim/wellwish.git

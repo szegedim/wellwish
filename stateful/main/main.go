@@ -23,6 +23,6 @@ func main() {
 	err := http.ListenAndServe(port, nil)
 	if err != nil {
 		fmt.Println(err)
-		fmt.Println("usage: go run stateful/main/main.go 127.0.0.1:7777")
+		fmt.Println("usage: go run stateful/main/main.go :7777")
 	}
 }

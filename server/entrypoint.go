@@ -80,7 +80,7 @@ func customizePort(args []string, port string) string {
 func printUsage(err error) {
 	if err != nil {
 		fmt.Println(err)
-		fmt.Println("usage: go run main.go 127.0.0.1:7777")
+		fmt.Println("usage: go run main.go :7777")
 	}
 }
 

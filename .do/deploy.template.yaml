@@ -1,0 +1,8 @@
+spec:
+  name: sample-wellwish
+  services:
+    - name: web
+      git:
+        branch: main
+        repo_clone_url: https://github.com/szegedim/wellwish.git
+      http_port: 7777

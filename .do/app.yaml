@@ -2,5 +2,5 @@ name: wellwish
 services:
   - name: web
     github:
-      repo: digitalocean/sample-flask
+      repo: szegedim/wellwish
       branch: main

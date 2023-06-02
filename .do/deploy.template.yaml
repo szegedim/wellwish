@@ -3,4 +3,5 @@ spec:
   services:
     - name: web
       git:
-        repo_clone_url: https://github.com/szegedim/wellwish/tree/main
+        branch: main
+        repo_clone_url: https://github.com/digitalocean/sample-flask.git

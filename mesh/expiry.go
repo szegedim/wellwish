@@ -53,3 +53,10 @@ func SetExpiry(key string, period time.Duration) {
 	willExpire := englang.Printf("Validated until %s.", n.Add(period).Format("Jan 2, 2006"))
 	expiry[key] = willExpire
 }
+
+func CheckExpiry(key string) bool {
+	indexLock.Lock()
+	defer indexLock.Unlock()
+	_, ok := index[key]
+	return ok
+}

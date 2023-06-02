@@ -14,8 +14,13 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
+// Order requests that can be used, cancelled, refunded.
 var orders = map[string]string{}
 
+// Vouchers issued from orders.
+// Vouchers are just valid for this site as a proof of order and/or payment.
+// They cannot be resold, they have no value.
+// They are also not a coin or digital currency, but they can be reworked as such with minimal effors.
 var vouchers = map[string]string{}
 
 func LogSnapshot(m string, w io.Writer, r io.Reader) {

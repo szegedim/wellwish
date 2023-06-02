@@ -109,8 +109,12 @@ func Setup() {
 		apiKey := r.URL.Query().Get("apikey")
 
 		bag := apiKey
+		if !mesh.CheckExpiry(bag) {
+			r.Method = "DELETE"
+		}
+
 		traces := bags[bag]
-		if traces == "" {
+		if traces == "" || mesh.GetIndex(bag) == "" {
 			management.QuantumGradeAuthorization()
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -146,6 +150,7 @@ func Setup() {
 			return
 		}
 		if r.Method == "DELETE" {
+			delete(bags, bag)
 			return
 		}
 		w.WriteHeader(http.StatusMethodNotAllowed)

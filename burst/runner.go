@@ -25,6 +25,11 @@ func BoxCore() {
 			command = ""
 		}
 		if command != "" {
+			// TODO
+			//go func() {
+			//	time.Sleep(MaxBurstRuntime)
+			//	os.Exit(0)
+			//}()
 			result := RunExternalShell(command)
 			fmt.Println(command, result)
 			Curl(englang.Printf("curl -X PUT http://127.0.0.1%s/idle?apikey=%s", metadata.Http11Port, participationKey), result)
@@ -35,5 +40,5 @@ func BoxCore() {
 }
 
 func LogSnapshot(m string, w io.Writer, r io.Reader) {
-
+	// TODO be nice and log burst sessions that were paid
 }

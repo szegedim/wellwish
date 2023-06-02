@@ -1,6 +1,8 @@
 package tests
 
 import (
+	"fmt"
+	"gitlab.com/eper.io/engine/metadata"
 	"sync"
 )
 
@@ -12,3 +14,5 @@ import (
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
 var mainTestLocalPorts = sync.Mutex{}
+
+var Me = fmt.Sprintf(metadata.OrderPattern, "\vExample Buyer Inc.\v", "\v111 S Ave\v, \vSan Fransisco\v, \vCA\v, \v55555\v, \vUnited States\v", "\vinfo\v@\vexample.com\v", "\v10\v", metadata.UnitPrice, "USD 10", "0")

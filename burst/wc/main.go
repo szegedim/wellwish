@@ -51,7 +51,12 @@ func Readdir(arr *[]string, s string) {
 				wc = wc + len(strings.Split(goContent, " "))
 				lc = lc + len(strings.Split(goContent, "\n"))
 				if !strings.HasSuffix(p, "_test.go") {
-					clc = clc + len(strings.Split(goContent, "\n"))
+					l := strings.Split(goContent, "\n")
+					for _, ll := range l {
+						if !strings.HasPrefix(ll, "//") {
+							clc = clc + 1
+						}
+					}
 				}
 			}
 		}

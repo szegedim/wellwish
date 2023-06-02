@@ -26,6 +26,28 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
+// This is a module code that runs burst containers.
+// The big difference between these and other modules is that it actually does not have
+// an entry point.
+// The locality is ensured by private keys distributed early.
+// This ensures that we have a local runner.
+// What does this mean?
+// - /idle responds to local endpoints only like a co-located container in the same pod
+// - idle returns a task and a key to complete the task
+// - malicious tasks may go for idle again
+// - we protect against this by letting bursts run for a term e.g. ten seconds
+// - we protect against this also by not issuing a new key until the previous one finishes
+// - we only give out code/secrets to containers that have been idle for longer than a burst runs
+// - this protects against running bursts requesting other container's data
+// - burst container keys are recycled once used
+// - Each runner connects to the main site as /idle using the activation key
+// - The activation key is deleted from the container once used
+// - It is not so important, it could use no apikeys, if it is restricted to 127.0.0.1
+// - The init task of the container is our burst runner. It should not be set debuggable by workload.
+// - The init task kills the container, if the workload tries to kill it.
+// - The final column is time fencing allowing /idle calls only once every minute when workloads are already gone.
+// - The runner restarts after each run, so that any local state and code is lost disabling double /idle calls.
+
 func TestBurst(t *testing.T) {
 	go func() {
 		err := http.ListenAndServe(metadata.Http11Port, nil)
@@ -79,24 +101,6 @@ func generateTestCoins(siteUrl string) (string, string) {
 	fmt.Println("Coin file", coin)
 	return invoice, coin
 }
-
-// This is a module code that runs burst containers.
-// The big difference between these and other modules is that it actually does not have
-// an entry point.
-// The locality is ensured by private keys distributed early called 'metal'.
-// This ensures that we have a local runner.
-// What does this mean?
-// - /idle responds to local endpoints only like a co-located container in the same pod
-// - idle returns a task and a key to complete the task
-// - malicious tasks may go for idle again
-// - we protect against this by letting bursts run for a term e.g. ten seconds
-// - we protect against this also by not issuing a new key until the previous one finishes
-// - Each runner connects to the main site as /idle using the activation key
-// - The activation key is deleted from the container once used
-// - The init task of the container is our burst runner. It should be set debuggable by workload.
-// - The init task kills the container, if the workload tries to kill it.
-// - The final column is time fencing allowing /idle calls only once every minute when workloads are already gone.
-// - The runner restarts after each run, so that any local state and code is lost disabling double /idle calls.
 
 func runInTest(code []byte, stdin io.ReadCloser, stdout io.Writer) {
 	goPath := path.Join(os.Getenv("GOROOT"), "bin", "go")
@@ -169,4 +173,23 @@ func TestRun(t *testing.T) {
 		t.Error(s)
 	}
 	t.Log(s)
+}
+
+func DummyBroker() {
+	go func() {
+		// Broker
+		for {
+			BoxCore()
+			continue
+			select {
+			case <-time.After(MaxBurstRuntime):
+				break
+			case callChannel := <-code:
+				code := <-callChannel
+				fmt.Println(code)
+				callChannel <- "<html><body>Hello World!</body></html>"
+				break
+			}
+		}
+	}()
 }

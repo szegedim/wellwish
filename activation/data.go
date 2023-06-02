@@ -15,12 +15,16 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
+// Shows whether activation was done or not.
 var ActivationNeeded = true
 
+// Triggers enabling all features
 var Activated = make(chan string)
 
+// Remove activation key from logs
 var ActivationHashLog = drawing.RedactPublicKey(metadata.ActivationKey)
 
+// Protects against brute force attacks
 var activationPeriod = time.Second
 
 func LogSnapshot(m string, w io.Writer, r io.Reader) {

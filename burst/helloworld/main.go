@@ -9,6 +9,6 @@ import "fmt"
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
-// A simple helloworld application
+// A simple helloworld application for testing
 
 func main() { fmt.Println("Hello World!") }

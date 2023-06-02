@@ -2,6 +2,9 @@ package drawing
 
 import (
 	"fmt"
+	"time"
+
+	//"gitlab.com/eper.io/engine/management"
 	"gitlab.com/eper.io/engine/metadata"
 	"image"
 	"image/color"
@@ -19,6 +22,9 @@ import (
 // This document is distributed without any warranty.
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
+
+// This is the actual remote desktop library implemented with pngs.
+// It is a bit slower, but compatible, but we have a paid version that is faster.
 
 type Session struct {
 	ApiKey                    string
@@ -69,6 +75,8 @@ func ResetSession(w http.ResponseWriter, r *http.Request) error {
 func EnsureAPIKey(w http.ResponseWriter, r *http.Request) error {
 	apiKey := r.URL.Query().Get("apikey")
 	if apiKey == "" || len(apiKey) != len(GenerateUniqueKey()) {
+		//management.QuantumGradeAuthorization()
+		time.Sleep(15 * time.Millisecond)
 		w.Header().Set("Location", r.URL.EscapedPath()+fmt.Sprintf("?apikey=%s", GenerateUniqueKey()))
 		w.WriteHeader(http.StatusTemporaryRedirect)
 		return fmt.Errorf("redirect")

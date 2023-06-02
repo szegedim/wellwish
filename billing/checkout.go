@@ -38,6 +38,7 @@ func setupCheckout() {
 		drawing.ServeRemoteFrame(w, r, declareCheckoutForm)
 	})
 	http.HandleFunc("/checkout", func(w http.ResponseWriter, r *http.Request) {
+		// See tests.Me for a good example to put as a body.
 		order := drawing.NoErrorString(io.ReadAll(r.Body))
 		var company string
 		var address string
@@ -93,7 +94,6 @@ func declareCheckoutForm(session *drawing.Session) {
 				err := englang.Scanf(s, pattern, &company, &address, &email, &amount, &unit, &total, &tax)
 				if err == nil {
 					IssueOrder(session.ApiKey, amount, company, address, email, unit)
-
 					session.Redirect = fmt.Sprintf("/invoice.html?apikey=%s", session.ApiKey)
 					session.SignalClosed(session)
 				}

@@ -18,8 +18,7 @@ import (
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
 // This is a module code that runs burst containers.
-// The big difference between these and other modules is that it actually does not have
-// an entry point.
+// The big difference between these and other modules is that bursts do not have an api endpoint.
 
 func RunExternalShell(task string) string {
 	var ret string

@@ -22,19 +22,19 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
-// The main design behind burst runners is that they to be scalable.
+// The main design behind burst runners is that they are designed to be scalable.
 // Data locality means that data is co-located with burst containers.
 // Data locality is important in some cases, especially UI driven code like ours.
-// However, bursts are designed to handle the longer running process.
+// However, bursts are designed to handle the longer running processes with chaining.
 
-// Because of this UI should be low latency using just bags and direct code
+// UI should be low latency using just bags and direct code.
 // Bursts should scale out. They are okay to be located elsewhere than the data bags.
 // The reason is that large computation will require streaming, and
 // streaming is driven by pipelined steps without replies and feedbacks.
 // Streaming bandwidth is not affected by co-location of data and code.
-// Example: 1million 100ms reads followed by 100ms compute will last 200000 seconds
+// Example: 1million 100ms reads followed by 100ms compute will last 200000 seconds.
 // Example: 1million 100ms reads streamed into 100ms compute will last 100000 seconds,
-// even if there is an extra network latency of 100ms
+// even if there is an extra network latency of 100ms per burst.
 
 var startTime = time.Now()
 var code = make(chan chan string)
@@ -54,21 +54,26 @@ func Setup() {
 		}
 
 		input := drawing.NoErrorString(io.ReadAll(request.Body))
-
-		call1 := make(chan string)
+		callChannel := make(chan string)
 
 		select {
 		case <-time.After(MaxBurstRuntime):
 			break
-		case code <- call1:
-			call1 <- input
+		case code <- callChannel:
+			break
+		}
+
+		select {
+		case <-time.After(MaxBurstRuntime):
+			break
+		case callChannel <- input:
 			break
 		}
 
 		select {
 		case <-time.After(MaxBurstRuntime + MaxBurstRuntime):
 			break
-		case output := <-call1:
+		case output := <-callChannel:
 			drawing.NoErrorWrite64(io.Copy(writer, bytes.NewBuffer([]byte(output))))
 			break
 		}
@@ -77,6 +82,9 @@ func Setup() {
 		apiKey := request.URL.Query().Get("apikey")
 		if request.Method == "GET" {
 			if apiKey == metadata.ActivationKey {
+				// We may live without activation key
+				// but this allows restricting the office cluster endpoint
+				// to internal 127.0.0.1 addresses that was easier with udp.
 				lock.Lock()
 				idle := drawing.GenerateUniqueKey()
 				ContainerRunning[apiKey] = fmt.Sprintf("Burst box %s registered at %s second.", idle, englang.DecimalString(int64(time.Now().Sub(startTime).Seconds())))
@@ -153,6 +161,7 @@ func Setup() {
 					burst := coinToUse
 					// TODO cleanup
 					BurstSession[burst] = englang.Printf(fmt.Sprintf("Burst chain api created from %s is %s/run.coin?apikey=%s. Chain is valid until %s.", coinToUse, metadata.Http11Port, burst, time.Now().Add(24*time.Hour).String()))
+					mesh.SetExpiry(burst, ValidPeriod)
 					mesh.RegisterIndex(burst)
 					// TODO cleanup
 					// mesh.SetIndex(burst, mesh.WhoAmI)
@@ -182,29 +191,12 @@ func Setup() {
 	})
 
 	for i := 0; i < BurstRunners; i++ {
+		// Normally this will be done by external docker containers
+		// This is good for local in container testing
 		go func() {
 			time.Sleep(10 * time.Millisecond)
 			// TODO docker
 			_ = RunBox()
 		}()
 	}
-}
-
-func DummyBroker() {
-	go func() {
-		// Broker
-		for {
-			BoxCore()
-			continue
-			select {
-			case <-time.After(MaxBurstRuntime):
-				break
-			case callChannel := <-code:
-				code := <-callChannel
-				fmt.Println(code)
-				callChannel <- "<html><body>Hello World!</body></html>"
-				break
-			}
-		}
-	}()
 }

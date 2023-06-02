@@ -74,8 +74,7 @@ func TestCustomerUseCase(t *testing.T) {
 	curl(englang.Printf("curl -X GET %s/activate?apikey=%s", siteUrl, metadata.ActivationKey), "")
 	time.Sleep(3 * time.Second)
 	// Buy a voucher
-	me := fmt.Sprintf(metadata.OrderPattern, "\vExample Buyer Inc.\v", "\v111 S Ave\v, \vSan Fransisco\v, \vCA\v, \v55555\v, \vUnited States\v", "\vinfo\v@\vexample.com\v", "\v10\v", metadata.UnitPrice, "USD 10", "0")
-	invoice := curl(englang.Printf("curl -X PUT %s/checkout", siteUrl), me)
+	invoice := curl(englang.Printf("curl -X PUT %s/checkout", siteUrl), Me)
 	if len(invoice) != len(drawing.GenerateUniqueKey()) {
 		t.Error("We could not order voucher", invoice)
 	}

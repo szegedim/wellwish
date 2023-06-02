@@ -12,15 +12,25 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
+// Stage 1. Load balancer
+// We rely on load balancers to each node port :7777
+// We use a single port that reduces support and development cost by a magnitude
+// compared to behemoths like Kubernetes.
+
+// Stage 2. Index ring
 // Index contains key indexes that are propagated to all servers.
-// This allows us to use even random load balancer without any sticky setting by IP, cookie or apikey
+// This allows us to use even a completely random load balancer
+//without any sticky setting by IP, cookie or apikey
 // Note: the reason we use indexes is not to use cookies that require annoying prompts
 // These are temporary stateless indexes
+// Technically some implementation can stop here, and they do not need any stateful layer.
 
+// Stage 3. Redis like behavior
 // Stateful indexes are keys and values that are backed by a stateful disk server backup
 // They can be cleaned in our memory but fetch again from backups
 // Stateful indexes can also be used to support load balancing
 
+// Stage 4. Expiry
 // Finally cleaned up indexes can have a rule to clean up periodically
 // Stateful indexes are cleaned up by design
 

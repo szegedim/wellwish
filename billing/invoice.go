@@ -87,12 +87,12 @@ func declareinvoiceForm(session *drawing.Session) {
 			}
 			if i == PaymentButton {
 				if strings.Contains(invoice, "Status is due.") {
-					//Paypal/Yatta/Paychex/etc.
+					// Redirect to your payments provider
 					session.Redirect = fmt.Sprintf(metadata.PaymentPattern, drawing.RedactPublicKey(session.ApiKey))
 				}
 			}
 			if i == VoucherButton {
-				//Paypal/Yatta/Paychex/etc.
+				// This is the coin file you can drop to pay with vouchers.
 				session.Redirect = fmt.Sprintf("%s/invoice.coin?apikey=%s", metadata.SiteUrl, session.ApiKey)
 			}
 		}

@@ -12,6 +12,10 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
+// This is how we handle payments in the ui.
+// It is simpler thant tpms, etc heavylifing for credit cards.
+// However, our coins are rather tokens that can be used on the site for a period.
+
 func SetupUploads() {
 	http.HandleFunc("/upload.coin", func(w http.ResponseWriter, r *http.Request) {
 		err := EnsureAPIKey(w, r)

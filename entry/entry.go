@@ -22,7 +22,7 @@ import (
 // We use the botanical style that was randomly selected by rolling a die.
 // It is colorful to attract and get noticed.
 //
-// Customers have not paid yet.
+// Customers have not paid at this stage, yet.
 // Clicking to a paid option will lead them to the payment tab.
 
 func Setup() {

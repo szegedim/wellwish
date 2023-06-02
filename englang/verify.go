@@ -5,6 +5,13 @@ import (
 	"strings"
 )
 
+// This document is Licensed under Creative Commons CC0.
+// To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights
+// to this document to the public domain worldwide.
+// This document is distributed without any warranty.
+// You should have received a copy of the CC0 Public Domain Dedication along with this document.
+// If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
+
 func IsBeingEdited(s string) bool {
 	if s == "" {
 		return true
@@ -111,12 +118,11 @@ func IsNumber(number string) bool {
 
 func IsAddress(address *string) bool {
 	// We are liberal here, we enforce the country or territory.
-	// The important is that the location of any Supreme Court is known.
-
+	// The important is that the location of any upper courts is known.
 	if IsBeingEdited(*address) {
 		return true
 	}
-	territories := []string{
+	locations := []string{
 		"Afghanistan",
 		"Albania",
 		"Algeria",
@@ -317,13 +323,13 @@ func IsAddress(address *string) bool {
 	check := *address
 	check = strings.ReplaceAll(check, "\v", "")
 	check = strings.ReplaceAll(check, "\v", "")
-	for _, x := range territories {
-		if strings.HasSuffix(check, x) {
+	for _, geo := range locations {
+		if strings.HasSuffix(check, geo) {
 			return true
 		}
 	}
 	candidate := ""
-	for _, x := range territories {
+	for _, x := range locations {
 		for i := 1; i < len(x); i++ {
 			if strings.HasPrefix(x, (check)[len(check)-i:]) {
 				if candidate != "" {
@@ -334,7 +340,6 @@ func IsAddress(address *string) bool {
 		}
 	}
 	return candidate != ""
-	//*address = fmt.Sprintf("%s"+format+"%s", addressLines, city, state, zip, country)
 }
 
 func Evaluate(s string) string {

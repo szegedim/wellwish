@@ -30,12 +30,12 @@ import (
 // - It propagates to local servers matching the pattern NodePattern
 // - The service is redirected to a management and administration page using a new api key
 // - Bookmark this page with the admin key to return and get backup or traces
-// - It has a pointer to public pages that can create bags bursts, etc.
+// - It has a pointer to public pages that can create bags, bursts, etc.
 
 // ## Design.
 // Why activate?
 // Such a solution allows a unique private distribution to be propagated and started in a clean state.
-// The activation key can also help to open up clusters in a few hundred milliseconds to customers who just paid.
+// The activation key can also help to give access to clusters in a few hundred milliseconds to customers who just paid.
 
 func Main(args []string) {
 	port := metadata.Http11Port

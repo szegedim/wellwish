@@ -55,8 +55,14 @@ func Setup() {
 	http.HandleFunc("/cryptonugget", func(w http.ResponseWriter, r *http.Request) {
 		apiKey := r.URL.Query().Get("apikey")
 		if r.Method == "GET" {
-			bag := apiKey
-			traces := miningTicket[bag]
+			cryptoNuggetMine := apiKey
+			if !mesh.CheckExpiry(cryptoNuggetMine) {
+				delete(miningTicket, cryptoNuggetMine)
+				management.QuantumGradeAuthorization()
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			traces := miningTicket[cryptoNuggetMine]
 			if traces == "" {
 				management.QuantumGradeAuthorization()
 				w.WriteHeader(http.StatusUnauthorized)

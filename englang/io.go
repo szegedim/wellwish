@@ -8,6 +8,16 @@ import (
 	"strings"
 )
 
+// This document is Licensed under Creative Commons CC0.
+// To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights
+// to this document to the public domain worldwide.
+// This document is distributed without any warranty.
+// You should have received a copy of the CC0 Public Domain Dedication along with this document.
+// If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
+
+// This is experimental code how to translate English to code.
+// TODO Clean it up.
+
 func Synonym(s string, t string) bool {
 	// Returns, if the two Englang statements are equivalent
 	// Example: Context is voltage. It is 3.3V == The voltage is 3.3V

@@ -33,10 +33,13 @@ func SetupRing() {
 		drawing.NoErrorVoid(write.Flush())
 	})
 
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/healthy", func(w http.ResponseWriter, r *http.Request) {
 		write := bufio.NewWriter(w)
 		drawing.NoErrorWrite(write.WriteString(metadata.Http11Port))
 		drawing.NoErrorVoid(write.Flush())
+	})
+
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 

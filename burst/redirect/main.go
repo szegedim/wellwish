@@ -17,7 +17,7 @@ import (
 
 func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "https://eper.io", http.StatusPermanentRedirect)
+		http.Redirect(w, r, "https://eper.io", http.StatusTemporaryRedirect)
 	})
 
 	err := http.ListenAndServe(metadata.Http11Port, nil)

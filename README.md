@@ -17,7 +17,7 @@ Refer to [Documentation](https://github.com/szegedim/wellwish/blob/main/document
 
 ## Try it
 
-[![Deploy to DO](https://www.deploytodo.com/do-btn-white-ghost.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/szegedim/wellwish/tree/main.git?refcode=48f147bd7dcd)
+[![Deploy to DO](https://www.deploytodo.com/do-btn-white-ghost.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/digitalocean/sample-nextjs/tree/main?refcode=48f147bd7dcd)
 
 ## Who is it for?
 

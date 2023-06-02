@@ -19,7 +19,7 @@ Refer to [Documentation](https://github.com/szegedim/wellwish/blob/main/document
 
 [![Deploy to DO](https://www.deploytodo.com/do-btn-white-ghost.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/szegedim/wellwish/tree/main)
 
-[![Deploy to DO](https://www.deploytodo.com/do-btn-white-ghost.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/digitalocean/sample-flask.git)
+&refcode=48f147bd7dcd
 
 ## Who is it for?
 

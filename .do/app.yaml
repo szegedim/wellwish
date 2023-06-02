@@ -6,6 +6,5 @@ services:
       registry_type: DOCKER_HUB
       repository: wellwish
       tag: latest
-    http_port: 7777
     instance_count: 1
     instance_size_slug: basic-m

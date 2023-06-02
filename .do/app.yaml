@@ -1,10 +1,6 @@
-name: sample-wellwish
+name: wellwish
 services:
-  - name: wellwish
-    image:
-      registry: schmiedent
-      registry_type: DOCKER_HUB
-      repository: wellwish
-      tag: latest
-    instance_count: 1
-    instance_size_slug: basic-m
+  - name: web
+    github:
+      repo: digitalocean/sample-flask
+      branch: main

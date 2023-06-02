@@ -1,9 +1,7 @@
 spec:
   name: wellwish
-  image:
-    registry: schmiedent
-    registry_type: DOCKER_HUB
-    repository: wellwish
-    tag: latest
-  instance_count: 1
-  instance_size_slug: basic-m
+  services:
+    - name: web
+      git:
+        branch: main
+        repo_clone_url: https://github.com/digitalocean/sample-flask.git

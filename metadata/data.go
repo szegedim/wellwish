@@ -19,23 +19,24 @@ import "time"
 // This is an example to fine tune a new docker image
 // (docker pull registry.gitlab.com/eper.io/<project> | grep 'Downloaded newer image') && docker build -t example.com/wellwish . && docker push example.com/wellwish
 
-var ActivationKey = "XPSZMNHVHDSOUOFNZBUQLBVVACMWASPLGXSQIZSDMXMDGJCKEXKCDQGLZWALMWWTJAFQILWYUMHSPZYSDHPDMSKVDXRR"
+// var ActivationKey = "XPSZMNHVHDSOUOFNZBUQLBVVACMWASPLGXSQIZSDMXMDGJCKEXKCDQGLZWALMWWTJAFQILWYUMHSPZYSDHPDMSKVDXRR"
+var ActivationKey = ""
 var ManagementKey = ""
 
 var SiteName = "WellWish\nCloud Decision Engine"
 
-var SiteUrl = "http://127.0.0.1:7777"
+var SiteUrl = "http://127.0.0.1:80"
 
 // NodePattern is easy to validate and a simple health script tells the nodes that are active.
 // The system scans the cluster at startup.
 // This is typically an internal node range
-var NodePattern = "http://127.0.0.1:77**"
+var NodePattern = "http://127.0.0.1:80"
 
 // Http11Port The container port that will face the public endpoint SiteUrl
-var Http11Port = ":7777"
+var Http11Port = ":80"
 
 // StatefulBackupUrl is the standard backup location, if needed. Empty string, if it is not needed.
-var StatefulBackupUrl = "http://127.0.0.1:7777"
+var StatefulBackupUrl = "http://127.0.0.1:80"
 
 // DataRoot will normally be somewhere in /var/lib in the container to get backed up
 var DataRoot = ""

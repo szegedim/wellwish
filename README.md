@@ -13,7 +13,11 @@ It is suitable for Internet of Things, Game Streaming, Embedded UI, Scalable Ent
 
 ## Design
 
-Refer to [./documentation/000 Concept.md](./documentation/000 Concept.md) for details.
+Refer to [Documentation](https://github.com/szegedim/wellwish/blob/main/documentation/000%20Concept.md) for details.
+
+## Try it
+
+[![Deploy to DO](https://www.deploytodo.com/do-btn-white-ghost.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/szegedim/wellwish.git?refcode=48f147bd7dcd)
 
 ## Who is it for?
 
@@ -32,11 +36,6 @@ The final goal is the following.
 If your professionals can use tools like Microsoft Access, or Excel, you will be able to use this one as well.
 
 Please consult with a professional of your local jurisdiction.
-
-## Try it
-
-
-[![Deploy to DO](https://www.deploytodo.com/do-btn-white-ghost.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/szegedim/wellwish.git?refcode=48f147bd7dcd)
 
 ## Getting started
 

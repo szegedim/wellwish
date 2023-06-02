@@ -17,7 +17,7 @@ Refer to [Documentation](https://github.com/szegedim/wellwish/blob/main/document
 
 ## Try it
 
-[![Deploy to DO](https://www.deploytodo.com/do-btn-white-ghost.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/digitalocean/sample-flask.git)
+[![Deploy to DO](https://www.deploytodo.com/do-btn-white-ghost.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/szegedim/wellwish.git)
 
 ## Who is it for?
 

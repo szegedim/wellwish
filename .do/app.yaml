@@ -1,0 +1,7 @@
+name: sample-wellwish
+services:
+  - name: wellwish
+    github:
+      repo: szegedim/wellwish
+      branch: main
+#    port: 7777

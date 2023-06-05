@@ -41,6 +41,7 @@ func verifyExpiry() {
 			del = true
 		}
 		if del || time.Now().After(expired) {
+			// TODO This index is to be deleted
 			DeleteIndex(k)
 		}
 	}

@@ -77,7 +77,7 @@ func Setup() {
 		if r.Method == "PUT" {
 			coinToUse := billing.ValidatedCoinContent(w, r)
 			if coinToUse != "" {
-				bag := makeBag(coinToUse)
+				bag := MakeBagInternal(coinToUse)
 				management.QuantumGradeAuthorization()
 				_, _ = w.Write([]byte(bag))
 				return
@@ -187,7 +187,7 @@ func MakebagWithCoin(coinUrlList string) string {
 		if err == nil {
 			ok, isInvoice, _, valid := billing.ValidateVoucherKey(voucher, true)
 			if ok {
-				bag := makeBag(valid)
+				bag := MakeBagInternal(valid)
 				if isInvoice {
 					bags[bag] = bags[bag] + fmt.Sprintf("\nInvoice used: %s\n", drawing.RedactPublicKey(voucher))
 				}
@@ -264,7 +264,7 @@ func declareForm(session *drawing.Session) {
 	}
 }
 
-func makeBag(bag string) string {
+func MakeBagInternal(bag string) string {
 	bags[bag] = "Bag is valid."
 	mesh.RegisterIndex(bag)
 	mesh.SetExpiry(bag, ValidPeriod)
@@ -275,4 +275,13 @@ func makeBag(bag string) string {
 	_ = w.Flush()
 	_ = bagFile.Close()
 	return bag
+}
+
+func GetBagPathInternal(bag string) string {
+	fileName := bag
+	return path.Join(fmt.Sprintf("/tmp/%s", fileName))
+}
+
+func GetBagInternal(bag string) []byte {
+	return drawing.NoErrorBytes(os.ReadFile(GetBagPathInternal(bag)))
 }

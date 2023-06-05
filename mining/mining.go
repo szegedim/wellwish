@@ -73,7 +73,7 @@ func Setup() {
 			for j := 0; j < 4096/8/4; j++ {
 				r := uint32(0)
 				for i := 0; i < 3 || r == 0; i++ {
-					r = random(apiKey)
+					r = Random(apiKey)
 				}
 				_, _ = writer.WriteString(fmt.Sprintf("%08x", r))
 			}
@@ -84,7 +84,7 @@ func Setup() {
 	})
 }
 
-func random(salt string) uint32 {
+func Random(salt string) uint32 {
 	buf := make([]byte, 4)
 	n, err := rand.Read(buf)
 	if err != nil || n != 4 {

@@ -26,6 +26,10 @@ import (
 // Clicking to a paid option will lead them to the payment tab.
 
 func Setup() {
+	http.HandleFunc("/index.html", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/entry.html", http.StatusTemporaryRedirect)
+	})
+
 	http.HandleFunc("/entry.html", func(w http.ResponseWriter, r *http.Request) {
 		err := drawing.EnsureAPIKey(w, r)
 		if err != nil {

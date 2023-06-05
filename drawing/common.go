@@ -86,6 +86,14 @@ func NoErrorBytes(data []byte, err error) []byte {
 	return data
 }
 
+func NoErrorRequest(data *http.Request, err error) *http.Request {
+	if err != nil {
+		fmt.Errorf("%s\n", err)
+		return nil
+	}
+	return data
+}
+
 func NoErrorResponse(data *http.Response, err error) *http.Response {
 	if err != nil {
 		fmt.Errorf("%s\n", err)

@@ -35,7 +35,7 @@ var Http11Port = ":7777"
 // The system scans the cluster at startup.
 // This is typically an internal node range
 // You can use "10.55.0.0/21" for Kubernetes clusters
-var NodePattern = "http://127.0.0.1" + Http11Port
+var NodePattern = "127.0.0.1/32"
 
 // StatefulBackupUrl is the standard backup location, if needed. Empty string, if it is not needed.
 var StatefulBackupUrl = "http://127.0.0.1" + Http11Port

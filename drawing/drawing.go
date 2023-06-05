@@ -25,6 +25,10 @@ func SetupDrawing() {
 		writer.Header().Set("Cache-Control", "no-cache")
 		http.ServeFile(writer, request, "./drawing/res/home.png")
 	})
+	http.HandleFunc("/upload.png", func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Cache-Control", "no-cache")
+		http.ServeFile(writer, request, "./drawing/res/upload.png")
+	})
 	http.HandleFunc("/legal.png", func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Cache-Control", "no-cache")
 		http.ServeFile(writer, request, "./drawing/res/legal.png")

@@ -21,6 +21,8 @@ If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 <div id="footer1" style="z-index: 100; position: absolute; top: 93%; width: 400px; height: 7%;">
   <table>
     <tr>
+      <td><a href="/"><img src="logo.png" style="width: 100%;" alt="home"></a></td>
+      <td><label id="uploadbutton" for="uploadthis" hidden onclick="uploadFile()"><img src="upload.png" style="width: 100%;" alt="home"></label><input type="file" hidden id="uploadthis" style="position: absolute; top:0px; left: 0px;width: 10px;"></td>
       <td><a href="/"><img src="home.png" style="width: 100%;" alt="home"></a></td>
       <td><a href="/terms"><img src="legal.png" style="width: 100%;" alt="home"></a></td>
       <td><a href="/contact"><img src="contact.png" style="width: 100%;" alt="home"></a></td>
@@ -189,9 +191,12 @@ If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 </script>
 <script>
   function uploadFile() {
-    let input = document.createElement('input')
+    //let input = document.createElement('input')
+    let input = document.getElementById("uploadthis")
     input.type = 'file'
     input.accept = acceptExtension
+    input.style.top = "1000px;"
+    input.style.left = "1000px;"
 
     input.onchange = e => {
       if (input.value !== '') {
@@ -205,8 +210,18 @@ If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
           flow = 50
         })
       }
+      document.getElementById('uploadbutton').hidden = true
     }
-    input.click()
+    if (navigator.vendor.indexOf('Apple') >= 0) {
+      document.getElementById('uploadbutton').hidden = false
+      document.getElementById('uploadbutton').style.opacity = "50%"
+      setTimeout(function () {
+        document.getElementById('uploadbutton').style.opacity = "100%"
+        //document.getElementById('uploadthis').hidden = false
+      }, 1000)
+    } else {
+      input.click()
+    }
   }
 </script>
 </body>

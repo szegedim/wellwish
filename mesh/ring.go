@@ -76,6 +76,7 @@ func SetupRing() {
 		whoAmI := GetWhoAmI()
 		if whoAmI == "" {
 			fmt.Println("I do not know my own address. I will probably make errors.")
+			fmt.Println("Fix this setting NODEPATTERN like 10.55.0.0/21, 127.0.0.1/32.")
 		}
 		index["host"] = whoAmI
 		// For testing

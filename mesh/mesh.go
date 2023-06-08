@@ -4,6 +4,7 @@ import (
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/metadata"
 	"net"
+	"os"
 	"strings"
 )
 
@@ -61,6 +62,10 @@ func InitializeNodeList() {
 	}
 	nodes := map[string]string{}
 	NodePattern = metadata.NodePattern
+	config := os.Getenv("NODEPATTERN")
+	if config != "" {
+		NodePattern = config
+	}
 	actual := []string{NodePattern}
 	if strings.Contains(NodePattern, "*") {
 		for {

@@ -22,10 +22,12 @@ import "time"
 var ActivationKey = "XPSZMNHVHDSOUOFNZBUQLBVVACMWASPLGXSQIZSDMXMDGJCKEXKCDQGLZWALMWWTJAFQILWYUMHSPZYSDHPDMSKVDXRR"
 var ManagementKey = ""
 
-var SiteName = "WellWish\nCloud Decision Engine"
+var SiteName = "WellWish Cloud"
 
 // SiteUrl is the public facing external endpoint.
 // This is typically a format like https://wellwish.example.com
+// Try to use a simple / whenever you do http redirects.
+// SiteUrl is mainly for logging and user facing messages.
 var SiteUrl = ""
 
 // Http11Port The container port that will face the public endpoint SiteUrl

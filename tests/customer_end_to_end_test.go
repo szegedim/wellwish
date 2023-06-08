@@ -36,7 +36,6 @@ func TestCustomerUseCase(t *testing.T) {
 		time.Sleep(2 * burst.MaxBurstRuntime)
 	}()
 
-	metadata.NodePattern = "http://127.0.0.1:771*"
 	var PrimaryPort = ":7716"
 	var StreamPort = ":7717"
 	siteUrl := "http://127.0.0.1:7716"

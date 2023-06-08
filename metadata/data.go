@@ -37,8 +37,12 @@ var Http11Port = ":7777"
 // You can use "10.55.0.0/21" for Kubernetes clusters
 // GKE specific setting example:
 // var NodePattern = "10.45.128.0/17"
-// Private node:
-var NodePattern = "127.0.0.1/32"
+// Standalone container
+// var NodePattern = "127.0.0.1/32"
+// Tests
+// var NodePattern = "127.0.0.1/32"
+// Suitable for local unit tests:
+var NodePattern = "http://127.0.0.1:77**"
 
 // StatefulBackupUrl is the standard backup location, if needed. Empty string, if it is not needed.
 var StatefulBackupUrl = "http://127.0.0.1" + Http11Port

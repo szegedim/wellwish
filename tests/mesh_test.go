@@ -5,7 +5,6 @@ import (
 	"gitlab.com/eper.io/engine/burst"
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/management"
-	"gitlab.com/eper.io/engine/metadata"
 	"os"
 	"os/exec"
 	"path"
@@ -33,7 +32,6 @@ func TestMesh(t *testing.T) {
 	}()
 
 	primary := "http://127.0.0.1:7724"
-	metadata.NodePattern = "http://127.0.0.1:772*"
 	wait := make(chan int)
 	nowait := make(chan int)
 	// Uncomment this to debug

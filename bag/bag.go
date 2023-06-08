@@ -92,7 +92,6 @@ func Setup() {
 			session, sessionValid := bags[apiKey]
 			if !sessionValid {
 				management.QuantumGradeAuthorization()
-				_, _ = w.Write([]byte("payment required"))
 				w.WriteHeader(http.StatusPaymentRequired)
 				return
 			}

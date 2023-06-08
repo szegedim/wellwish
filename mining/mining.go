@@ -42,7 +42,6 @@ func Setup() {
 			session, sessionValid := miningTicket[apiKey]
 			if !sessionValid {
 				management.QuantumGradeAuthorization()
-				_, _ = w.Write([]byte("payment required"))
 				w.WriteHeader(http.StatusPaymentRequired)
 				return
 			}

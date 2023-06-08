@@ -39,8 +39,8 @@ var Http11Port = ":7777"
 // var NodePattern = "10.45.128.0/17"
 // Standalone container
 // var NodePattern = "127.0.0.1/32"
-// Tests
-// var NodePattern = "127.0.0.1/32"
+// Run Unit Tests
+// var NodePattern = "http://127.0.0.1:77**"
 // Suitable for local unit tests:
 var NodePattern = "http://127.0.0.1:77**"
 

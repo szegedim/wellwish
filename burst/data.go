@@ -1,6 +1,9 @@
 package burst
 
 import (
+	"bufio"
+	"bytes"
+	"gitlab.com/eper.io/engine/englang"
 	"sync"
 	"time"
 )
@@ -35,3 +38,22 @@ const ValidPeriod = 168 * time.Hour
 // Use DummyBroker, if this is 0
 var BurstRunners = 0
 var MaxBurstRuntime = 3 * time.Second
+
+func LogSnapshot(m string, w bufio.Writer, r *bufio.Reader) {
+	if m == "GET" {
+		for k, v := range BurstSession {
+			englang.WriteIndexedEntry(w, k, "burst", bytes.NewBufferString(v))
+		}
+	}
+	if m == "PUT" {
+		for {
+			e, k, v := englang.ReadIndexedEntry(*r)
+			if k == "" {
+				return
+			}
+			if e == "burst" {
+				BurstSession[k] = v
+			}
+		}
+	}
+}

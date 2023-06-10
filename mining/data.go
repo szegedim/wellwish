@@ -8,10 +8,9 @@ package mining
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
 import (
+	"bufio"
 	"bytes"
 	"gitlab.com/eper.io/engine/englang"
-	"io"
-	"strconv"
 	"time"
 )
 
@@ -19,15 +18,21 @@ var miningTicket = map[string]string{}
 
 const ValidPeriod = 4 * 168 * time.Hour
 
-func LogSnapshot(m string, w io.Writer, r io.Reader) {
+func LogSnapshot(m string, w bufio.Writer, r *bufio.Reader) {
 	if m == "GET" {
 		for k, v := range miningTicket {
-			buf := bytes.NewBufferString("")
-			bufv := []byte(v)
-			buf.WriteString(englang.Printf("Record with type %s, apikey %s, and length %s bytes.", "miningticket", k, strconv.FormatUint(uint64(len(bufv)), 10)))
-			buf.Write(bufv)
-			_, _ = w.Write(buf.Bytes())
+			englang.WriteIndexedEntry(w, k, "mining", bytes.NewBufferString(v))
 		}
 	}
-	return
+	if m == "PUT" {
+		for {
+			e, k, v := englang.ReadIndexedEntry(*r)
+			if k == "" {
+				return
+			}
+			if e == "mining" {
+				miningTicket[k] = v
+			}
+		}
+	}
 }

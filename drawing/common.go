@@ -37,8 +37,12 @@ func NewImageSlice(_image *image.RGBA64, rect image.Rectangle) ImageSlice {
 
 func NoErrorFile(data *os.File, err error) *os.File {
 	if err != nil {
-		fmt.Errorf("%s\n", err)
-		return nil
+		fmt.Println(err)
+		data, _ = os.Open("/dev/null")
+		if data == nil {
+			fmt.Println(err)
+			return nil
+		}
 	}
 	go func(f *os.File) {
 		// Garbage collection

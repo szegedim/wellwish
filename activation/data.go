@@ -1,10 +1,10 @@
 package activation
 
 import (
+	"bufio"
 	"fmt"
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/metadata"
-	"io"
 	"time"
 )
 
@@ -27,7 +27,7 @@ var ActivationHashLog = drawing.RedactPublicKey(metadata.ActivationKey)
 // Protects against brute force attacks
 var activationPeriod = time.Second
 
-func LogSnapshot(m string, w io.Writer, r io.Reader) {
+func LogSnapshot(m string, w bufio.Writer, r *bufio.Reader) {
 	// Activation key is shared with multiple containers of the same version,
 	// so we just return the record locator
 	if m == "GET" {

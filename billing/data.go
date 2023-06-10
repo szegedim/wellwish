@@ -1,10 +1,9 @@
 package billing
 
 import (
+	"bufio"
 	"bytes"
 	"gitlab.com/eper.io/engine/englang"
-	"io"
-	"strconv"
 )
 
 // This document is Licensed under Creative Commons CC0.
@@ -23,22 +22,27 @@ var orders = map[string]string{}
 // They are also not a coin or digital currency, but they can be reworked as such with minimal effors.
 var vouchers = map[string]string{}
 
-func LogSnapshot(m string, w io.Writer, r io.Reader) {
+func LogSnapshot(m string, w bufio.Writer, r *bufio.Reader) {
 	if m == "GET" {
 		for k, v := range orders {
-			buf := bytes.NewBufferString("")
-			bufv := []byte(v)
-			buf.WriteString(englang.Printf("Record with type %s, apikey %s, and length %s bytes.", "order", k, strconv.FormatUint(uint64(len(bufv)), 10)))
-			buf.Write(bufv)
-			_, _ = w.Write(buf.Bytes())
+			englang.WriteIndexedEntry(w, k, "order", bytes.NewBufferString(v))
 		}
 		for k, v := range vouchers {
-			buf := bytes.NewBufferString("")
-			bufv := []byte(v)
-			buf.WriteString(englang.Printf("Record with type %s, apikey %s, and length %s bytes.", "voucher", k, strconv.FormatUint(uint64(len(bufv)), 10)))
-			buf.Write(bufv)
-			_, _ = w.Write(buf.Bytes())
+			englang.WriteIndexedEntry(w, k, "voucher", bytes.NewBufferString(v))
 		}
 	}
-	return
+	if m == "PUT" {
+		for {
+			e, k, v := englang.ReadIndexedEntry(*r)
+			if k == "" {
+				return
+			}
+			if e == "order" {
+				orders[k] = v
+			}
+			if e == "voucher" {
+				vouchers[k] = v
+			}
+		}
+	}
 }

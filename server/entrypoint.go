@@ -1,6 +1,8 @@
 package server
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"gitlab.com/eper.io/engine/activation"
 	"gitlab.com/eper.io/engine/bag"
@@ -86,14 +88,16 @@ func printUsage(err error) {
 
 func setupSite() {
 	<-activation.Activated
-	management.SetupSiteManagement(func(m string, w io.Writer, r io.Reader) {
-		management.LogSnapshot(m, w, r)
-		activation.LogSnapshot(m, w, r)
-		billing.LogSnapshot(m, w, r)
-		mining.LogSnapshot(m, w, r)
-		bag.LogSnapshot(m, w, r)
-		burst.LogSnapshot(m, w, r)
-		mesh.LogSnapshot(m, w, r)
+	management.SetupSiteManagement(func(m string, w bufio.Writer, r io.Reader) {
+		fullRestore := bytes.NewBuffer(drawing.NoErrorBytes(io.ReadAll(r)))
+		// We could try in parallel, but we will probably be ram bound anyway.
+		activation.LogSnapshot(m, w, bufio.NewReader(fullRestore))
+		management.LogSnapshot(m, w, bufio.NewReader(fullRestore))
+		billing.LogSnapshot(m, w, bufio.NewReader(fullRestore))
+		mining.LogSnapshot(m, w, bufio.NewReader(fullRestore))
+		bag.LogSnapshot(m, w, bufio.NewReader(fullRestore))
+		burst.LogSnapshot(m, w, bufio.NewReader(fullRestore))
+		mesh.LogSnapshot(m, w, bufio.NewReader(fullRestore))
 	})
 	activation.Activated <- "Hello Moon!"
 

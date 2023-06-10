@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/metadata"
-	"io"
 	"time"
 )
 
@@ -37,8 +36,4 @@ func BoxCore() {
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
-}
-
-func LogSnapshot(m string, w io.Writer, r io.Reader) {
-	// TODO be nice and log burst sessions that were paid
 }

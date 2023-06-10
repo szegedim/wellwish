@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/management"
-	"io"
 	"sync"
 	"time"
 )
@@ -33,26 +32,25 @@ var NodePattern = ""
 
 var updateFrequency = 2 * time.Second
 
-func LogSnapshot(m string, w io.Writer, r io.Reader) {
+func LogSnapshot(m string, w bufio.Writer, r *bufio.Reader) {
 	// TODO
-	if m == "GET" && w != nil {
-		ww := bufio.NewWriter(w)
-		_, _ = ww.Write([]byte("\n"))
+	if m == "GET" {
+		_, _ = w.Write([]byte("\n"))
 		for k, v := range Nodes {
 			s := "unavailable"
 			_, err := management.HttpProxyRequest(fmt.Sprintf("%s/health", k), "GET", nil)
 			if err == nil {
 				s = "ready"
 			}
-			_, _ = ww.WriteString(fmt.Sprintf("Node %s has status %s. Health result is %s\n", k, v, s))
+			_, _ = w.WriteString(fmt.Sprintf("Node %s has status %s. Health result is %s\n", k, v, s))
 		}
 		index := index
 		for k, v := range index {
-			_, _ = ww.WriteString(fmt.Sprintf("Index %s is %s here.", k, v) + "\n")
+			_, _ = w.WriteString(fmt.Sprintf("Index %s is %s here.", k, v) + "\n")
 		}
 		for k, v := range expiry {
-			_, _ = ww.WriteString(fmt.Sprintf("Index %s is %s here.", k, v) + "\n")
+			_, _ = w.WriteString(fmt.Sprintf("Index %s is %s here.", k, v) + "\n")
 		}
-		_ = ww.Flush()
+		_ = w.Flush()
 	}
 }

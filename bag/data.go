@@ -1,13 +1,14 @@
 package bag
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
+	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
 	"io"
 	"os"
 	"path"
-	"strconv"
 	"time"
 )
 
@@ -22,52 +23,55 @@ var bags = map[string]string{}
 
 const ValidPeriod = 168 * time.Hour
 
-const RecordPattern = "Record with type %s, apikey %s, info %s, file name %s and length of %s bytes."
-
-const RecordType = "bag"
-
-func LogSnapshot(m string, w io.Writer, r io.Reader) {
+func LogSnapshot(m string, w bufio.Writer, r *bufio.Reader) {
 	if m == "GET" {
 		for k, v := range bags {
-			bag := k
-			filePath := path.Join(fmt.Sprintf("/tmp/%s", k))
-			info := v
-
-			content, _ := os.ReadFile(filePath)
-
-			buf := bytes.NewBuffer([]byte{})
-			buf.WriteString(englang.Printf(RecordPattern, RecordType, bag, info, filePath, strconv.FormatInt(int64(len(content)), 10)))
-			buf.Write(content)
-			_, _ = w.Write(buf.Bytes())
+			englang.WriteIndexedEntry(w, k, "bag", bytes.NewBufferString(v))
 		}
 	}
 	if m == "PUT" {
-		buf, err := io.ReadAll(r)
-		if err != nil {
-			return
-		}
-		i := 0
 		for {
-			record := ""
-			bag := ""
-			info := ""
-			filePath := ""
-			length := ""
-			n, err := englang.ScanfStream(buf, i, RecordPattern, &record, &bag, &info, &filePath, &length)
-			if err != nil {
-				break
+			e, k, v := englang.ReadIndexedEntry(*r)
+			if k == "" {
+				return
 			}
-			l, err := strconv.ParseInt(length, 10, 32)
-			if err != nil {
-				break
+			if e == "bag" {
+				bags[k] = v
 			}
-			// Storing the length ensures to avoid Englang injection vulnerabilities
-			// if the file contains Englang of bags.
-			bags[bag] = info
-			if l > 0 {
-				_ = os.WriteFile(path.Join("/tmp", bag), buf[n:n+int(l)], 0700)
+		}
+	}
+	// Bags are special with binary data at the end to support debugging.
+	logBinaries(m, w, r)
+}
+
+func logBinaries(m string, w bufio.Writer, r *bufio.Reader) {
+	if m == "GET" {
+		for k, _ := range bags {
+			bag := k
+			filePath := path.Join(fmt.Sprintf("/tmp/%s", bag))
+			binaryData := drawing.NoErrorFile(os.Open(filePath))
+			var length int64
+			stat, _ := binaryData.Stat()
+			if stat != nil {
+				length = stat.Size()
 			}
-			i = n
+			drawing.NoErrorWrite(w.WriteString(englang.Printf("Indexed entity %s of bytes %s follows.\n", k, englang.DecimalString(length))))
+			drawing.NoErrorWrite64(w.ReadFrom(binaryData))
+		}
+	}
+	if m == "PUT" {
+		for {
+			line, _ := r.ReadBytes('\n')
+			var bag, lengths string
+			if nil == englang.Scanf1(string(line), "Indexed entity %s of bytes %s follows.\n", &bag, &lengths) {
+				length := englang.Decimal(lengths)
+				content := make([]byte, length)
+				n, _ := io.ReadFull(r, content)
+				filePath := path.Join(fmt.Sprintf("/tmp/%s", bag))
+				_ = os.WriteFile(filePath, content[0:n], 0700)
+			} else {
+				return
+			}
 		}
 	}
 }

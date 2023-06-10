@@ -1,6 +1,8 @@
 package management
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	drawing "gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/metadata"
@@ -16,7 +18,7 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
-func SetupSiteManagement(traces func(m string, w io.Writer, r io.Reader)) {
+func SetupSiteManagement(traces func(m string, w bufio.Writer, r io.Reader)) {
 	CheckpointFunc = traces
 
 	http.HandleFunc("/management.html", func(w http.ResponseWriter, r *http.Request) {
@@ -42,10 +44,13 @@ func SetupSiteManagement(traces func(m string, w io.Writer, r io.Reader)) {
 
 		if r.Method == "GET" {
 			w.Header().Set("Content-Type", "text/plain")
-			CheckpointFunc("GET", w, nil)
+			buffered := bufio.NewWriter(w)
+			CheckpointFunc("GET", *buffered, nil)
+			_ = buffered.Flush()
 		}
 		if r.Method == "PUT" {
-			CheckpointFunc("PUT", nil, r.Body)
+			buffered := bufio.NewWriter(bytes.NewBufferString(""))
+			CheckpointFunc("PUT", *buffered, r.Body)
 		}
 	})
 }
@@ -142,7 +147,7 @@ func declareForm(session *drawing.Session) {
 	}
 }
 
-func LogSnapshot(m string, w io.Writer, r io.Reader) {
+func LogSnapshot(m string, w bufio.Writer, r *bufio.Reader) {
 	if m == "GET" {
 		_, _ = w.Write([]byte(fmt.Sprintf("This container is running with management key %s ...\n\n", drawing.RedactPublicKey(GetAdminKey()))))
 	}

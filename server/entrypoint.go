@@ -88,16 +88,29 @@ func printUsage(err error) {
 
 func setupSite() {
 	<-activation.Activated
-	management.SetupSiteManagement(func(m string, w bufio.Writer, r io.Reader) {
-		fullRestore := bytes.NewBuffer(drawing.NoErrorBytes(io.ReadAll(r)))
+	management.SetupSiteManagement(func(m string, w *bufio.Writer, r io.Reader) {
+		var fullRestore *bytes.Buffer
+		if r != nil {
+			fullRestore = bytes.NewBuffer(drawing.NoErrorBytes(io.ReadAll(r)))
+		}
 		// We could try in parallel, but we will probably be ram bound anyway.
-		activation.LogSnapshot(m, w, bufio.NewReader(fullRestore))
-		management.LogSnapshot(m, w, bufio.NewReader(fullRestore))
-		billing.LogSnapshot(m, w, bufio.NewReader(fullRestore))
-		mining.LogSnapshot(m, w, bufio.NewReader(fullRestore))
-		bag.LogSnapshot(m, w, bufio.NewReader(fullRestore))
-		burst.LogSnapshot(m, w, bufio.NewReader(fullRestore))
-		mesh.LogSnapshot(m, w, bufio.NewReader(fullRestore))
+		modules := make([]func(m string, w *bufio.Writer, r *bufio.Reader), 0)
+		modules = append(modules, bag.LogSnapshot)
+		modules = append(modules, mining.LogSnapshot)
+		modules = append(modules, burst.LogSnapshot)
+		modules = append(modules, activation.LogSnapshot)
+		modules = append(modules, management.LogSnapshot)
+		modules = append(modules, billing.LogSnapshot)
+		modules = append(modules, mesh.LogSnapshot)
+
+		for _, v := range modules {
+			if fullRestore != nil {
+				v(m, w, bufio.NewReader(fullRestore))
+			} else {
+				v(m, w, nil)
+			}
+			_ = w.Flush()
+		}
 	})
 	activation.Activated <- "Hello Moon!"
 

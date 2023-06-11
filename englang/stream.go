@@ -27,7 +27,7 @@ func ReadIndexedEntry(r bufio.Reader) (string, string, string) {
 	}
 }
 
-func WriteIndexedEntry(w bufio.Writer, entity string, k string, buf *bytes.Buffer) {
+func WriteIndexedEntry(w *bufio.Writer, entity string, k string, buf *bytes.Buffer) {
 	drawing.NoErrorWrite(w.WriteString(Printf("Indexed %s entity %s of bytes %s follows.\n", entity, k, DecimalString(int64(buf.Len())))))
 	_, _ = w.Write(buf.Bytes())
 }

@@ -39,7 +39,7 @@ const ValidPeriod = 168 * time.Hour
 var BurstRunners = 0
 var MaxBurstRuntime = 3 * time.Second
 
-func LogSnapshot(m string, w bufio.Writer, r *bufio.Reader) {
+func LogSnapshot(m string, w *bufio.Writer, r *bufio.Reader) {
 	if m == "GET" {
 		for k, v := range BurstSession {
 			englang.WriteIndexedEntry(w, k, "burst", bytes.NewBufferString(v))

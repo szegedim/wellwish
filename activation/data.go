@@ -27,14 +27,13 @@ var ActivationHashLog = drawing.RedactPublicKey(metadata.ActivationKey)
 // Protects against brute force attacks
 var activationPeriod = time.Second
 
-func LogSnapshot(m string, w bufio.Writer, r *bufio.Reader) {
+func LogSnapshot(m string, w *bufio.Writer, r *bufio.Reader) {
 	// Activation key is shared with multiple containers of the same version,
 	// so we just return the record locator
 	if m == "GET" {
-		if metadata.ActivationKey == "" {
-			_, _ = w.Write([]byte("The container is activated."))
-		} else {
-			_, _ = w.Write([]byte(fmt.Sprintf("This container is running with activation key as %s ...", ActivationHashLog)))
+		if !ActivationNeeded {
+			_, _ = w.WriteString("The container is activated.\n")
 		}
+		_, _ = w.WriteString(fmt.Sprintf("This container is running with activation key as %s ...\n", ActivationHashLog))
 	}
 }

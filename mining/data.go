@@ -18,7 +18,7 @@ var miningTicket = map[string]string{}
 
 const ValidPeriod = 4 * 168 * time.Hour
 
-func LogSnapshot(m string, w bufio.Writer, r *bufio.Reader) {
+func LogSnapshot(m string, w *bufio.Writer, r *bufio.Reader) {
 	if m == "GET" {
 		for k, v := range miningTicket {
 			englang.WriteIndexedEntry(w, k, "mining", bytes.NewBufferString(v))

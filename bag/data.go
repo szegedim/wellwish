@@ -23,7 +23,7 @@ var bags = map[string]string{}
 
 const ValidPeriod = 168 * time.Hour
 
-func LogSnapshot(m string, w bufio.Writer, r *bufio.Reader) {
+func LogSnapshot(m string, w *bufio.Writer, r *bufio.Reader) {
 	if m == "GET" {
 		for k, v := range bags {
 			englang.WriteIndexedEntry(w, k, "bag", bytes.NewBufferString(v))
@@ -44,7 +44,7 @@ func LogSnapshot(m string, w bufio.Writer, r *bufio.Reader) {
 	logBinaries(m, w, r)
 }
 
-func logBinaries(m string, w bufio.Writer, r *bufio.Reader) {
+func logBinaries(m string, w *bufio.Writer, r *bufio.Reader) {
 	if m == "GET" {
 		for k, _ := range bags {
 			bag := k

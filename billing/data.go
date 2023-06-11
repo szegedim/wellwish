@@ -22,7 +22,7 @@ var orders = map[string]string{}
 // They are also not a coin or digital currency, but they can be reworked as such with minimal effors.
 var vouchers = map[string]string{}
 
-func LogSnapshot(m string, w bufio.Writer, r *bufio.Reader) {
+func LogSnapshot(m string, w *bufio.Writer, r *bufio.Reader) {
 	if m == "GET" {
 		for k, v := range orders {
 			englang.WriteIndexedEntry(w, k, "order", bytes.NewBufferString(v))

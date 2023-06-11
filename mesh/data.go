@@ -32,7 +32,7 @@ var NodePattern = ""
 
 var updateFrequency = 2 * time.Second
 
-func LogSnapshot(m string, w bufio.Writer, r *bufio.Reader) {
+func LogSnapshot(m string, w *bufio.Writer, r *bufio.Reader) {
 	// TODO
 	if m == "GET" {
 		_, _ = w.Write([]byte("\n"))

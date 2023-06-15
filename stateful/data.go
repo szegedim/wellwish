@@ -12,7 +12,7 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
-var containerIndexLimit = 100000
+var ContainerIndexLimit = 100000
 
 // The list of modules that are backed up and restored on startup
 var stateModules = make([]*map[string]string, 0)
@@ -25,7 +25,5 @@ var checkpoint *[]byte = nil
 // if there is memory pressure.
 var startupTime = time.Now()
 var lru = map[string]string{}
-
-const lruSampleSize = 104
 
 var lock = sync.Mutex{}

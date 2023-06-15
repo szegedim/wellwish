@@ -1,9 +1,10 @@
-package stateful
+package tests
 
 import (
 	"fmt"
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/metadata"
+	"gitlab.com/eper.io/engine/stateful"
 	"net/http"
 	"testing"
 	"time"
@@ -17,22 +18,32 @@ import (
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
 func TestBackup(t *testing.T) {
-	containerIndexLimit = 2
+	mainTestLocalPorts.Lock()
+	defer mainTestLocalPorts.Unlock()
+	stateful.ContainerIndexLimit = 2
+	// Normally this is /var/lib
 	metadata.DataRoot = "/tmp"
 	metadata.Http11Port = ":7599"
 	metadata.SiteUrl = "http://127.0.0.1:7599"
 	metadata.StatefulBackupUrl = "http://127.0.0.1:7599"
 
 	module := map[string]string{}
-	RegisterModuleForBackup(&module)
+	stateful.RegisterModuleForBackup(&module)
 
-	SetupStateful()
+	stateful.SetupStateful()
 
 	go func() {
 		_ = http.ListenAndServe(metadata.Http11Port, nil)
 	}()
 
 	time.Sleep(1 * time.Second)
+
+	metadata.ManagementKey = ""
+	managementKey := drawing.GenerateUniqueKey()
+	drawing.NoErrorResponse(http.Post(fmt.Sprintf("%s/setkey?apikey=%s", metadata.StatefulBackupUrl, managementKey), "", nil))
+	if metadata.ManagementKey != managementKey {
+		t.Error("cannot set key")
+	}
 
 	expectedTestResults := map[string]string{}
 
@@ -41,21 +52,21 @@ func TestBackup(t *testing.T) {
 		k := drawing.GenerateUniqueKey()
 		v := drawing.GenerateUniqueKey()
 		expectedTestResults[k] = v
-		SetStatefulItem(&module, k, v)
+		stateful.SetStatefulItem(&module, k, v)
 	}()
 	go func() {
 		time.Sleep(7 * time.Second)
 		k := drawing.GenerateUniqueKey()
 		v := drawing.GenerateUniqueKey()
 		expectedTestResults[k] = v
-		SetStatefulItem(&module, k, v)
+		stateful.SetStatefulItem(&module, k, v)
 	}()
 	go func() {
 		time.Sleep(25 * time.Second)
 		k := drawing.GenerateUniqueKey()
 		v := drawing.GenerateUniqueKey()
 		expectedTestResults[k] = v
-		SetStatefulItem(&module, k, v)
+		stateful.SetStatefulItem(&module, k, v)
 	}()
 
 	started := time.Now()
@@ -63,11 +74,12 @@ func TestBackup(t *testing.T) {
 		time.Sleep(3 * time.Second)
 
 		fmt.Println("Next epoch")
-		if len(module) > containerIndexLimit {
+		stateful.RegularCleanup()
+		if len(module) > stateful.ContainerIndexLimit {
 			t.Error("Cannot delete", len(module))
 		}
 		for kk, vv := range expectedTestResults {
-			vvv := GetStatefulItem(&module, kk)
+			vvv := stateful.GetStatefulItem(&module, kk)
 			if vv != vvv {
 				t.Error(vv, vvv)
 			}

@@ -5,6 +5,7 @@ import (
 	"gitlab.com/eper.io/engine/metadata"
 	"gitlab.com/eper.io/engine/stateful"
 	"net/http"
+	"os"
 )
 
 // This document is Licensed under Creative Commons CC0.
@@ -17,9 +18,17 @@ import (
 // Usage: go run main.go [:port]
 // Example: go run main.go :8080
 func main() {
-	stateful.SetupStateful()
-
 	port := metadata.Http11Port
+	if len(os.Args) > 1 {
+		port = os.Args[1]
+	}
+	key, ok := os.LookupEnv("KEY")
+	if ok && key != "" {
+		metadata.ActivationKey = key
+	}
+
+	stateful.SetupPersistence()
+
 	err := http.ListenAndServe(port, nil)
 	if err != nil {
 		fmt.Println(err)

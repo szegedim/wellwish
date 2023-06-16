@@ -2,11 +2,15 @@ package burst
 
 import (
 	"bytes"
+	"fmt"
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
+	"gitlab.com/eper.io/engine/metadata"
 	"io"
 	"net/http"
+	"os/exec"
 	"strings"
+	"time"
 )
 
 // This document is Licensed under Creative Commons CC0.
@@ -16,11 +20,13 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
-// This is a module that translates code to Englang.
+var MockPhp = "<html><body><?php echo \"Hello World!\" ?></body></html>"
+var MockPhpResult = "<html><body>Hello World!</body></html>"
+
+// Curl is a function that translates Englang to code.
 // Englang is easy to transmit over networks and backup files.
 // Even your accountant can read the raw data.
 // This makes them safer and cheaper to use than JSON, COM/RPC, CORBA, or XML.
-
 func Curl(command string, data string) string {
 	options := ""
 	method := "GET"
@@ -46,4 +52,25 @@ func Curl(command string, data string) string {
 		return "success"
 	}
 	return string(download)
+}
+
+func FinishCleanup() {
+	ContainerRunning = map[string]string{}
+	BurstSession = map[string]string{}
+}
+
+func BoxCoreForTests() {
+	participationKey := drawing.NoErrorString(exec.Command("curl", "-X", "GET", fmt.Sprintf("http://127.0.0.1%s/idle?apikey=%s", metadata.Http11Port, metadata.ActivationKey)).Output())
+	//participationKey := Curl(englang.Printf("curl -X GET http://127.0.0.1%s/idle?apikey=%s", metadata.Http11Port, metadata.ActivationKey), "")
+
+	started := time.Now()
+	for time.Now().Before(started.Add(MaxBurstRuntime * 4)) {
+		instructions := drawing.NoErrorString(exec.Command("curl", "-X", "GET", fmt.Sprintf("http://127.0.0.1%s/idle?apikey=%s", metadata.Http11Port, participationKey)).Output())
+		if instructions != "" {
+			ret := drawing.NoErrorString(exec.Command("curl", "-d", "<html><body>Hello World!</body></html>", "-X", "PUT", fmt.Sprintf("http://127.0.0.1%s/idle?apikey=%s", metadata.Http11Port, participationKey)).Output())
+			fmt.Println("got instructions", instructions, "result", ret)
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
 }

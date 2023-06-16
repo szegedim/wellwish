@@ -4,15 +4,11 @@ import (
 	"bytes"
 	"fmt"
 	"gitlab.com/eper.io/engine/burst"
-	"gitlab.com/eper.io/engine/burst/php"
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/metadata"
 	"io"
 	"net/http"
-	"os"
-	"os/exec"
-	"path"
 	"strings"
 	"testing"
 	"time"
@@ -158,19 +154,20 @@ func TestCustomerUseCase(t *testing.T) {
 		for {
 			time.Sleep(100 * time.Millisecond)
 
-			goRoot := os.Getenv("GOROOT")
-			goroot := path.Join(goRoot, "bin", "go")
-			p := path.Join("..", "burst", "box", "main.go")
-			fmt.Println(p, metadata.Http11Port)
-			err := exec.Command(goroot, "run", p, PrimaryPort).Run()
-			if err != nil {
-				fmt.Println("local result", err)
-			}
+			burst.BoxCoreForTests()
+			//goRoot := os.Getenv("GOROOT")
+			//goroot := path.Join(goRoot, "bin", "go")
+			//p := path.Join("..", "burst", "box", "main.go")
+			//fmt.Println(p, metadata.Http11Port)
+			//err := exec.Command(goroot, "run", p, PrimaryPort).Run()
+			//if err != nil {
+			//	fmt.Println("local result", err)
+			//}
 		}
 	}()
 	fmt.Println("Running burst on", siteUrl)
 	time.Sleep(2 * time.Second)
-	run0 := curl(englang.Printf("curl -X PUT %s/run?apikey=%s", siteUrl, burstSession), "Run the following php code."+php.MockPhp)
+	run0 := curl(englang.Printf("curl -X PUT %s/run?apikey=%s", siteUrl, burstSession), "Run the following php code."+burst.MockPhp)
 	fmt.Println("CPU Burst result", run0)
 	if run0 != "<html><body>Hello World!</body></html>" {
 		t.Error("could not run sample php")

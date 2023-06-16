@@ -22,19 +22,51 @@ import (
 // You should have received a copy of the CC0 Public Domain Dedication along with this document.
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
+// Burst runners run containerized applications in pull mode.
+
 // The main design behind burst runners is that they are designed to be scalable.
 // Data locality means that data is co-located with burst containers.
 // Data locality is important in some cases, especially UI driven code like ours.
-// However, bursts are designed to handle the longer running processes with chaining.
 
-// UI should be low latency using just bags and direct code.
+// Bursts are designed to handle the longer running processes with chaining.
+// They do not wait, but they register pass on the results to another burst saving serverless time.
+
+// UI applets should be low latency using just bags and direct code.
 // Bursts should scale out. They are okay to be located elsewhere than the data bags.
 // The reason is that large computation will require streaming, and
 // streaming is driven by pipelined steps without replies and feedbacks.
 // Streaming bandwidth is not affected by co-location of data and code.
 // Example: 1million 100ms reads followed by 100ms compute will last 200000 seconds.
 // Example: 1million 100ms reads streamed into 100ms compute will last 100000 seconds,
-// even if there is an extra network latency of 100ms per burst.
+// even if there is an extra network latency of 150ms per burst.
+
+// Box is a container code that waits for a single burst and exits
+// The host runs an /idle?apikey=<ACTIVATION KEY> call to get a unique key
+// TODO Consider using the management key here?
+// The host then runs a box such as
+// docker run -d --rm --restart=always --name box1 -e BURSTKEY=<key> wellwish
+// It will do a curl -X GET /idle?apikey=<BURSTKEY> to fetch the instructions
+// It will return the results to curl -X PUT /ilde?apikey=<BURSTKEY> after running
+
+// There are two ways to input and output data to and from such boxes
+// One is the burst `/run` request body and return.
+// Keep this small as it transfers through multiple http requests.
+// The other way is to pass a bag url or cloud bucket url where the box streams any input or results.
+
+// We do not log runtime or errors, the server takes care of that.
+// It is so simple that once it works it will work forever.
+// The design is that it runs for 1-10 seconds.
+// This is the bandwidth of a single 1 vcpu+1 gigabyte container streamed entirely.
+// It is similar to serverless lambdas, but it is a bit better.
+// Lambdas can wait but bursts typically use cpu bursts, and they continue in another burst.
+// This makes bursts less expensive to the cloud provider using the cpu as much as possible.
+// Also, bursts are not called, but they run with standard input and standard output.
+// They are not an api endpoint, the api gateway is the wellwish server.
+// This makes burst more secure and easier to use just like a bash script or cgi script.
+// Bursts are typically docker containers with php/java/node preloaded by the taste of the cloud office cluster.
+// They keep checking the frontend for new tasks, and they restart when done cleaning all interim results.
+
+// TODO add timeout logic on paid vouchers
 
 var startTime = time.Now()
 var code = make(chan chan string)
@@ -103,6 +135,7 @@ func Setup() {
 			}
 			lock.Lock()
 			v, ok := ContainerRunning[apiKey]
+			lock.Unlock()
 			if ok {
 				var key, started string
 				if nil == englang.Scanf1(v, "Burst box %s registered at %s second is ready.", &key, &started) {
@@ -112,8 +145,10 @@ func Setup() {
 						break
 					case callChannel := <-code:
 						request := <-callChannel
+						lock.Lock()
 						delete(ContainerRunning, apiKey)
 						ContainerResults[apiKey] = callChannel
+						lock.Unlock()
 						go func(key string) {
 							time.Sleep(MaxBurstRuntime * 2)
 							lock.Lock()
@@ -128,7 +163,6 @@ func Setup() {
 			} else {
 				// Not ready
 			}
-			lock.Unlock()
 			return
 		}
 		if request.Method == "PUT" {
@@ -136,6 +170,7 @@ func Setup() {
 			result := drawing.NoErrorString(io.ReadAll(request.Body))
 			lock.Lock()
 			replyCh, ok := ContainerResults[apiKey]
+			lock.Unlock()
 			if ok {
 				select {
 				case <-time.After(10 * time.Millisecond):
@@ -143,9 +178,12 @@ func Setup() {
 				case replyCh <- result:
 					break
 				}
-				delete(ContainerResults, apiKey)
+				go func() {
+					lock.Lock()
+					delete(ContainerResults, apiKey)
+					lock.Unlock()
+				}()
 			}
-			lock.Unlock()
 			return
 		}
 	})
@@ -188,14 +226,4 @@ func Setup() {
 			return
 		}
 	})
-
-	for i := 0; i < BurstRunners; i++ {
-		// Normally this will be done by external docker containers
-		// This is good for local in container testing
-		go func() {
-			time.Sleep(10 * time.Millisecond)
-			// TODO docker
-			_ = RunBox()
-		}()
-	}
 }

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"gitlab.com/eper.io/engine/billing"
 	"gitlab.com/eper.io/engine/burst"
-	"gitlab.com/eper.io/engine/burst/php"
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/mesh"
@@ -69,7 +68,7 @@ func testContainer(t *testing.T) {
 	go func() {
 		time.Sleep(5 * time.Second)
 
-		result := runBurst("Run the following php code."+php.MockPhp, burstSession)
+		result := runBurst("Run the following php code."+burst.MockPhp, burstSession)
 
 		t.Log("LOG", result)
 		done <- true
@@ -80,10 +79,7 @@ func testContainer(t *testing.T) {
 
 		for {
 			// Box
-			err := burst.RunBox()
-			if err != nil {
-				t.Error(err)
-			}
+			burst.BoxCoreForTests()
 		}
 	}()
 
@@ -140,7 +136,7 @@ func testBurstEndToEndApi(t *testing.T) {
 		go func(delay int) {
 			time.Sleep(time.Duration(delay) * time.Second)
 
-			result := runBurst("Run the following php code."+php.MockPhp, burstSession)
+			result := runBurst("Run the following php code."+burst.MockPhp, burstSession)
 
 			t.Log("LOG", result)
 			if result != "<html><body>Hello World!</body></html>" {
@@ -157,11 +153,8 @@ func testBurstEndToEndApi(t *testing.T) {
 				time.Sleep(100 * time.Millisecond)
 
 				for {
-					// Box
-					err := burst.RunBox()
-					if err != nil {
-						t.Error(err)
-					}
+					time.Sleep(100 * time.Millisecond)
+					burst.BoxCoreForTests()
 				}
 			}()
 		}

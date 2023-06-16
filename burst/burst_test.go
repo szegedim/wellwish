@@ -5,16 +5,11 @@ import (
 	"bytes"
 	"fmt"
 	"gitlab.com/eper.io/engine/billing"
-	"gitlab.com/eper.io/engine/burst/php"
 	"gitlab.com/eper.io/engine/drawing"
 	"gitlab.com/eper.io/engine/englang"
 	"gitlab.com/eper.io/engine/mesh"
 	"gitlab.com/eper.io/engine/metadata"
-	"io"
 	"net/http"
-	"os"
-	"os/exec"
-	"path"
 	"testing"
 	"time"
 )
@@ -50,15 +45,25 @@ import (
 
 func TestBurst(t *testing.T) {
 	go func() {
+		BurstRunners = 5
+		for i := 0; i < BurstRunners; i++ {
+			// Normally this will be done by external docker containers
+			// This is good for local in container testing
+			go func() {
+				time.Sleep(10 * time.Millisecond)
+				// TODO docker
+				BoxCoreForTests()
+			}()
+		}
+	}()
+
+	go func() {
 		err := http.ListenAndServe(metadata.Http11Port, nil)
 		if err != nil {
 			t.Error(err)
 		}
 	}()
 
-	if BurstRunners == 0 {
-		DummyBroker()
-	}
 	Setup()
 	billing.Setup()
 
@@ -77,7 +82,7 @@ func TestBurst(t *testing.T) {
 
 	time.Sleep(1 * time.Second)
 
-	result = mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1%s path /run?apikey=%s with method PUT and content %s. The call expects englang.", metadata.Http11Port, burstSession, "Run the following php code."+php.MockPhp))
+	result = mesh.EnglangRequest(englang.Printf("Call server http://127.0.0.1%s path /run?apikey=%s with method PUT and content %s. The call expects englang.", metadata.Http11Port, burstSession, "Run the following php code."+MockPhp))
 	fmt.Println("Burst result", result)
 	if result != "<html><body>Hello World!</body></html>" {
 		t.Error("not expected")
@@ -100,96 +105,4 @@ func generateTestCoins(siteUrl string) (string, string) {
 	coin := Curl(englang.Printf("curl -X GET %s/invoice.coin?apikey=%s", siteUrl, invoice), "")
 	fmt.Println("Coin file", coin)
 	return invoice, coin
-}
-
-func runInTest(code []byte, stdin io.ReadCloser, stdout io.Writer) {
-	goPath := path.Join(os.Getenv("GOROOT"), "bin", "go")
-	workDir := path.Join("/tmp")
-	mainGo := path.Join(workDir, "main.go")
-	_ = os.WriteFile(mainGo, code, 0700)
-	cmd := &exec.Cmd{
-		Path: path.Join(goPath),
-		Args: []string{"", "run", mainGo},
-		Dir:  workDir,
-		Env: []string{fmt.Sprintf("HOSTNAME=%s", metadata.SiteUrl),
-			fmt.Sprintf("HOME=%s", workDir),
-			fmt.Sprintf("GOROOT=%s", os.Getenv("GOROOT"))},
-		Stderr: stdout,
-		Stdin:  stdin,
-	}
-
-	stdoutRead, err := cmd.StdoutPipe()
-	if err != nil {
-		_, _ = stdout.Write([]byte(err.Error()))
-		return
-	}
-
-	err = cmd.Start()
-	if err != nil {
-		_, _ = stdout.Write([]byte(err.Error()))
-		return
-	}
-
-	defer func() {
-		if cmd.Process != nil {
-			_ = cmd.Process.Kill()
-		}
-	}()
-
-	go func(r io.ReadCloser, w io.ReadCloser) {
-		_, err = io.Copy(stdout, r)
-		if err != nil {
-			_, _ = stdout.Write([]byte(err.Error()))
-			return
-		}
-
-		_ = r.Close()
-		_ = w.Close()
-	}(stdoutRead, stdin)
-
-	err = cmd.Wait()
-	if err != nil {
-		_, _ = stdout.Write([]byte(err.Error()))
-		return
-	}
-}
-
-func TestRun(t *testing.T) {
-	code, _ := io.ReadAll(drawing.NoErrorFile(os.Open("./helloworld/main.go")))
-	stdout, in := io.Pipe()
-	go func() {
-		_, _ = in.Write([]byte("Hello Burst!"))
-		_ = in.Close()
-	}()
-	out, stdin := io.Pipe()
-	go func() {
-		runInTest(code, stdout, stdin)
-		_ = stdin.Close()
-	}()
-
-	x, _ := io.ReadAll(out)
-	s := string(x)
-	if s != "Hello World!\n" {
-		t.Error(s)
-	}
-	t.Log(s)
-}
-
-func DummyBroker() {
-	go func() {
-		// Broker
-		for {
-			BoxCore()
-			continue
-			select {
-			case <-time.After(MaxBurstRuntime):
-				break
-			case callChannel := <-code:
-				code := <-callChannel
-				fmt.Println(code)
-				callChannel <- "<html><body>Hello World!</body></html>"
-				break
-			}
-		}
-	}()
 }

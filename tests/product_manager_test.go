@@ -16,11 +16,11 @@ import (
 // If not, see https://creativecommons.org/publicdomain/zero/1.0/legalcode.
 
 func TestLongTermCosts(t *testing.T) {
-	ret := drawing.NoErrorString(exec.Command("go", "run", "../burst/wc/main.go", "..").Output())
+	ret := drawing.NoErrorString(exec.Command("go", "run", "../tests/wc/main.go", "..").Output())
 	var begin, lines, end string
 	_ = englang.ScanfContains(ret, "clc:%s\n", &begin, &lines, &end)
 	fmt.Println(lines)
-	if englang.Decimal(lines) > 5300 {
+	if englang.Decimal(lines) > 5000 {
 		t.Error("project became larger than what can be handled by 0.6 developer")
 		t.Log("\n" + ret)
 	}
